@@ -14,20 +14,26 @@
 use std::io;
 use std::fmt;
 
+mod docker;
+
+pub use docker::Docker;
+
+trait OciRuntime {}
+
 #[derive(Debug)]
-pub enum OciRuntime {
+pub enum OciRuntimeType {
     Docker,
 }
 
-impl fmt::Display for OciRuntime {
+impl fmt::Display for OciRuntimeType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(self, f)
     }
 }
 
-pub fn get_oci_runtime(runtime_str: String) -> io::Result<OciRuntime> {
+pub fn get_oci_runtime(runtime_str: String) -> io::Result<OciRuntimeType> {
     match runtime_str.to_lowercase().as_str() {
-        "docker" => Ok(OciRuntime::Docker),
+        "docker" => Ok(OciRuntimeType::Docker),
 
         // Error case
         &_ => Err(io::Error::new(

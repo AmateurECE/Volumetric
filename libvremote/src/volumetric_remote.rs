@@ -19,7 +19,7 @@ use handlebars::Handlebars;
 // use yaml_rust::{YamlEmitter, YamlLoader};
 
 extern crate libvruntime;
-use libvruntime::OciRuntime;
+use libvruntime::OciRuntimeType;
 
 use crate::{RemoteImpl, REPOSITORY_VERSION};
 
@@ -34,7 +34,7 @@ const INITIAL_HISTORY: &'static str = "";
 
 pub struct VolumetricRemote<R: RemoteImpl> {
     transport: R,
-    oci_runtime: libvruntime::OciRuntime,
+    oci_runtime: libvruntime::OciRuntimeType,
 }
 
 impl<R: RemoteImpl> VolumetricRemote<R> {
@@ -42,11 +42,11 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
         VolumetricRemote {
             transport,
             // TODO: Detect OCI Runtime here?
-            oci_runtime: OciRuntime::Docker,
+            oci_runtime: OciRuntimeType::Docker,
         }
     }
 
-    pub fn set_runtime(&mut self, oci_runtime: OciRuntime) {
+    pub fn set_runtime(&mut self, oci_runtime: OciRuntimeType) {
         self.oci_runtime = oci_runtime;
     }
 
