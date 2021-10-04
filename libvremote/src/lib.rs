@@ -31,22 +31,8 @@ pub trait RemoteImpl {
     fn create_dir(&mut self, name: &str) -> Result<(), io::Error>;
 }
 
-// This struct implements functionality for talking to a remote repository.
-pub struct VolumetricRemote<R: RemoteImpl> {
-    transport: R,
-    oci_runtime: libvruntime::OciRuntime,
-}
-
-// Remote repository that exists on a currently mounted filesystem.
-pub struct FileRemote {
-    spec: FileRemoteSpec,
-    data_dir: String,
-}
-
-// Spec for the FileRemote
-pub struct FileRemoteSpec {
-    path: String,
-}
+pub use volumetric_remote::VolumetricRemote;
+pub use file_remote::{FileRemote, FileRemoteSpec};
 
 // Enum to differentiate between Remotes
 pub enum RemoteSpec {

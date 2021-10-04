@@ -11,7 +11,6 @@
 ////
 
 use std::error::Error;
-use std::io;
 
 extern crate clap;
 use clap::{App, AppSettings, Arg, SubCommand};
@@ -20,17 +19,7 @@ extern crate libvremote;
 use libvremote::{VolumetricRemote, remote_type, RemoteSpec, FileRemote};
 
 extern crate libvruntime;
-use libvruntime::OciRuntime;
-
-fn get_oci_runtime(runtime_str: String) -> io::Result<OciRuntime> {
-    match runtime_str.to_lowercase().as_str() {
-        "docker" => Ok(OciRuntime::Docker),
-        &_ => Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!("Invalid runtime: {}", runtime_str))
-        ),
-    }
-}
+use libvruntime::get_oci_runtime;
 
 fn do_init(uri: String, oci_runtime: String) -> Result<(), Box<dyn Error>> {
     let mut remote = match remote_type(uri).unwrap() {
@@ -39,6 +28,10 @@ fn do_init(uri: String, oci_runtime: String) -> Result<(), Box<dyn Error>> {
     remote.set_runtime(get_oci_runtime(oci_runtime)?);
     remote.init()?;
     Ok(())
+}
+
+fn do_add(_volume: String) -> Result<(), Box<dyn Error>> {
+    unimplemented!()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -65,6 +58,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         let uri = matches.value_of("uri").unwrap_or(".");
         let oci_runtime = matches.value_of("oci-runtime").unwrap_or("docker");
         do_init(uri.to_string(), oci_runtime.to_string())?;
+    } else if let Some(matches) = matches.subcommand_matches("add") {
+        let volume = matches.value_of("volume")
+            .expect("Must provide a volume name!");
+        do_add(volume.to_string())?;
     }
     Ok(())
 }

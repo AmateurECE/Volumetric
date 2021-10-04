@@ -3,7 +3,7 @@
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Impl for the VolumetricRemote struct.
+// DESCRIPTION:     Implements functionality for talking to a remote repository
 //
 // CREATED:         10/03/2021
 //
@@ -21,7 +21,7 @@ use handlebars::Handlebars;
 extern crate libvruntime;
 use libvruntime::OciRuntime;
 
-use crate::{RemoteImpl, VolumetricRemote, REPOSITORY_VERSION};
+use crate::{RemoteImpl, REPOSITORY_VERSION};
 
 const INITIAL_LOCK: &'static str = "";
 
@@ -31,6 +31,11 @@ oci-runtime: '{{oci_runtime}}'
 ";
 
 const INITIAL_HISTORY: &'static str = "";
+
+pub struct VolumetricRemote<R: RemoteImpl> {
+    transport: R,
+    oci_runtime: libvruntime::OciRuntime,
+}
 
 impl<R: RemoteImpl> VolumetricRemote<R> {
     pub fn new(transport: R) -> VolumetricRemote<R> {

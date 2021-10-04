@@ -11,6 +11,7 @@
 // LAST EDITED:     10/03/2021
 ////
 
+use std::io;
 use std::fmt;
 
 #[derive(Debug)]
@@ -21,6 +22,16 @@ pub enum OciRuntime {
 impl fmt::Display for OciRuntime {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(self, f)
+    }
+}
+
+pub fn get_oci_runtime(runtime_str: String) -> io::Result<OciRuntime> {
+    match runtime_str.to_lowercase().as_str() {
+        "docker" => Ok(OciRuntime::Docker),
+        &_ => Err(io::Error::new(
+            io::ErrorKind::Other,
+            format!("Invalid runtime: {}", runtime_str))
+        ),
     }
 }
 

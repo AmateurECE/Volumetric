@@ -15,11 +15,22 @@ use std::io::Write;
 use std::io::ErrorKind;
 use std::fs;
 
-use crate::{DATA_DIR, RemoteImpl, FileRemote, FileRemoteSpec};
+use crate::{DATA_DIR, RemoteImpl};
+
+// Remote repository that exists on a currently mounted filesystem.
+pub struct FileRemote {
+    spec: FileRemoteSpec,
+    data_dir: String,
+}
+
+// Spec for the FileRemote
+pub struct FileRemoteSpec {
+    pub path: String,
+}
 
 impl FileRemote {
     pub fn new(spec: FileRemoteSpec) -> io::Result<FileRemote> {
-        let data_dir = spec.get_path().to_owned() + "/" + DATA_DIR;
+        let data_dir = spec.path.to_owned() + "/" + DATA_DIR;
         let mut remote = FileRemote {
             spec, data_dir,
         };
@@ -42,7 +53,7 @@ impl RemoteImpl for FileRemote {
     }
 
     fn create_dir(&mut self, name: &str) -> io::Result<()> {
-        let name = self.spec.get_path().to_owned() + "/" + DATA_DIR
+        let name = self.spec.path.to_owned() + "/" + DATA_DIR
             + "/" + name;
         match fs::create_dir_all(&name) {
             Ok(()) => Ok(()),
@@ -53,10 +64,6 @@ impl RemoteImpl for FileRemote {
             },
         }
     }
-}
-
-impl FileRemoteSpec {
-    pub fn get_path(&self) -> &str { self.path.as_str() }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
