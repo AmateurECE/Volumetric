@@ -28,6 +28,8 @@ impl fmt::Display for OciRuntime {
 pub fn get_oci_runtime(runtime_str: String) -> io::Result<OciRuntime> {
     match runtime_str.to_lowercase().as_str() {
         "docker" => Ok(OciRuntime::Docker),
+
+        // Error case
         &_ => Err(io::Error::new(
             io::ErrorKind::Other,
             format!("Invalid runtime: {}", runtime_str))

@@ -16,22 +16,25 @@ extern crate clap;
 use clap::{App, AppSettings, Arg, SubCommand};
 
 extern crate libvremote;
-use libvremote::{VolumetricRemote, remote_type, RemoteSpec, FileRemote};
+use libvremote::{
+    VolumetricRemote, remote_type, RemoteSpec, FileRemote, RemoteImpl,
+};
 
 extern crate libvruntime;
 use libvruntime::get_oci_runtime;
 
-fn do_init(uri: String, oci_runtime: String) -> Result<(), Box<dyn Error>> {
-    let mut remote = match remote_type(uri).unwrap() {
-        RemoteSpec::File(e) => VolumetricRemote::new(FileRemote::new(e)?),
-    };
+fn do_init<R: RemoteImpl>(
+    mut remote: VolumetricRemote<R>, oci_runtime: String
+) -> Result<(), Box<dyn Error>> {
     remote.set_runtime(get_oci_runtime(oci_runtime)?);
     remote.init()?;
     Ok(())
 }
 
-fn do_add(_volume: String) -> Result<(), Box<dyn Error>> {
-    unimplemented!()
+fn do_add<R: RemoteImpl>(
+    mut _remote: VolumetricRemote<R>, _volume: String
+) -> Result<(), Box<dyn Error>> {
+    Ok(())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -40,6 +43,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .author("Ethan D. Twardy <ethan.twardy@gmail.com>")
         .about("Version control for OCI Volumes")
         .settings(&[AppSettings::SubcommandRequiredElseHelp])
+        .arg(Arg::with_name("uri")
+             .help("URI of a repository"))
         .subcommand(SubCommand::with_name("init")
                     .about("Initialize a repository in the current directory")
                     .arg(Arg::with_name("uri")
@@ -50,18 +55,24 @@ fn main() -> Result<(), Box<dyn Error>> {
                          .short("r")))
         .subcommand(SubCommand::with_name("add")
                     .about("Track changes to a volume in the OCI Runtime")
+                    .arg(Arg::with_name("uri")
+                         .help("URI of the repository"))
                     .arg(Arg::with_name("volume")
                          .help("Name of a persistent volume in the runtime")))
         .get_matches();
 
+    let uri = matches.value_of("uri").unwrap_or(".");
+    let remote = match remote_type(uri.to_string()).unwrap() {
+        RemoteSpec::File(e) => VolumetricRemote::new(FileRemote::new(e)?),
+    };
+
     if let Some(matches) = matches.subcommand_matches("init") {
-        let uri = matches.value_of("uri").unwrap_or(".");
         let oci_runtime = matches.value_of("oci-runtime").unwrap_or("docker");
-        do_init(uri.to_string(), oci_runtime.to_string())?;
+        do_init(remote, oci_runtime.to_string())?;
     } else if let Some(matches) = matches.subcommand_matches("add") {
         let volume = matches.value_of("volume")
             .expect("Must provide a volume name!");
-        do_add(volume.to_string())?;
+        do_add(remote, volume.to_string())?;
     }
     Ok(())
 }
