@@ -11,24 +11,47 @@
 ////
 
 use std::io;
+use std::io::Write;
+use std::io::ErrorKind;
+use std::fs;
 
-use crate::{RemoteImpl, FileRemote, FileRemoteSpec};
+use crate::{DATA_DIR, RemoteImpl, FileRemote, FileRemoteSpec};
 
 impl FileRemote {
-    pub fn new(spec: FileRemoteSpec) -> FileRemote {
-        FileRemote { spec }
+    pub fn new(spec: FileRemoteSpec) -> io::Result<FileRemote> {
+        let data_dir = spec.get_path().to_owned() + "/" + DATA_DIR;
+        let mut remote = FileRemote {
+            spec, data_dir,
+        };
+        remote.create_dir("")?; // Pass empty string to ensure we create repo
+        Ok(remote)
     }
 }
 
 impl RemoteImpl for FileRemote {
-    fn get_file(filename: &str)
-                -> Result<io::BufReader<Box<dyn io::Read>>, io::Error> {
+    fn get_file(&mut self, _name: &str) -> io::Result<Box<dyn io::Read>> {
         unimplemented!()
     }
 
-    fn put_file(buffer: io::BufReader<Box<dyn io::Read>>)
-                -> Result<usize, io::Error> {
-        unimplemented!()
+    fn put_file(&mut self, name: &str, buffer: &[u8]) -> io::Result<usize> {
+        let name = self.data_dir.clone() + "/" + name;
+        let mut writer = fs::File::create(&name)?;
+        writer.write(&buffer)?;
+
+        Ok(buffer.len())
+    }
+
+    fn create_dir(&mut self, name: &str) -> io::Result<()> {
+        let name = self.spec.get_path().to_owned() + "/" + DATA_DIR
+            + "/" + name;
+        match fs::create_dir_all(&name) {
+            Ok(()) => Ok(()),
+            Err(e) => match e.kind() {
+                // Doesn't matter if it already exists.
+                ErrorKind::AlreadyExists => Ok(()),
+                _ => Err(e),
+            },
+        }
     }
 }
 

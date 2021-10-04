@@ -16,12 +16,17 @@ use std::io;
 mod volumetric_remote;
 mod file_remote;
 
+// More or less: Maj.Min.Patch
+pub const REPOSITORY_VERSION: &'static str = "0.1.0";
+pub const DATA_DIR: &'static str = ".volumetric";
+
 // This trait guarantees a consistent interface for remote endpoints.
 pub trait RemoteImpl {
-    fn get_file(filename: &str)
-                -> Result<io::BufReader<Box<dyn io::Read>>, io::Error>;
-    fn put_file(buffer: io::BufReader<Box<dyn io::Read>>)
-                -> Result<usize, io::Error>;
+    fn get_file(&mut self, name: &str) -> io::Result<Box<dyn io::Read>>;
+
+    fn put_file(&mut self, name: &str, buffer: &[u8]) -> io::Result<usize>;
+
+    fn create_dir(&mut self, name: &str) -> Result<(), io::Error>;
 }
 
 // This struct implements functionality for talking to a remote repository.
@@ -32,6 +37,7 @@ pub struct VolumetricRemote<R: RemoteImpl> {
 // Remote repository that exists on a currently mounted filesystem.
 pub struct FileRemote {
     spec: FileRemoteSpec,
+    data_dir: String,
 }
 
 // Spec for the FileRemote

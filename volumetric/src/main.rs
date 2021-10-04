@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     if let Some(matches) = matches.subcommand_matches("init") {
         let uri = matches.value_of("uri").unwrap();
         let mut remote = match remote_type(uri.to_string()).unwrap() {
-            RemoteSpec::File(e) => VolumetricRemote::new(FileRemote::new(e)),
+            RemoteSpec::File(e) => VolumetricRemote::new(FileRemote::new(e)?),
         };
         remote.init()?;
     }
