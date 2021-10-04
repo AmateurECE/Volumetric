@@ -7,4 +7,5 @@ edition = "2018"
 
 [dependencies]
 yaml-rust = "0.4"
-const_format = "0.2"
+handlebars = "4.1"
+libvruntime = { path = "../libvruntime" }

@@ -13,6 +13,8 @@
 
 use std::io;
 
+extern crate libvruntime;
+
 mod volumetric_remote;
 mod file_remote;
 
@@ -32,6 +34,7 @@ pub trait RemoteImpl {
 // This struct implements functionality for talking to a remote repository.
 pub struct VolumetricRemote<R: RemoteImpl> {
     transport: R,
+    oci_runtime: libvruntime::OciRuntime,
 }
 
 // Remote repository that exists on a currently mounted filesystem.
