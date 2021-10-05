@@ -28,23 +28,11 @@
 use std::collections::HashMap;
 use std::error::Error;
 
-use handlebars::Handlebars;
-
-// extern crate yaml_rust;
-// use yaml_rust::{YamlEmitter, YamlLoader};
-
-extern crate libvruntime;
+use serde_yaml;
 use libvruntime::OciRuntimeType;
-
 use crate::{RemoteImpl, REPOSITORY_VERSION};
 
 const INITIAL_LOCK: &'static str = "";
-
-const INITIAL_SETTINGS: &'static str = "\
-version: '{{VERSION}}'
-oci-runtime: '{{oci_runtime}}'
-";
-
 const INITIAL_HISTORY: &'static str = "";
 
 pub struct VolumetricRemote<R: RemoteImpl> {
@@ -66,16 +54,13 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
     }
 
     pub fn init(&mut self) -> Result<(), Box<dyn Error>> {
-        let mut handlebars = Handlebars::new();
-        handlebars.register_template_string("settings", INITIAL_SETTINGS)?;
-
         // Populate all the initial artifacts
         self.transport.put_file("lock", &mut INITIAL_LOCK.as_bytes())?;
 
         let mut settings = HashMap::new();
-        settings.insert("oci_runtime", self.oci_runtime.to_string());
-        settings.insert("VERSION", REPOSITORY_VERSION.to_string());
-        let settings = handlebars.render("settings", &settings)?;
+        settings.insert("version", REPOSITORY_VERSION.to_string());
+        settings.insert("oci-runtime", self.oci_runtime.to_string());
+        let settings = serde_yaml::to_string(&settings)?;
         self.transport.put_file("settings", &settings.as_bytes())?;
 
         self.transport.put_file("history", &mut INITIAL_HISTORY.as_bytes())?;
