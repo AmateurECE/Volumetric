@@ -47,9 +47,9 @@ fn do_init<R: RemoteImpl>(
 }
 
 fn do_add<R: RemoteImpl>(
-    mut _remote: VolumetricRemote<R>, _volume: String
+    mut remote: VolumetricRemote<R>, volume: String
 ) -> Result<(), Box<dyn Error>> {
-    unimplemented!()
+    remote.add(volume)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {

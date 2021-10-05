@@ -7,7 +7,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/04/2021
+// LAST EDITED:     10/05/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -32,7 +32,6 @@ use serde_yaml;
 use libvruntime::OciRuntimeType;
 use crate::{RemoteImpl, REPOSITORY_VERSION};
 
-const INITIAL_LOCK: &'static str = "";
 const INITIAL_HISTORY: &'static str = "";
 
 pub struct VolumetricRemote<R: RemoteImpl> {
@@ -53,9 +52,15 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
         self.oci_runtime = oci_runtime;
     }
 
+    // Populate all the initial artifacts
     pub fn init(&mut self) -> Result<(), Box<dyn Error>> {
-        // Populate all the initial artifacts
-        self.transport.put_file("lock", &mut INITIAL_LOCK.as_bytes())?;
+        let mut lock = HashMap::new();
+        lock.insert("volumes", HashMap::<&str, &str>::new());
+        let lock = serde_yaml::to_string(&lock)?;
+        self.transport.put_file("lock", &mut lock.as_bytes())?;
+
+        let lock_orig = "";
+        self.transport.put_file("lock.orig", &mut lock_orig.as_bytes())?;
 
         let mut settings = HashMap::new();
         settings.insert("version", REPOSITORY_VERSION.to_string());
@@ -67,6 +72,11 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
         self.transport.create_dir("objects")?;
         self.transport.create_dir("changes")?;
         Ok(())
+    }
+
+    // Add a volume to the lock file.
+    pub fn add(&mut self, _volume: String) -> Result<(), Box<dyn Error>> {
+        unimplemented!()
     }
 }
 
