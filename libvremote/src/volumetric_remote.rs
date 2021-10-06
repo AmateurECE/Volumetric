@@ -28,11 +28,23 @@
 use std::collections::HashMap;
 use std::error::Error;
 
+use serde::{Serialize, Deserialize};
 use serde_yaml;
 use libvruntime::OciRuntimeType;
 use crate::{RemoteImpl, REPOSITORY_VERSION};
 
 const INITIAL_HISTORY: &'static str = "";
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct LockFile {
+    volumes: HashMap<String, String>
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct SettingsFile {
+    version: String,
+    oci_runtime: String,
+}
 
 pub struct VolumetricRemote<R: RemoteImpl> {
     transport: R,
@@ -54,17 +66,17 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
 
     // Populate all the initial artifacts
     pub fn init(&mut self) -> Result<(), Box<dyn Error>> {
-        let mut lock = HashMap::new();
-        lock.insert("volumes", HashMap::<&str, &str>::new());
+        let lock = LockFile { volumes: HashMap::new() };
         let lock = serde_yaml::to_string(&lock)?;
         self.transport.put_file("lock", &mut lock.as_bytes())?;
 
         let lock_orig = "";
         self.transport.put_file("lock.orig", &mut lock_orig.as_bytes())?;
 
-        let mut settings = HashMap::new();
-        settings.insert("version", REPOSITORY_VERSION.to_string());
-        settings.insert("oci-runtime", self.oci_runtime.to_string());
+        let settings = SettingsFile {
+            version: REPOSITORY_VERSION.to_string(),
+            oci_runtime: self.oci_runtime.to_string(),
+        };
         let settings = serde_yaml::to_string(&settings)?;
         self.transport.put_file("settings", &settings.as_bytes())?;
 
