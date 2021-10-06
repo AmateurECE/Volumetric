@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/05/2021
+// LAST EDITED:     10/06/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -30,12 +30,11 @@ use std::io::Write;
 use std::io::ErrorKind;
 use std::fs;
 
-use crate::{DATA_DIR, RemoteImpl};
+use crate::RemoteImpl;
 
 // Remote repository that exists on a currently mounted filesystem.
 pub struct FileRemote {
     spec: FileRemoteSpec,
-    data_dir: String,
 }
 
 // Spec for the FileRemote
@@ -45,23 +44,18 @@ pub struct FileRemoteSpec {
 
 impl FileRemote {
     pub fn new(spec: FileRemoteSpec) -> io::Result<FileRemote> {
-        let data_dir = spec.path.to_owned() + "/" + DATA_DIR;
-        let mut remote = FileRemote {
-            spec, data_dir,
-        };
-        remote.create_dir("")?; // Pass empty string to ensure we create repo
-        Ok(remote)
+        Ok(FileRemote { spec })
     }
 }
 
 impl RemoteImpl for FileRemote {
     fn get_file(&mut self, name: &str) -> io::Result<Box<dyn io::Read>> {
-        let name = self.data_dir.clone() + "/" + name;
+        let name = self.spec.path.clone() + "/" + name;
         Ok(Box::new(fs::File::open(name)?))
     }
 
     fn put_file(&mut self, name: &str, buffer: &[u8]) -> io::Result<usize> {
-        let name = self.data_dir.clone() + "/" + name;
+        let name = self.spec.path.clone() + "/" + name;
         let mut writer = fs::File::create(&name)?;
         writer.write(&buffer)?;
 
@@ -69,9 +63,8 @@ impl RemoteImpl for FileRemote {
     }
 
     fn create_dir(&mut self, name: &str) -> io::Result<()> {
-        let name = self.spec.path.to_owned() + "/" + DATA_DIR
-            + "/" + name;
-        match fs::create_dir_all(&name) {
+        let name = self.spec.path.to_owned() + "/" + name;
+        match fs::create_dir(&name) {
             Ok(()) => Ok(()),
             Err(e) => match e.kind() {
                 // Doesn't matter if it already exists.

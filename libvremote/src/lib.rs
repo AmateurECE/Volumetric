@@ -8,7 +8,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/04/2021
+// LAST EDITED:     10/06/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -35,7 +35,6 @@ mod file_remote;
 
 // More or less: Maj.Min.Patch
 pub const REPOSITORY_VERSION: &'static str = "0.1.0";
-pub const DATA_DIR: &'static str = ".volumetric";
 
 // This trait guarantees a consistent interface for remote endpoints.
 pub trait RemoteImpl {

@@ -33,17 +33,18 @@ use serde_yaml;
 use libvruntime::{OciRuntimeType, OciRuntime, Docker, Podman};
 use crate::{RemoteImpl, REPOSITORY_VERSION};
 
-const INITIAL_HISTORY: &'static str = "";
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct LockFile {
-    pub volumes: HashMap<String, String>
-}
+const SETTINGS_FILE: &'static str = "volumetric.yaml";
+const DATA_DIR: &'static str     = ".volumetric";
+const LOCK_FILE: &'static str    = ".volumetric/lock";
+const HISTORY_FILE: &'static str = ".volumetric/history";
+const OBJECTS_DIR: &'static str  = ".volumetric/objects";
+const CHANGES_DIR: &'static str  = ".volumetric/changes";
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct SettingsFile {
     pub version: String,
     pub oci_runtime: OciRuntimeType,
+    pub volumes: HashMap<String, String>
 }
 
 impl Default for SettingsFile {
@@ -51,6 +52,7 @@ impl Default for SettingsFile {
         SettingsFile {
             version: REPOSITORY_VERSION.to_string(),
             oci_runtime: OciRuntimeType::Docker,
+            volumes: HashMap::new(),
         }
     }
 }
@@ -62,7 +64,7 @@ pub struct VolumetricRemote<R: RemoteImpl> {
 
 impl<R: RemoteImpl> VolumetricRemote<R> {
     pub fn new(mut transport: R) -> VolumetricRemote<R> {
-        let settings: SettingsFile = match transport.get_file("settings") {
+        let settings = match transport.get_file(&SETTINGS_FILE) {
             Ok(reader) => serde_yaml::from_reader(reader)
                 .expect("Could not read settings file from repository"),
             Err(_) => SettingsFile::default(),
@@ -77,19 +79,17 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
 
     // Populate all the initial artifacts
     pub fn init(&mut self) -> Result<(), Box<dyn Error>> {
-        let lock = LockFile { volumes: HashMap::new() };
-        let lock = serde_yaml::to_string(&lock)?;
-        self.transport.put_file("lock", &mut lock.as_bytes())?;
-
-        let lock_orig = "";
-        self.transport.put_file("lock.orig", &mut lock_orig.as_bytes())?;
-
         let settings = serde_yaml::to_string(&self.settings)?;
-        self.transport.put_file("settings", &settings.as_bytes())?;
+        self.transport.put_file(&SETTINGS_FILE, &settings.as_bytes())?;
 
-        self.transport.put_file("history", &mut INITIAL_HISTORY.as_bytes())?;
-        self.transport.create_dir("objects")?;
-        self.transport.create_dir("changes")?;
+        self.transport.create_dir(&DATA_DIR)?;
+        let lock_orig = "";
+        self.transport.put_file(&LOCK_FILE, &mut lock_orig.as_bytes())?;
+
+        let history_orig = "";
+        self.transport.put_file(&HISTORY_FILE, &mut history_orig.as_bytes())?;
+        self.transport.create_dir(&OBJECTS_DIR)?;
+        self.transport.create_dir(&CHANGES_DIR)?;
         Ok(())
     }
 
@@ -104,14 +104,14 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
     pub fn add(&mut self, volume: String) -> Result<(), Box<dyn Error>> {
         let driver = self.get_driver();
         if driver.volume_exists(&volume)? {
-            let mut lock: LockFile = serde_yaml::from_reader(
-                self.transport.get_file("lock")?)?;
+            let mut settings: SettingsFile = serde_yaml::from_reader(
+                self.transport.get_file(&SETTINGS_FILE)?)?;
             // TODO: This command should also stage changes for commit?
-            if !lock.volumes.contains_key(&volume) {
-                lock.volumes.insert(volume, "/dev/null".to_string());
+            if !settings.volumes.contains_key(&volume) {
+                settings.volumes.insert(volume, "/dev/null".to_string());
             }
-            let lock = serde_yaml::to_string(&lock)?;
-            self.transport.put_file("lock", &lock.as_bytes())?;
+            let settings = serde_yaml::to_string(&settings)?;
+            self.transport.put_file(&SETTINGS_FILE, &settings.as_bytes())?;
         }
 
         Ok(())
