@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/04/2021
+// LAST EDITED:     10/05/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -70,8 +70,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                          .short("r")))
         .subcommand(SubCommand::with_name("add")
                     .about("Track changes to a volume in the OCI Runtime")
-                    .arg(Arg::with_name("uri")
-                         .help("URI of the repository"))
                     .arg(Arg::with_name("volume")
                          .help("Name of a persistent volume in the runtime")))
         .get_matches();

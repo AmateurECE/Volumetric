@@ -98,6 +98,9 @@ dependencies = [
 [[package]]
 name = "libvruntime"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "linked-hash-map"

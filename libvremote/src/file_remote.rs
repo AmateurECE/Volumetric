@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/04/2021
+// LAST EDITED:     10/05/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -55,8 +55,9 @@ impl FileRemote {
 }
 
 impl RemoteImpl for FileRemote {
-    fn get_file(&mut self, _name: &str) -> io::Result<Box<dyn io::Read>> {
-        unimplemented!()
+    fn get_file(&mut self, name: &str) -> io::Result<Box<dyn io::Read>> {
+        let name = self.data_dir.clone() + "/" + name;
+        Ok(Box::new(fs::File::open(name)?))
     }
 
     fn put_file(&mut self, name: &str, buffer: &[u8]) -> io::Result<usize> {

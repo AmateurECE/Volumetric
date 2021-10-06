@@ -1,10 +1,9 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            lib.rs
+// NAME:            podman.rs
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     This crate is an abstraction layer for different OCI
-//                  Runtimes.
+// DESCRIPTION:     Abstraction layer for working with Podman.
 //
 // CREATED:         10/04/2021
 //
@@ -28,42 +27,36 @@
 
 use std::error::Error;
 use std::io;
-use std::fmt;
+use std::io::BufRead;
+use std::process;
 
-use serde::{Serialize, Deserialize};
+use crate::OciRuntime;
 
-mod docker;
-pub use docker::Docker;
+pub struct Podman {}
 
-mod podman;
-pub use podman::Podman;
-
-pub trait OciRuntime {
-    fn volume_exists(&self, volume: &str) -> Result<bool, Box<dyn Error>>;
+impl Podman {
+    pub fn new() -> Podman { Podman {} }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub enum OciRuntimeType {
-    Docker,
-    Podman,
-}
+impl OciRuntime for Podman {
+    fn volume_exists(&self, volume: &str) -> Result<bool, Box<dyn Error>> {
+        let output = process::Command::new("podman")
+            .args(["volume", "ls"])
+            .output()
+            .expect("Error running podman volume ls");
+        let output = io::BufReader::new(io::Cursor::new(output.stdout));
 
-impl fmt::Display for OciRuntimeType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(self, f)
-    }
-}
+        // Start from the second, first line is header.
+        for line in output.lines() {
+            let line = line?;
+            if let Some(name) = line.split_whitespace().nth(1) {
+                if volume == name {
+                    return Ok(true)
+                }
+            }
+        }
 
-pub fn get_oci_runtime(runtime_str: String) -> io::Result<OciRuntimeType> {
-    match runtime_str.to_lowercase().as_str() {
-        "docker" => Ok(OciRuntimeType::Docker),
-        "podman" => Ok(OciRuntimeType::Podman),
-
-        // Error case
-        &_ => Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!("Invalid runtime: {}", runtime_str))
-        ),
+        Ok(false)
     }
 }
 

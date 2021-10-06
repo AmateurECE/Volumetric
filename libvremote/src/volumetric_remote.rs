@@ -30,7 +30,7 @@ use std::error::Error;
 
 use serde::{Serialize, Deserialize};
 use serde_yaml;
-use libvruntime::{OciRuntimeType, OciRuntime, Docker};
+use libvruntime::{OciRuntimeType, OciRuntime, Docker, Podman};
 use crate::{RemoteImpl, REPOSITORY_VERSION};
 
 const INITIAL_HISTORY: &'static str = "";
@@ -43,25 +43,36 @@ pub struct LockFile {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct SettingsFile {
     pub version: String,
-    pub oci_runtime: String,
+    pub oci_runtime: OciRuntimeType,
+}
+
+impl Default for SettingsFile {
+    fn default() -> SettingsFile {
+        SettingsFile {
+            version: REPOSITORY_VERSION.to_string(),
+            oci_runtime: OciRuntimeType::Docker,
+        }
+    }
 }
 
 pub struct VolumetricRemote<R: RemoteImpl> {
     transport: R,
-    oci_runtime: libvruntime::OciRuntimeType,
+    settings: SettingsFile,
 }
 
 impl<R: RemoteImpl> VolumetricRemote<R> {
-    pub fn new(transport: R) -> VolumetricRemote<R> {
-        VolumetricRemote {
-            transport,
-            // TODO: Detect OCI Runtime here?
-            oci_runtime: OciRuntimeType::Docker,
-        }
+    pub fn new(mut transport: R) -> VolumetricRemote<R> {
+        let settings: SettingsFile = match transport.get_file("settings") {
+            Ok(reader) => serde_yaml::from_reader(reader)
+                .expect("Could not read settings file from repository"),
+            Err(_) => SettingsFile::default(),
+        };
+
+        VolumetricRemote { transport, settings, }
     }
 
     pub fn set_runtime(&mut self, oci_runtime: OciRuntimeType) {
-        self.oci_runtime = oci_runtime;
+        self.settings.oci_runtime = oci_runtime;
     }
 
     // Populate all the initial artifacts
@@ -73,11 +84,7 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
         let lock_orig = "";
         self.transport.put_file("lock.orig", &mut lock_orig.as_bytes())?;
 
-        let settings = SettingsFile {
-            version: REPOSITORY_VERSION.to_string(),
-            oci_runtime: self.oci_runtime.to_string(),
-        };
-        let settings = serde_yaml::to_string(&settings)?;
+        let settings = serde_yaml::to_string(&self.settings)?;
         self.transport.put_file("settings", &settings.as_bytes())?;
 
         self.transport.put_file("history", &mut INITIAL_HISTORY.as_bytes())?;
@@ -87,8 +94,9 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
     }
 
     fn get_driver(&self) -> Box<dyn OciRuntime> {
-        match self.oci_runtime {
+        match self.settings.oci_runtime {
             OciRuntimeType::Docker => Box::new(Docker::new()),
+            OciRuntimeType::Podman => Box::new(Podman::new()),
         }
     }
 

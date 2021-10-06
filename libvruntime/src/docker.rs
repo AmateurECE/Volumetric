@@ -26,6 +26,9 @@
 ////
 
 use std::error::Error;
+use std::io;
+use std::io::BufRead;
+use std::process;
 
 use crate::OciRuntime;
 
@@ -36,8 +39,24 @@ impl Docker {
 }
 
 impl OciRuntime for Docker {
-    fn volume_exists(&self, _: &str) -> Result<bool, Box<dyn Error>> {
-        unimplemented!()
+    fn volume_exists(&self, volume: &str) -> Result<bool, Box<dyn Error>> {
+        let output = process::Command::new("docker")
+            .args(["volume", "ls"])
+            .output()
+            .expect("Error running docker volume ls");
+        let output = io::BufReader::new(io::Cursor::new(output.stdout));
+
+        // Start from the second, first line is header.
+        for line in output.lines() {
+            let line = line?;
+            if let Some(name) = line.split_whitespace().nth(1) {
+                if volume == name {
+                    return Ok(true)
+                }
+            }
+        }
+
+        Ok(false)
     }
 }
 
