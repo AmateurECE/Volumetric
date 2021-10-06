@@ -30,20 +30,20 @@ use std::error::Error;
 
 use serde::{Serialize, Deserialize};
 use serde_yaml;
-use libvruntime::OciRuntimeType;
+use libvruntime::{OciRuntimeType, RuntimeDriver};
 use crate::{RemoteImpl, REPOSITORY_VERSION};
 
 const INITIAL_HISTORY: &'static str = "";
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct LockFile {
-    volumes: HashMap<String, String>
+    pub volumes: HashMap<String, String>
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct SettingsFile {
-    version: String,
-    oci_runtime: String,
+    pub version: String,
+    pub oci_runtime: String,
 }
 
 pub struct VolumetricRemote<R: RemoteImpl> {
@@ -87,8 +87,17 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
     }
 
     // Add a volume to the lock file.
-    pub fn add(&mut self, _volume: String) -> Result<(), Box<dyn Error>> {
-        unimplemented!()
+    pub fn add(&mut self, volume: String) -> Result<(), Box<dyn Error>> {
+        let driver = RuntimeDriver::new(self.oci_runtime);
+        if driver.volume_exists(&volume)? {
+            let mut lock: LockFile = serde_yaml::from_reader(
+                self.transport.get_file("lock")?)?;
+            lock.volumes.insert(volume, "/dev/null".to_string());
+            let lock = serde_yaml::to_string(&lock)?;
+            self.transport.put_file("lock", &lock.as_bytes())?;
+        }
+
+        Ok(())
     }
 }
 

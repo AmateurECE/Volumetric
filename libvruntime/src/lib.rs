@@ -8,7 +8,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/04/2021
+// LAST EDITED:     10/05/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -26,6 +26,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+use std::error::Error;
 use std::io;
 use std::fmt;
 
@@ -35,7 +36,7 @@ pub use docker::Docker;
 
 trait OciRuntime {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum OciRuntimeType {
     Docker,
 }
@@ -55,6 +56,16 @@ pub fn get_oci_runtime(runtime_str: String) -> io::Result<OciRuntimeType> {
             io::ErrorKind::Other,
             format!("Invalid runtime: {}", runtime_str))
         ),
+    }
+}
+
+pub struct RuntimeDriver {}
+
+impl RuntimeDriver {
+    pub fn new(_type: OciRuntimeType) -> RuntimeDriver { RuntimeDriver {} }
+
+    pub fn volume_exists(&self, _: &str) -> Result<bool, Box<dyn Error>> {
+        unimplemented!()
     }
 }
 
