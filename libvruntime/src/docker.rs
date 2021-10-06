@@ -7,7 +7,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/04/2021
+// LAST EDITED:     10/05/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,10 +25,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+use std::error::Error;
+
 use crate::OciRuntime;
 
 pub struct Docker {}
 
-impl OciRuntime for Docker {}
+impl Docker {
+    pub fn new() -> Docker { Docker {} }
+}
+
+impl OciRuntime for Docker {
+    fn volume_exists(&self, _: &str) -> Result<bool, Box<dyn Error>> {
+        unimplemented!()
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -34,7 +34,9 @@ mod docker;
 
 pub use docker::Docker;
 
-trait OciRuntime {}
+pub trait OciRuntime {
+    fn volume_exists(&self, volume: &str) -> Result<bool, Box<dyn Error>>;
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum OciRuntimeType {
@@ -56,16 +58,6 @@ pub fn get_oci_runtime(runtime_str: String) -> io::Result<OciRuntimeType> {
             io::ErrorKind::Other,
             format!("Invalid runtime: {}", runtime_str))
         ),
-    }
-}
-
-pub struct RuntimeDriver {}
-
-impl RuntimeDriver {
-    pub fn new(_type: OciRuntimeType) -> RuntimeDriver { RuntimeDriver {} }
-
-    pub fn volume_exists(&self, _: &str) -> Result<bool, Box<dyn Error>> {
-        unimplemented!()
     }
 }
 

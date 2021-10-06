@@ -30,7 +30,7 @@ use std::error::Error;
 
 use serde::{Serialize, Deserialize};
 use serde_yaml;
-use libvruntime::{OciRuntimeType, RuntimeDriver};
+use libvruntime::{OciRuntimeType, OciRuntime, Docker};
 use crate::{RemoteImpl, REPOSITORY_VERSION};
 
 const INITIAL_HISTORY: &'static str = "";
@@ -86,9 +86,15 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
         Ok(())
     }
 
+    fn get_driver(&self) -> Box<dyn OciRuntime> {
+        match self.oci_runtime {
+            OciRuntimeType::Docker => Box::new(Docker::new()),
+        }
+    }
+
     // Add a volume to the lock file.
     pub fn add(&mut self, volume: String) -> Result<(), Box<dyn Error>> {
-        let driver = RuntimeDriver::new(self.oci_runtime);
+        let driver = self.get_driver();
         if driver.volume_exists(&volume)? {
             let mut lock: LockFile = serde_yaml::from_reader(
                 self.transport.get_file("lock")?)?;
