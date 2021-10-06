@@ -7,7 +7,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/05/2021
+// LAST EDITED:     10/06/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -47,7 +47,7 @@ impl OciRuntime for Podman {
         let output = io::BufReader::new(io::Cursor::new(output.stdout));
 
         // Start from the second, first line is header.
-        for line in output.lines() {
+        for line in output.lines().skip(1) {
             let line = line?;
             if let Some(name) = line.split_whitespace().nth(1) {
                 if volume == name {

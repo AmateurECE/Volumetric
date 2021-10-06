@@ -7,7 +7,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/05/2021
+// LAST EDITED:     10/06/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -106,7 +106,10 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
         if driver.volume_exists(&volume)? {
             let mut lock: LockFile = serde_yaml::from_reader(
                 self.transport.get_file("lock")?)?;
-            lock.volumes.insert(volume, "/dev/null".to_string());
+            // TODO: This command should also stage changes for commit?
+            if !lock.volumes.contains_key(&volume) {
+                lock.volumes.insert(volume, "/dev/null".to_string());
+            }
             let lock = serde_yaml::to_string(&lock)?;
             self.transport.put_file("lock", &lock.as_bytes())?;
         }
