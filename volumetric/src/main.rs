@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/05/2021
+// LAST EDITED:     10/06/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -26,6 +26,7 @@
 ////
 
 use std::error::Error;
+use std::io;
 
 extern crate clap;
 use clap::{App, AppSettings, Arg, SubCommand};
@@ -52,6 +53,14 @@ fn do_add<R: RemoteImpl>(
     remote.add(volume)
 }
 
+fn do_status<R: RemoteImpl>(
+    mut remote: VolumetricRemote<R>
+) -> Result<(), Box<dyn Error>>
+{
+    let stdout = io::stdout();
+    remote.status(stdout.lock())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("Volumetric")
         .version("0.1.0")
@@ -72,6 +81,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .about("Track changes to a volume in the OCI Runtime")
                     .arg(Arg::with_name("volume")
                          .help("Name of a persistent volume in the runtime")))
+        .subcommand(SubCommand::with_name("status")
+                    .about("Show status of the volumes repository"))
         .get_matches();
 
     let uri = matches.value_of("uri").unwrap_or(".");
@@ -86,6 +97,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         let volume = matches.value_of("volume")
             .expect("Must provide a volume name!");
         do_add(remote, volume.to_string())?;
+    } else if matches.subcommand_name().unwrap() == "status" {
+        do_status(remote)?;
     }
     Ok(())
 }

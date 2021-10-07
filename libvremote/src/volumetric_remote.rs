@@ -27,6 +27,7 @@
 
 use std::collections::HashMap;
 use std::error::Error;
+use std::io;
 
 use serde::{Serialize, Deserialize};
 use serde_yaml;
@@ -83,11 +84,6 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
         self.transport.put_file(&SETTINGS_FILE, &settings.as_bytes())?;
 
         self.transport.create_dir(&DATA_DIR)?;
-        let lock_orig = "";
-        self.transport.put_file(&LOCK_FILE, &mut lock_orig.as_bytes())?;
-
-        let history_orig = "";
-        self.transport.put_file(&HISTORY_FILE, &mut history_orig.as_bytes())?;
         self.transport.create_dir(&OBJECTS_DIR)?;
         self.transport.create_dir(&CHANGES_DIR)?;
         Ok(())
@@ -114,6 +110,70 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
             self.transport.put_file(&SETTINGS_FILE, &settings.as_bytes())?;
         }
 
+        Ok(())
+    }
+
+    // TODO: Maybe can get a speedup with async?
+    // TODO: Show progress?
+    // TODO: REFACTORING. ERROR HANDLING.
+    // Write status information about the repository to writer
+    // Short:
+    //     volume-1         Added
+    //     volume-2         Changed: 3/Added: 5/Removed: 2
+    // Progress (optional):
+    //     volume-1         Calculating...
+    pub fn status<W: io::Write>
+        (&mut self, mut out: W)
+         -> Result<(), Box<dyn Error>> {
+        // Get new and old volumes
+        let cur_volumes: SettingsFile = serde_yaml::from_reader(
+            self.transport.get_file(&SETTINGS_FILE)?)?;
+        let cur_volumes = cur_volumes.volumes;
+        let old_volumes: HashMap<String, String>
+            = match self.transport.get_file(&LOCK_FILE) {
+                Ok(file) => {
+                    let set: SettingsFile = serde_yaml::from_reader(file)?;
+                    set.volumes
+                },
+                Err(e) => match e.kind() {
+                    io::ErrorKind::NotFound => HashMap::new(),
+                    _ => return Err(Box::new(e)),
+                },
+            };
+
+        let mut reported_volumes = HashMap::<String, String>::new();
+
+        // First, volumes that we've added
+        for (volume, _) in cur_volumes.iter().filter(
+            |(k, _)| !old_volumes.contains_key(k.as_str())) {
+            reported_volumes.insert(volume.clone(), "Added".to_string());
+        }
+
+        // Second, volumes that have been removed
+        for (volume, _) in old_volumes.iter().filter(
+            |(k, _)| !cur_volumes.contains_key(k.as_str())) {
+            reported_volumes.insert(volume.clone(), "Removed".to_string());
+        }
+
+        // Third, volumes with staged changes
+        for (volume, _) in cur_volumes.iter().filter(
+            |(k, v)| old_volumes.contains_key(k.as_str())
+                && old_volumes.get(k.as_str()).unwrap() != *v) {
+            reported_volumes.insert(volume.clone(), "Changed".to_string());
+        }
+
+        // TODO: Volumes with unstaged changes
+        let padding = reported_volumes.iter()
+            .map(|(k, _)| k.len())
+            .reduce(|l, m| l.max(m))
+            .expect("Error deciding padding length!");
+        let padding = padding + (padding - (padding % 4)) + 4;
+        for (volume, status) in reported_volumes {
+            write!(out,
+                   "{:<padding$}{}\n",
+                   &volume, &status, padding=padding - volume.len()
+            )?;
+        }
         Ok(())
     }
 }
