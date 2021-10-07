@@ -113,6 +113,23 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
         Ok(())
     }
 
+    fn print_status<W: io::Write>(
+        volumes: HashMap<String, String>, mut writer: W) -> io::Result<()>
+    {
+        let padding = volumes.iter()
+            .map(|(k, _)| k.len())
+            .reduce(|l, m| l.max(m))
+            .expect("Error deciding padding length!");
+        let padding = padding + (padding - (padding % 4)) + 4;
+        for (volume, status) in volumes {
+            write!(writer,
+                   "{:<padding$}{}\n",
+                   &volume, &status, padding=padding - volume.len()
+            )?;
+        }
+        Ok(())
+    }
+
     // TODO: Maybe can get a speedup with async?
     // TODO: Show progress?
     // TODO: REFACTORING. ERROR HANDLING.
@@ -122,9 +139,9 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
     //     volume-2         Changed: 3/Added: 5/Removed: 2
     // Progress (optional):
     //     volume-1         Calculating...
-    pub fn status<W: io::Write>
-        (&mut self, mut out: W)
-         -> Result<(), Box<dyn Error>> {
+    pub fn status<W: io::Write>(
+        &mut self, out: W) -> Result<(), Box<dyn Error>>
+    {
         // Get new and old volumes
         let cur_volumes: SettingsFile = serde_yaml::from_reader(
             self.transport.get_file(&SETTINGS_FILE)?)?;
@@ -162,19 +179,7 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
             reported_volumes.insert(volume.clone(), "Changed".to_string());
         }
 
-        // TODO: Volumes with unstaged changes
-        let padding = reported_volumes.iter()
-            .map(|(k, _)| k.len())
-            .reduce(|l, m| l.max(m))
-            .expect("Error deciding padding length!");
-        let padding = padding + (padding - (padding % 4)) + 4;
-        for (volume, status) in reported_volumes {
-            write!(out,
-                   "{:<padding$}{}\n",
-                   &volume, &status, padding=padding - volume.len()
-            )?;
-        }
-        Ok(())
+        Ok(VolumetricRemote::<R>::print_status(reported_volumes, out)?)
     }
 }
 
