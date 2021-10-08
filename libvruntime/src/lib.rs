@@ -8,7 +8,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/05/2021
+// LAST EDITED:     10/07/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -29,6 +29,7 @@
 use std::error::Error;
 use std::io;
 use std::fmt;
+use std::path;
 
 use serde::{Serialize, Deserialize};
 
@@ -40,6 +41,8 @@ pub use podman::Podman;
 
 pub trait OciRuntime {
     fn volume_exists(&self, volume: &str) -> Result<bool, Box<dyn Error>>;
+    fn get_volume_host_path(&self, volume: &str) ->
+        Result<path::PathBuf, Box<dyn Error>>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]

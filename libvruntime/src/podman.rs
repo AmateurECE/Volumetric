@@ -7,7 +7,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/06/2021
+// LAST EDITED:     10/07/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -28,6 +28,7 @@
 use std::error::Error;
 use std::io;
 use std::io::BufRead;
+use std::path;
 use std::process;
 
 use crate::OciRuntime;
@@ -57,6 +58,12 @@ impl OciRuntime for Podman {
         }
 
         Ok(false)
+    }
+
+    fn get_volume_host_path(&self, volume: &str) ->
+        Result<path::PathBuf, Box<dyn Error>>
+    {
+        unimplemented!()
     }
 }
 

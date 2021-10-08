@@ -7,7 +7,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/06/2021
+// LAST EDITED:     10/07/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -27,7 +27,10 @@
 
 use std::collections::HashMap;
 use std::error::Error;
+use std::fs;
 use std::io;
+use std::io::BufRead;
+use std::process;
 
 use serde::{Serialize, Deserialize};
 use serde_yaml;
@@ -40,6 +43,7 @@ const LOCK_FILE: &'static str    = ".volumetric/lock";
 const HISTORY_FILE: &'static str = ".volumetric/history";
 const OBJECTS_DIR: &'static str  = ".volumetric/objects";
 const CHANGES_DIR: &'static str  = ".volumetric/changes";
+const STAGING_DIR: &'static str  = ".volumetric/staging";
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct SettingsFile {
@@ -99,17 +103,46 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
     // Add a volume to the lock file.
     pub fn add(&mut self, volume: String) -> Result<(), Box<dyn Error>> {
         let driver = self.get_driver();
-        if driver.volume_exists(&volume)? {
-            let mut settings: SettingsFile = serde_yaml::from_reader(
-                self.transport.get_file(&SETTINGS_FILE)?)?;
-            // TODO: This command should also stage changes for commit?
-            if !settings.volumes.contains_key(&volume) {
-                settings.volumes.insert(volume, "/dev/null".to_string());
-            }
-            let settings = serde_yaml::to_string(&settings)?;
-            self.transport.put_file(&SETTINGS_FILE, &settings.as_bytes())?;
+        if !driver.volume_exists(&volume)? {
+            return Err(Box::new(io::Error::new(
+                io::ErrorKind::NotFound, "No such volume")));
         }
 
+        // 1. Set up staging area, if not already existing. (Commit command
+        //    clears staging area)
+        self.transport.create_dir(&STAGING_DIR)?;
+        let staging_objects = STAGING_DIR.to_owned() + "/objects";
+        self.transport.create_dir(&staging_objects)?;
+        let tmp_dir = DATA_DIR.to_owned() + "/tmp";
+        self.transport.create_dir(&tmp_dir)?;
+
+        // 2. Zip up the volume, place in .volumetric/staging/objects/<hash>
+        let host_path = driver.get_volume_host_path(&volume)?;
+        let tmp_object = tmp_dir + "/" + &volume + ".tar.gz";
+        let status = process::Command::new("tar")
+            .args(["xzf", &tmp_object, host_path.to_str().unwrap()])
+            .status()
+            .expect("Error running tar");
+        if !status.success() {
+            return Err(Box::new(io::Error::from_raw_os_error(
+                status.code().unwrap())));
+        }
+
+        let output = process::Command::new("sha256sum")
+            .args([&tmp_object])
+            .output()
+            .expect("Error running sha256sum");
+        let mut shasum = String::new();
+        io::BufReader::new(io::Cursor::new(output.stdout))
+            .read_line(&mut shasum)?;
+        let shasum = shasum.split_whitespace().nth(0)
+            .expect("Improperly formatted output from sha256sum");
+        let object_file = staging_objects + "/" + shasum;
+        fs::rename(&tmp_object, &object_file)?;
+
+        // 3. Copy .volumetric/staging/lock from .volumetric/lock, if the
+        //    former does not already exist
+        // 4. Update .volumetric/staging/lock with the hash of the new volume.
         Ok(())
     }
 
