@@ -63,7 +63,14 @@ impl OciRuntime for Podman {
     fn get_volume_host_path(&self, volume: &str) ->
         Result<path::PathBuf, Box<dyn Error>>
     {
-        unimplemented!()
+        let output = process::Command::new("podman")
+            .args(["inspect", "-f", "{{.Mountpoint}}", &volume])
+            .output()
+            .expect("Error running podman inspect");
+        let mut mount_point = String::new();
+        io::BufReader::new(io::Cursor::new(output.stdout))
+            .read_line(&mut mount_point)?;
+        Ok(path::PathBuf::from(mount_point.trim()))
     }
 }
 
