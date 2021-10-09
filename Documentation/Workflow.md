@@ -4,16 +4,17 @@
 2.  `add`: Track changes to a volume in the OCI runtime.
 3.  `status`: Check for changes in existing containers.
 4.  `commit`: Snapshot current volume state to the local repository.
-5.  `push`: Push refs to a remote repository.
-6.  `checkout`: Checkout a local copy of a repository (uses only
+5.  `generate`: Generate `volumetric.yaml` from a repository.
+6.  `push`: Push refs to a remote repository.
+7.  `checkout`: Checkout a local copy of a repository (uses only
     volumetric.yaml)
-7.  `deploy`: Deploy a snapshot to the OCI runtime.
-8.  `revert`: Discard local changes to a volume set.
-9.  `rollback`: Roll a snapshot back to a previous commit and deploy its volume
+8.  `deploy`: Deploy a snapshot to the OCI runtime.
+9.  `revert`: Discard local changes to a volume set.
+10. `rollback`: Roll a snapshot back to a previous commit and deploy its volume
     set to the OCI runtime.
-10.  `list`: List objects in the local checkout
-11. `prune`: Remove objects from the local checkout.
-12. `rm`: Remove a volume from the repository.
+11. `list`: List objects in the local checkout
+12. `prune`: Remove objects from the local checkout.
+13. `rm`: Remove a volume from the repository.
 
 # Terminology
 

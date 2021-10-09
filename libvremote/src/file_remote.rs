@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/06/2021
+// LAST EDITED:     10/09/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -29,6 +29,7 @@ use std::io;
 use std::io::Write;
 use std::io::ErrorKind;
 use std::fs;
+use std::path::{Path, PathBuf};
 
 use crate::RemoteImpl;
 
@@ -39,7 +40,7 @@ pub struct FileRemote {
 
 // Spec for the FileRemote
 pub struct FileRemoteSpec {
-    pub path: String,
+    pub path: PathBuf,
 }
 
 impl FileRemote {
@@ -49,21 +50,25 @@ impl FileRemote {
 }
 
 impl RemoteImpl for FileRemote {
-    fn get_file(&mut self, name: &str) -> io::Result<Box<dyn io::Read>> {
-        let name = self.spec.path.clone() + "/" + name;
+    fn get_file<P: AsRef<Path>>(&mut self, name: P) ->
+        io::Result<Box<dyn io::Read>>
+    {
+        let name = self.get_path(name);
         Ok(Box::new(fs::File::open(name)?))
     }
 
-    fn put_file(&mut self, name: &str, buffer: &[u8]) -> io::Result<usize> {
-        let name = self.spec.path.clone() + "/" + name;
+    fn put_file<P: AsRef<Path>>(&mut self, name: P, buffer: &[u8]) ->
+        io::Result<usize>
+    {
+        let name = self.get_path(name);
         let mut writer = fs::File::create(&name)?;
         writer.write(&buffer)?;
 
         Ok(buffer.len())
     }
 
-    fn create_dir(&mut self, name: &str) -> io::Result<()> {
-        let name = self.spec.path.to_owned() + "/" + name;
+    fn create_dir<P: AsRef<Path>>(&mut self, name: P) -> io::Result<()> {
+        let name = self.get_path(name);
         match fs::create_dir(&name) {
             Ok(()) => Ok(()),
             Err(e) => match e.kind() {
@@ -72,6 +77,23 @@ impl RemoteImpl for FileRemote {
                 _ => Err(e),
             },
         }
+    }
+
+    fn rename<P: AsRef<Path>, Q: AsRef<Path>>(&mut self, src: P, dest: Q) ->
+        io::Result<()>
+    {
+        fs::rename(self.get_path(src), self.get_path(dest))
+    }
+
+    fn copy<P: AsRef<Path>, Q: AsRef<Path>>(&mut self, src: P, dest: Q) ->
+        io::Result<()>
+    {
+        fs::copy(self.get_path(src), self.get_path(dest))?;
+        Ok(())
+    }
+
+    fn get_path<P: AsRef<Path>>(&self, path: P) -> PathBuf {
+        self.spec.path.clone().join(path)
     }
 }
 

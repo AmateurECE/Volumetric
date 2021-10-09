@@ -8,7 +8,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/06/2021
+// LAST EDITED:     10/09/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -27,6 +27,7 @@
 ////
 
 use std::io;
+use std::path::{Path, PathBuf};
 
 extern crate libvruntime;
 
@@ -38,11 +39,22 @@ pub const REPOSITORY_VERSION: &'static str = "0.1.0";
 
 // This trait guarantees a consistent interface for remote endpoints.
 pub trait RemoteImpl {
-    fn get_file(&mut self, name: &str) -> io::Result<Box<dyn io::Read>>;
+    fn get_file<P: AsRef<Path>>(&mut self, name: P) ->
+        io::Result<Box<dyn io::Read>>;
 
-    fn put_file(&mut self, name: &str, buffer: &[u8]) -> io::Result<usize>;
+    fn put_file<P: AsRef<Path>>(&mut self, name: P, buffer: &[u8]) ->
+        io::Result<usize>;
 
-    fn create_dir(&mut self, name: &str) -> Result<(), io::Error>;
+    fn create_dir<P: AsRef<Path>>(&mut self, name: P) ->
+        io::Result<()>;
+
+    fn rename<P: AsRef<Path>, Q: AsRef<Path>>(&mut self, src: P, dest: Q) ->
+        io::Result<()>;
+
+    fn copy<P: AsRef<Path>, Q: AsRef<Path>>(&mut self, src: P, dest: Q) ->
+        io::Result<()>;
+
+    fn get_path<P: AsRef<Path>>(&self, path: P) -> PathBuf;
 }
 
 pub use volumetric_remote::VolumetricRemote;
@@ -65,12 +77,14 @@ pub fn remote_type(url: String) -> Result<RemoteSpec, ()> {
         Some(i) => url.split_at(i),
 
         // If no scheme is found, assume it's a path.
-        None => return Ok(RemoteSpec::File(FileRemoteSpec { path: url })),
+        None => return Ok(RemoteSpec::File(FileRemoteSpec {
+            path: PathBuf::from(url) })),
     };
 
     let path = path[3..].to_string();
     if scheme == "file" {
-        return Ok(RemoteSpec::File(FileRemoteSpec { path }));
+        return Ok(RemoteSpec::File(FileRemoteSpec {
+            path: PathBuf::from(path) }));
     }
 
     return Err(());
