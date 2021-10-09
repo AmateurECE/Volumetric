@@ -128,8 +128,7 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
                 },
             };
 
-        let hash = volume.hash.to_owned();
-        volumes.insert(hash, volume);
+        volumes.insert(volume.name.to_owned(), volume);
         let volumes = serde_yaml::to_string(&volumes).unwrap();
         self.transport.put_file(&staging_lock, &volumes.as_bytes())?;
         Ok(())
@@ -158,12 +157,12 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
     }
 
     fn print_status<W: io::Write>(
-        volumes: HashMap<String, String>, mut writer: W) -> io::Result<()>
+        &self, volumes: Vec<(String, String)>, mut writer: W) -> io::Result<()>
     {
         let padding = volumes.iter()
             .map(|(k, _)| k.len())
             .reduce(|l, m| l.max(m))
-            .expect("Error deciding padding length!");
+            .unwrap();
         let padding = padding + (padding - (padding % 4)) + 4;
         for (volume, status) in volumes {
             write!(writer,
@@ -174,19 +173,47 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
         Ok(())
     }
 
+    fn status_staging(&mut self, status: &mut Vec<(String, String)>) ->
+        io::Result<()>
+    {
+        let staging_lock = path::PathBuf::from(STAGING_DIR).join("lock");
+        let staged: HashMap<String, Volume>
+            = match self.transport.get_file(&staging_lock) {
+                Ok(file) => serde_yaml::from_reader(file).unwrap(),
+                Err(e) => match e.kind() {
+                    io::ErrorKind::NotFound => return Ok(()),
+                    _ => return Err(e),
+                },
+            };
+
+        let volumes: HashMap<String, Volume> = serde_yaml::from_reader(
+            self.transport.get_file(&LOCK_FILE)?).unwrap();
+
+        staged.iter()
+            .filter(|(k, _)| !volumes.contains_key(k.as_str()))
+            .for_each(|(k, _)| status.push((k.clone(), "Added".to_string())));
+        Ok(())
+    }
+
     // TODO: Maybe can get a speedup with async?
     // TODO: Show progress?
-    // TODO: REFACTORING. ERROR HANDLING.
+    // TODO: Maybe show sizes of snapshots?
     // Write status information about the repository to writer
-    // Short:
-    //     volume-1         Added
-    //     volume-2         Changed: 3/Added: 5/Removed: 2
-    // Progress (optional):
-    //     volume-1         Calculating...
     pub fn status<W: io::Write>(
         &mut self, out: W) -> Result<(), Box<dyn Error>>
     {
-        unimplemented!()
+        let mut status = Vec::<(String, String)>::new();
+
+        // 1. Volumes in the staging area
+        self.status_staging(&mut status)?;
+
+        // 2. Volumes showing changes either from the staging area or the lock
+        //    in the runtime (this will take a long time to calculate, so we
+        //    should enable/disable this with a flag).
+        // 3. Commits behind master
+
+        self.print_status(status, out)?;
+        Ok(())
     }
 }
 

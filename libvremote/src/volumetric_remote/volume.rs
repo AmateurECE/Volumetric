@@ -53,7 +53,7 @@ impl Volume {
     ) -> io::Result<()> {
         let host_path = driver.get_volume_host_path(&self.name).unwrap();
         let status = process::Command::new("tar")
-            .args(["czf", tmp_object.as_ref().to_str().unwrap(),
+            .args(["czvf", tmp_object.as_ref().to_str().unwrap(),
                    "-C", host_path.to_str().unwrap(), "."])
             .status()
             .expect("Error running tar");
