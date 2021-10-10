@@ -28,6 +28,7 @@
 
 use std::io;
 use std::path::{Path, PathBuf};
+use std::iter::Iterator;
 
 extern crate libvruntime;
 
@@ -55,6 +56,9 @@ pub trait RemoteImpl {
         io::Result<()>;
 
     fn get_path<P: AsRef<Path>>(&self, path: P) -> PathBuf;
+
+    fn read_dir<P: AsRef<Path>>(&self, path: P) ->
+        io::Result<Box<dyn Iterator<Item = PathBuf>>>;
 }
 
 pub use volumetric_remote::VolumetricRemote;

@@ -28,6 +28,7 @@
 use std::io;
 use std::io::Write;
 use std::io::ErrorKind;
+use std::iter::Iterator;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -94,6 +95,14 @@ impl RemoteImpl for FileRemote {
 
     fn get_path<P: AsRef<Path>>(&self, path: P) -> PathBuf {
         self.spec.path.clone().join(path)
+    }
+
+    fn read_dir<P: AsRef<Path>>(&self, path: P) ->
+        io::Result<Box<dyn Iterator<Item = PathBuf>>>
+    {
+        let path = self.get_path(path);
+        Ok(Box::new(fs::read_dir(path)?.into_iter()
+                    .map(|l| l.unwrap().path())))
     }
 }
 

@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/06/2021
+// LAST EDITED:     10/09/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -47,18 +47,23 @@ fn do_init<R: RemoteImpl>(
     Ok(())
 }
 
-fn do_add<R: RemoteImpl>(
-    mut remote: VolumetricRemote<R>, volume: String
-) -> Result<(), Box<dyn Error>> {
+fn do_add<R: RemoteImpl>(mut remote: VolumetricRemote<R>, volume: String) ->
+    Result<(), Box<dyn Error>>
+{
     remote.add(volume)
 }
 
-fn do_status<R: RemoteImpl>(
-    mut remote: VolumetricRemote<R>
-) -> Result<(), Box<dyn Error>>
+fn do_status<R: RemoteImpl>(mut remote: VolumetricRemote<R>) ->
+    Result<(), Box<dyn Error>>
 {
     let stdout = io::stdout();
     remote.status(stdout.lock())
+}
+
+fn do_commit<R: RemoteImpl>(mut remote: VolumetricRemote<R>) ->
+    Result<(), Box<dyn Error>>
+{
+    Ok(remote.commit()?)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -83,6 +88,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                          .help("Name of a persistent volume in the runtime")))
         .subcommand(SubCommand::with_name("status")
                     .about("Show status of the volumes repository"))
+        .subcommand(SubCommand::with_name("commit")
+                    .about("Commit staged changes"))
         .get_matches();
 
     let uri = matches.value_of("uri").unwrap_or(".");
@@ -99,6 +106,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         do_add(remote, volume.to_string())?;
     } else if matches.subcommand_name().unwrap() == "status" {
         do_status(remote)?;
+    } else if matches.subcommand_name().unwrap() == "commit" {
+        do_commit(remote)?;
     }
     Ok(())
 }
