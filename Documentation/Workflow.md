@@ -2,13 +2,13 @@
 
 - [x] `init`: Initialize a repository in a directory.
 - [x] `add`: Track changes to a volume in the OCI runtime.
-- [ ] `status`: Check for changes in existing containers.
+- [x] `status`: Check for changes in existing containers.
 - [ ] `commit`: Snapshot current volume state to the local repository.
 - [ ] `generate`: Generate `volumetric.yaml` from a repository.
-- [ ] `push`: Push refs to a remote repository.
 - [ ] `checkout`: Checkout a local copy of a repository (uses only
       volumetric.yaml)
 - [ ] `deploy`: Deploy a snapshot to the OCI runtime.
+- [ ] `push`: Push refs to a remote repository.
 - [ ] `revert`: Discard local changes to a volume set.
 - [ ] `rollback`: Roll a snapshot back to a previous commit and deploy its
       volume set to the OCI runtime.

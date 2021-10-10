@@ -26,12 +26,13 @@
 ////
 
 use std::io;
-use std::io::BufRead;
 use std::path::Path;
 use std::process;
 
 use libvruntime::OciRuntime;
 use serde::{Serialize, Deserialize};
+
+use crate::volumetric_remote::hash;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Volume {
@@ -62,16 +63,7 @@ impl Volume {
                 status.code().unwrap()));
         }
 
-        let output = process::Command::new("sha256sum")
-            .args([tmp_object.as_ref().to_str().unwrap()])
-            .output()
-            .expect("Error running sha256sum");
-        let mut shasum = String::new();
-        io::BufReader::new(io::Cursor::new(output.stdout))
-            .read_line(&mut shasum)?;
-        let shasum = shasum.split_whitespace().nth(0)
-            .expect("Improperly formatted output from sha256sum");
-        self.hash = shasum.to_string();
+        self.hash = hash::sha256sum(tmp_object)?;
         Ok(())
     }
 }

@@ -38,6 +38,8 @@ use crate::{RemoteImpl, REPOSITORY_VERSION};
 mod volume;
 use volume::Volume;
 
+mod hash;
+
 const VOLUMETRIC_FILE: &'static str = "volumetric.yaml";
 const DATA_DIR: &'static str      = ".volumetric";
 const LOCK_FILE: &'static str     = ".volumetric/lock";
