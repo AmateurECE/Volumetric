@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/09/2021
+// LAST EDITED:     10/10/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -66,6 +66,12 @@ fn do_commit<R: RemoteImpl>(mut remote: VolumetricRemote<R>) ->
     Ok(remote.commit()?)
 }
 
+fn do_generate<R: RemoteImpl>(mut remote: VolumetricRemote<R>) ->
+    Result<(), Box<dyn Error>>
+{
+    Ok(remote.generate()?)
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("Volumetric")
         .version("0.1.0")
@@ -90,6 +96,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .about("Show status of the volumes repository"))
         .subcommand(SubCommand::with_name("commit")
                     .about("Commit staged changes"))
+        .subcommand(SubCommand::with_name("generate")
+                    .about("Generate a volumetric.yaml from the repository"))
         .get_matches();
 
     let uri = matches.value_of("uri").unwrap_or(".");
@@ -108,6 +116,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         do_status(remote)?;
     } else if matches.subcommand_name().unwrap() == "commit" {
         do_commit(remote)?;
+    } else if matches.subcommand_name().unwrap() == "generate" {
+        do_generate(remote)?;
     }
     Ok(())
 }

@@ -7,7 +7,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/09/2021
+// LAST EDITED:     10/10/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -248,6 +248,21 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
                 .join(staged_object.file_name().unwrap().to_str().unwrap());
             self.transport.rename(staged_object, object_name)?;
         }
+        Ok(())
+    }
+
+    // Generate volumetric.yaml, which is meant to be committed to external
+    // source control and can be used to clone/deploy a setup on a machine.
+    pub fn generate(&mut self) -> Result<(), Box<dyn Error>> {
+        // TODO: This should be a local-only file.
+        let mut object = serde_yaml::to_value(&self.settings)?;
+        let volumes: HashMap<String, Volume> = serde_yaml::from_reader(
+            self.transport.get_file(&LOCK_FILE)?)?;
+        object.as_mapping_mut().unwrap()
+            .insert(serde_yaml::to_value("volumes")?,
+                    serde_yaml::to_value(volumes)?);
+        let object = serde_yaml::to_string(&object)?;
+        self.transport.put_file(&VOLUMETRIC_FILE, &object.as_bytes())?;
         Ok(())
     }
 }
