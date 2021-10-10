@@ -163,11 +163,11 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
             .map(|(k, _)| k.len())
             .reduce(|l, m| l.max(m))
             .unwrap();
-        let padding = padding + (padding - (padding % 4)) + 4;
+        let padding = padding + (8 - (padding % 8)) + 8;
         for (volume, status) in volumes {
             write!(writer,
-                   "{:<padding$}{}\n",
-                   &volume, &status, padding=padding - volume.len()
+                   "{:padding$}{}\n",
+                   &volume, &status, padding=padding,
             )?;
         }
         Ok(())
