@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/09/2021
+// LAST EDITED:     10/10/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -101,8 +101,11 @@ impl RemoteImpl for FileRemote {
         io::Result<Box<dyn Iterator<Item = PathBuf>>>
     {
         let path = self.get_path(path);
-        Ok(Box::new(fs::read_dir(path)?.into_iter()
-                    .map(|l| l.unwrap().path())))
+        let path_prefix = self.spec.path.to_owned();
+        let contents = fs::read_dir(path)?.into_iter()
+            .map(move |l| l.unwrap().path()
+                 .strip_prefix(&path_prefix).unwrap().to_path_buf());
+        Ok(Box::new(contents))
     }
 }
 

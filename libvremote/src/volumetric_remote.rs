@@ -223,19 +223,15 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
     pub fn commit(&mut self) -> io::Result<()> {
         // 1. Move .volumetric/staging/lock to .volumetric/lock
         let staging_lock = path::PathBuf::from(STAGING_DIR).join("lock");
-        println!("Moving {} to {}", staging_lock.to_str().unwrap(), &LOCK_FILE);
         self.transport.rename(&staging_lock, &LOCK_FILE)?;
 
         // 2. Hash .volumetric/lock
         let lock_path = self.transport.get_path(&LOCK_FILE);
         let lock_hash = hash::sha256sum(&lock_path)?;
-        println!("Calculated hash: {}", &lock_hash);
 
         // 3. Copy .volumetric/lock to .volumetric/changes/<hash>
         let object_file = path::PathBuf::from(&CHANGES_DIR).join(&lock_hash);
         self.transport.copy(&LOCK_FILE, &object_file)?;
-        println!("Copying file {} to {}", &LOCK_FILE,
-                 object_file.to_str().unwrap());
 
         // 4. Append <hash> to .volumetric/history
         let history = io::BufReader::new(
@@ -244,12 +240,13 @@ impl<R: RemoteImpl> VolumetricRemote<R> {
             .collect::<Vec<String>>().join("\n");
         let history = history + &lock_hash + "\n";
         self.transport.put_file(&HISTORY_FILE, &history.as_bytes())?;
-        println!("Added commit to history file.");
 
         // 5. Move .volumetric/staging/objects/* to .volumetric/objects/
         let staging_objects = path::PathBuf::from(STAGING_DIR).join("objects");
-        for object in self.transport.read_dir(&staging_objects)? {
-            println!("{}", object.to_str().unwrap());
+        for staged_object in self.transport.read_dir(&staging_objects)? {
+            let object_name = path::PathBuf::from(OBJECTS_DIR)
+                .join(staged_object.file_name().unwrap().to_str().unwrap());
+            self.transport.rename(staged_object, object_name)?;
         }
         Ok(())
     }
