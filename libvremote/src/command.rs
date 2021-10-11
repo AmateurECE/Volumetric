@@ -50,7 +50,7 @@ const TMP_DIR: &'static str       = ".volumetric/tmp";
 pub struct SettingsFile {
     pub version: String,
     pub oci_runtime: OciRuntimeType,
-    pub remote_uri: String,
+    pub remote_uri: Option<String>,
 }
 
 impl Default for SettingsFile {
@@ -58,7 +58,7 @@ impl Default for SettingsFile {
         SettingsFile {
             version: REPOSITORY_VERSION.to_string(),
             oci_runtime: OciRuntimeType::Docker,
-            remote_uri: String::new(),
+            remote_uri: None,
         }
     }
 }
@@ -78,15 +78,15 @@ impl SettingsFile {
         self.oci_runtime = oci_runtime;
     }
 
+    pub fn set_remote_uri(&mut self, remote_uri: String) {
+        self.remote_uri = Some(remote_uri);
+    }
+
     fn get_driver(&self) -> Box<dyn OciRuntime> {
         match self.oci_runtime {
             OciRuntimeType::Docker => Box::new(Docker::new()),
             OciRuntimeType::Podman => Box::new(Podman::new()),
         }
-    }
-
-    pub fn set_remote_uri(&mut self, remote_uri: String) {
-        self.remote_uri = remote_uri;
     }
 }
 
