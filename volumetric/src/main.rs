@@ -55,7 +55,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .arg(Arg::with_name("oci-runtime")
                          .takes_value(true)
                          .long("oci-runtime")
-                         .short("r")))
+                         .short("r"))
+                    .arg(Arg::with_name("remote-uri")
+                         .help("Remote URI that the repository is reached at")
+                         .takes_value(true)
+                         .long("remote-uri")
+                         .short("u")))
         .subcommand(SubCommand::with_name("add")
                     .about("Track changes to a volume in the OCI Runtime")
                     .arg(Arg::with_name("volume")
@@ -76,7 +81,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if let Some(matches) = matches.subcommand_matches("init") {
         let oci_runtime = matches.value_of("oci-runtime").unwrap_or("docker");
+        let remote_uri = matches.value_of("remote-uri").unwrap_or(&uri);
         settings.set_runtime(get_oci_runtime(oci_runtime.to_string())?);
+        settings.set_remote_uri(remote_uri.to_string());
         let mut initializer = Init::new(remote, settings);
         initializer.init()?;
     }
