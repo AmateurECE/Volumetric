@@ -7,7 +7,7 @@
 //
 // CREATED:         10/09/2021
 //
-// LAST EDITED:     10/09/2021
+// LAST EDITED:     10/10/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -32,7 +32,7 @@ use std::process;
 use libvruntime::OciRuntime;
 use serde::{Serialize, Deserialize};
 
-use crate::volumetric_remote::hash;
+use crate::hash;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Volume {

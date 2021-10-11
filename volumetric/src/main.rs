@@ -33,44 +33,12 @@ use clap::{App, AppSettings, Arg, SubCommand};
 
 extern crate libvremote;
 use libvremote::{
-    VolumetricRemote, remote_type, RemoteSpec, FileRemote, RemoteImpl,
+    SettingsFile, remote_type, RemoteSpec, FileRemote, Init, Add, Status,
+    Commit, Generate,
 };
 
 extern crate libvruntime;
 use libvruntime::get_oci_runtime;
-
-fn do_init<R: RemoteImpl>(
-    mut remote: VolumetricRemote<R>, oci_runtime: String
-) -> Result<(), Box<dyn Error>> {
-    remote.set_runtime(get_oci_runtime(oci_runtime)?);
-    remote.init()?;
-    Ok(())
-}
-
-fn do_add<R: RemoteImpl>(mut remote: VolumetricRemote<R>, volume: String) ->
-    Result<(), Box<dyn Error>>
-{
-    remote.add(volume)
-}
-
-fn do_status<R: RemoteImpl>(mut remote: VolumetricRemote<R>) ->
-    Result<(), Box<dyn Error>>
-{
-    let stdout = io::stdout();
-    remote.status(stdout.lock())
-}
-
-fn do_commit<R: RemoteImpl>(mut remote: VolumetricRemote<R>) ->
-    Result<(), Box<dyn Error>>
-{
-    Ok(remote.commit()?)
-}
-
-fn do_generate<R: RemoteImpl>(mut remote: VolumetricRemote<R>) ->
-    Result<(), Box<dyn Error>>
-{
-    Ok(remote.generate()?)
-}
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("Volumetric")
@@ -101,23 +69,39 @@ fn main() -> Result<(), Box<dyn Error>> {
         .get_matches();
 
     let uri = matches.value_of("uri").unwrap_or(".");
-    let remote = match remote_type(uri.to_string()).unwrap() {
-        RemoteSpec::File(e) => VolumetricRemote::new(FileRemote::new(e)?),
+    let mut remote = match remote_type(uri.to_string()).unwrap() {
+        RemoteSpec::File(e) => FileRemote::new(e)?,
     };
+    let mut settings = SettingsFile::from(&mut remote);
 
     if let Some(matches) = matches.subcommand_matches("init") {
         let oci_runtime = matches.value_of("oci-runtime").unwrap_or("docker");
-        do_init(remote, oci_runtime.to_string())?;
-    } else if let Some(matches) = matches.subcommand_matches("add") {
+        settings.set_runtime(get_oci_runtime(oci_runtime.to_string())?);
+        let mut initializer = Init::new(remote, settings);
+        initializer.init()?;
+    }
+
+    else if let Some(matches) = matches.subcommand_matches("add") {
         let volume = matches.value_of("volume")
             .expect("Must provide a volume name!");
-        do_add(remote, volume.to_string())?;
-    } else if matches.subcommand_name().unwrap() == "status" {
-        do_status(remote)?;
-    } else if matches.subcommand_name().unwrap() == "commit" {
-        do_commit(remote)?;
-    } else if matches.subcommand_name().unwrap() == "generate" {
-        do_generate(remote)?;
+        let mut adder = Add::new(remote, settings);
+        adder.add(volume.to_string())?;
+    }
+
+    else if matches.subcommand_name().unwrap() == "status" {
+        let stdout = io::stdout();
+        let mut printer = Status::new(remote);
+        printer.status(stdout.lock())?;
+    }
+
+    else if matches.subcommand_name().unwrap() == "commit" {
+        let mut committer = Commit::new(remote);
+        committer.commit()?;
+    }
+
+    else if matches.subcommand_name().unwrap() == "generate" {
+        let mut generator = Generate::new(remote, settings);
+        generator.generate()?;
     }
     Ok(())
 }

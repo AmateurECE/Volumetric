@@ -8,7 +8,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/09/2021
+// LAST EDITED:     10/10/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -30,10 +30,18 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::iter::Iterator;
 
-extern crate libvruntime;
-
-mod volumetric_remote;
+mod command;
 mod file_remote;
+mod hash;
+mod volume;
+
+pub use command::init::Init;
+pub use command::add::Add;
+pub use command::status::Status;
+pub use command::commit::Commit;
+pub use command::generate::Generate;
+pub use file_remote::{FileRemote, FileRemoteSpec};
+pub use command::SettingsFile;
 
 // More or less: Maj.Min.Patch
 pub const REPOSITORY_VERSION: &'static str = "0.1.0";
@@ -60,9 +68,6 @@ pub trait RemoteImpl {
     fn read_dir<P: AsRef<Path>>(&self, path: P) ->
         io::Result<Box<dyn Iterator<Item = PathBuf>>>;
 }
-
-pub use volumetric_remote::VolumetricRemote;
-pub use file_remote::{FileRemote, FileRemoteSpec};
 
 // Enum to differentiate between Remotes
 pub enum RemoteSpec {
