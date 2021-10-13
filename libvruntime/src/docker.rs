@@ -7,7 +7,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/07/2021
+// LAST EDITED:     10/12/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -63,6 +63,14 @@ impl OciRuntime for Docker {
     fn get_volume_host_path(&self, volume: &str) ->
         Result<path::PathBuf, Box<dyn Error>>
     {
+        unimplemented!()
+    }
+
+    fn remove_volume(&self, volume: &str) -> Result<(), Box<dyn Error>> {
+        unimplemented!()
+    }
+
+    fn create_volume(&self, volume: &str) -> Result<(), Box<dyn Error>> {
         unimplemented!()
     }
 }

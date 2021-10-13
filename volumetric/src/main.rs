@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/10/2021
+// LAST EDITED:     10/12/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -34,11 +34,11 @@ use clap::{App, AppSettings, Arg, SubCommand};
 extern crate libvremote;
 use libvremote::{
     SettingsFile, remote_type, RemoteSpec, FileRemote, Init, Add, Status,
-    Commit, Generate,
+    Commit, Generate, Deploy,
 };
 
 extern crate libvruntime;
-use libvruntime::get_oci_runtime;
+use libvruntime::get_oci_runtime_type;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("Volumetric")
@@ -71,6 +71,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .about("Commit staged changes"))
         .subcommand(SubCommand::with_name("generate")
                     .about("Generate a volumetric.yaml from the repository"))
+        .subcommand(SubCommand::with_name("deploy")
+                    .about("Deploy a volumetric configuration to the runtime")
+                    .arg(Arg::with_name("file")
+                         .help("Volumetric configuration (volumetric.yaml)")
+                         .takes_value(true)
+                         .long("file")
+                         .short("f")))
         .get_matches();
 
     let uri = matches.value_of("uri").unwrap_or(".");
@@ -82,7 +89,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     if let Some(matches) = matches.subcommand_matches("init") {
         let oci_runtime = matches.value_of("oci-runtime").unwrap_or("docker");
         let remote_uri = matches.value_of("remote-uri").unwrap_or(&uri);
-        settings.set_runtime(get_oci_runtime(oci_runtime.to_string())?);
+        settings.set_runtime(get_oci_runtime_type(oci_runtime.to_string())?);
         settings.set_remote_uri(remote_uri.to_string());
         let mut initializer = Init::new(remote, settings);
         initializer.init()?;
@@ -109,6 +116,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     else if matches.subcommand_name().unwrap() == "generate" {
         let mut generator = Generate::new(remote, settings);
         generator.generate()?;
+    }
+
+    else if let Some(matches) = matches.subcommand_matches("deploy") {
+        let file = matches.value_of("file").unwrap_or("volumetric.yaml");
+        let mut deployer = Deploy::new(remote);
+        deployer.deploy(&file)?;
     }
     Ok(())
 }

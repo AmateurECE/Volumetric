@@ -7,7 +7,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/07/2021
+// LAST EDITED:     10/12/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -71,6 +71,30 @@ impl OciRuntime for Podman {
         io::BufReader::new(io::Cursor::new(output.stdout))
             .read_line(&mut mount_point)?;
         Ok(path::PathBuf::from(mount_point.trim()))
+    }
+
+    fn remove_volume(&self, volume: &str) -> Result<(), Box<dyn Error>> {
+        let status = process::Command::new("podman")
+            .args(["volume", "rm", &volume])
+            .status()
+            .expect("Error running podman volume");
+        if !status.success() {
+            return Err(Box::new(io::Error::last_os_error()));
+        }
+
+        Ok(())
+    }
+
+    fn create_volume(&self, volume: &str) -> Result<(), Box<dyn Error>> {
+        let status = process::Command::new("podman")
+            .args(["volume", "create", &volume])
+            .status()
+            .expect("Error running podman volume");
+        if !status.success() {
+            return Err(Box::new(io::Error::last_os_error()));
+        }
+
+        Ok(())
     }
 }
 

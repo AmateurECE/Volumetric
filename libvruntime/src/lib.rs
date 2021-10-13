@@ -8,7 +8,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/07/2021
+// LAST EDITED:     10/12/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -43,6 +43,8 @@ pub trait OciRuntime {
     fn volume_exists(&self, volume: &str) -> Result<bool, Box<dyn Error>>;
     fn get_volume_host_path(&self, volume: &str) ->
         Result<path::PathBuf, Box<dyn Error>>;
+    fn remove_volume(&self, volume: &str) -> Result<(), Box<dyn Error>>;
+    fn create_volume(&self, volume: &str) -> Result<(), Box<dyn Error>>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -57,7 +59,8 @@ impl fmt::Display for OciRuntimeType {
     }
 }
 
-pub fn get_oci_runtime(runtime_str: String) -> io::Result<OciRuntimeType> {
+pub fn get_oci_runtime_type(runtime_str: String) -> io::Result<OciRuntimeType>
+{
     match runtime_str.to_lowercase().as_str() {
         "docker" => Ok(OciRuntimeType::Docker),
         "podman" => Ok(OciRuntimeType::Podman),
@@ -67,6 +70,13 @@ pub fn get_oci_runtime(runtime_str: String) -> io::Result<OciRuntimeType> {
             io::ErrorKind::Other,
             format!("Invalid runtime: {}", runtime_str))
         ),
+    }
+}
+
+pub fn get_oci_runtime(runtime: OciRuntimeType) -> Box<dyn OciRuntime> {
+    match runtime {
+        OciRuntimeType::Docker => Box::new(Docker::new()),
+        OciRuntimeType::Podman => Box::new(Podman::new()),
     }
 }
 

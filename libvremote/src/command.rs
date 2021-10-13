@@ -7,7 +7,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/10/2021
+// LAST EDITED:     10/12/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -26,7 +26,7 @@
 ////
 
 use serde::{Serialize, Deserialize};
-use libvruntime::{OciRuntimeType, OciRuntime, Docker, Podman};
+use libvruntime::OciRuntimeType;
 
 use crate::{RemoteImpl, REPOSITORY_VERSION};
 
@@ -35,6 +35,7 @@ pub mod add;
 pub mod status;
 pub mod commit;
 pub mod generate;
+pub mod deploy;
 
 const VOLUMETRIC_FILE: &'static str = "volumetric.yaml";
 const DATA_DIR: &'static str      = ".volumetric";
@@ -80,13 +81,6 @@ impl SettingsFile {
 
     pub fn set_remote_uri(&mut self, remote_uri: String) {
         self.remote_uri = Some(remote_uri);
-    }
-
-    fn get_driver(&self) -> Box<dyn OciRuntime> {
-        match self.oci_runtime {
-            OciRuntimeType::Docker => Box::new(Docker::new()),
-            OciRuntimeType::Podman => Box::new(Podman::new()),
-        }
     }
 }
 

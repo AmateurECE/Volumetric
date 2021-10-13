@@ -8,7 +8,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/10/2021
+// LAST EDITED:     10/11/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -40,6 +40,7 @@ pub use command::add::Add;
 pub use command::status::Status;
 pub use command::commit::Commit;
 pub use command::generate::Generate;
+pub use command::deploy::Deploy;
 pub use file_remote::{FileRemote, FileRemoteSpec};
 pub use command::SettingsFile;
 

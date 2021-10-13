@@ -7,7 +7,7 @@
 //
 // CREATED:         10/09/2021
 //
-// LAST EDITED:     10/10/2021
+// LAST EDITED:     10/12/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -64,6 +64,23 @@ impl Volume {
         }
 
         self.hash = hash::sha256sum(tmp_object)?;
+        Ok(())
+    }
+
+    pub fn restore<P: AsRef<Path>>(&self, driver: &dyn OciRuntime, image: P) ->
+        io::Result<()>
+    {
+        let host_path = driver.get_volume_host_path(&self.name).unwrap();
+        let status = process::Command::new("tar")
+            .args(["xzvf", image.as_ref().to_str().unwrap(),
+                   "-C", host_path.to_str().unwrap()])
+            .status()
+            .expect("Error running tar");
+        if !status.success() {
+            return Err(io::Error::from_raw_os_error(
+                status.code().unwrap()));
+        }
+
         Ok(())
     }
 }

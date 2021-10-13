@@ -7,7 +7,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/10/2021
+// LAST EDITED:     10/12/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -69,7 +69,7 @@ impl<R: RemoteImpl> Add<R> {
 
     // Stage a volume for commit.
     pub fn add(&mut self, volume: String) -> Result<(), Box<dyn Error>> {
-        let driver = self.settings.get_driver();
+        let driver = libvruntime::get_oci_runtime(self.settings.oci_runtime);
         if !driver.volume_exists(&volume)? {
             return Err(Box::new(io::Error::new(
                 io::ErrorKind::NotFound, "No such volume")));
