@@ -8,7 +8,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/12/2021
+// LAST EDITED:     10/14/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -32,7 +32,8 @@ use std::path::{Path, PathBuf};
 use serde_yaml;
 
 use crate::RemoteImpl;
-use crate::command::{SettingsFile, OBJECTS_DIR};
+use crate::settings::Settings;
+use crate::command::OBJECTS_DIR;
 use crate::volume::Volume;
 
 pub struct Deploy<R: RemoteImpl> {
@@ -43,7 +44,7 @@ impl<R: RemoteImpl> Deploy<R> {
     pub fn new(transport: R) -> Deploy<R> { Deploy { transport } }
 
     fn read_configuration<P: AsRef<Path>>(&mut self, name: P) ->
-        serde_yaml::Result<(SettingsFile, HashMap<String, Volume>)>
+        serde_yaml::Result<(Settings, HashMap<String, Volume>)>
     {
         let mut conf: serde_yaml::Value = serde_yaml::from_reader(
             self.transport.get_file(name).unwrap())?;
@@ -51,7 +52,7 @@ impl<R: RemoteImpl> Deploy<R> {
             .remove(&serde_yaml::to_value("volumes")?)
             .unwrap();
         Ok((
-            serde_yaml::from_value::<SettingsFile>(conf)?,
+            serde_yaml::from_value::<Settings>(conf)?,
             serde_yaml::from_value::<HashMap<String, Volume>>(volumes)?,
         ))
     }

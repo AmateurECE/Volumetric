@@ -7,7 +7,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/12/2021
+// LAST EDITED:     10/16/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,17 +25,17 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-use serde::{Serialize, Deserialize};
-use libvruntime::OciRuntimeType;
-
-use crate::{RemoteImpl, REPOSITORY_VERSION};
-
 pub mod init;
 pub mod add;
 pub mod status;
 pub mod commit;
 pub mod generate;
 pub mod deploy;
+
+use std::io;
+use std::default::Default;
+use crate::settings::Settings;
+use crate::RemoteImpl;
 
 const VOLUMETRIC_FILE: &'static str = "volumetric.yaml";
 const DATA_DIR: &'static str      = ".volumetric";
@@ -47,41 +47,18 @@ const CHANGES_DIR: &'static str   = ".volumetric/changes";
 const STAGING_DIR: &'static str   = ".volumetric/staging";
 const TMP_DIR: &'static str       = ".volumetric/tmp";
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct SettingsFile {
-    pub version: String,
-    pub oci_runtime: OciRuntimeType,
-    pub remote_uri: Option<String>,
-}
-
-impl Default for SettingsFile {
-    fn default() -> SettingsFile {
-        SettingsFile {
-            version: REPOSITORY_VERSION.to_string(),
-            oci_runtime: OciRuntimeType::Docker,
-            remote_uri: None,
-        }
+pub fn load_settings<R: RemoteImpl>(transport: &mut R) -> io::Result<Settings>
+{
+    match transport.get_file(&SETTINGS_FILE) {
+        Ok(mut reader) => Settings::from(reader.as_mut()),
+        Err(_) => Ok(Settings::default()),
     }
 }
 
-impl SettingsFile {
-    pub fn from<R: RemoteImpl>(transport: &mut R) -> SettingsFile {
-        let settings = match transport.get_file(&SETTINGS_FILE) {
-            Ok(reader) => serde_yaml::from_reader(reader)
-                .expect("Could not read settings file from repository"),
-            Err(_) => SettingsFile::default(),
-        };
-
-        settings
-    }
-
-    pub fn set_runtime(&mut self, oci_runtime: OciRuntimeType) {
-        self.oci_runtime = oci_runtime;
-    }
-
-    pub fn set_remote_uri(&mut self, remote_uri: String) {
-        self.remote_uri = Some(remote_uri);
-    }
+pub fn write_settings<R: RemoteImpl>(transport: &mut R, settings: &Settings) ->
+    io::Result<usize>
+{
+    transport.put_file(&SETTINGS_FILE, &settings.serialize()?.as_bytes())
 }
 
 ///////////////////////////////////////////////////////////////////////////////

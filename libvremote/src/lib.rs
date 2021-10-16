@@ -8,7 +8,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/11/2021
+// LAST EDITED:     10/16/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -34,6 +34,7 @@ mod command;
 mod file_remote;
 mod hash;
 mod volume;
+mod settings;
 
 pub use command::init::Init;
 pub use command::add::Add;
@@ -41,8 +42,11 @@ pub use command::status::Status;
 pub use command::commit::Commit;
 pub use command::generate::Generate;
 pub use command::deploy::Deploy;
+pub use command::load_settings;
+pub use command::write_settings;
+
 pub use file_remote::{FileRemote, FileRemoteSpec};
-pub use command::SettingsFile;
+pub use settings::Settings;
 
 // More or less: Maj.Min.Patch
 pub const REPOSITORY_VERSION: &'static str = "0.1.0";

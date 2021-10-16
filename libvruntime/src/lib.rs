@@ -8,7 +8,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/12/2021
+// LAST EDITED:     10/14/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -26,11 +26,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+use std::convert::TryFrom;
 use std::error::Error;
 use std::io;
 use std::fmt;
 use std::path;
 
+use serde;
 use serde::{Serialize, Deserialize};
 
 mod docker;
@@ -53,23 +55,21 @@ pub enum OciRuntimeType {
     Podman,
 }
 
-impl fmt::Display for OciRuntimeType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(self, f)
+impl TryFrom<&str> for OciRuntimeType {
+    type Error = io::Error;
+    fn try_from(source: &str) -> Result<Self, Self::Error> {
+        match source.to_lowercase().as_str() {
+            "docker" => Ok(OciRuntimeType::Docker),
+            "podman" => Ok(OciRuntimeType::Podman),
+            &_ => Err(io::Error::new(io::ErrorKind::Other,
+                "Unknown variant!".to_string())),
+        }
     }
 }
 
-pub fn get_oci_runtime_type(runtime_str: String) -> io::Result<OciRuntimeType>
-{
-    match runtime_str.to_lowercase().as_str() {
-        "docker" => Ok(OciRuntimeType::Docker),
-        "podman" => Ok(OciRuntimeType::Podman),
-
-        // Error case
-        &_ => Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!("Invalid runtime: {}", runtime_str))
-        ),
+impl fmt::Display for OciRuntimeType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
     }
 }
 

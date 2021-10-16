@@ -9,7 +9,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/10/2021
+// LAST EDITED:     10/14/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -33,15 +33,16 @@ use serde_yaml;
 
 use crate::RemoteImpl;
 use crate::volume::Volume;
-use crate::command::{SettingsFile, LOCK_FILE, VOLUMETRIC_FILE};
+use crate::settings::Settings;
+use crate::command::{LOCK_FILE, VOLUMETRIC_FILE};
 
 pub struct Generate<R: RemoteImpl> {
     transport: R,
-    settings: SettingsFile,
+    settings: Settings,
 }
 
 impl<R: RemoteImpl> Generate<R> {
-    pub fn new(transport: R, settings: SettingsFile) -> Generate<R> {
+    pub fn new(transport: R, settings: Settings) -> Generate<R> {
         Generate { transport, settings }
     }
 

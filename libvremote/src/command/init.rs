@@ -7,7 +7,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/10/2021
+// LAST EDITED:     10/14/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -31,18 +31,19 @@ use std::path;
 
 use crate::RemoteImpl;
 use crate::volume::Volume;
+use crate::settings::Settings;
 use crate::command::{
     DATA_DIR, SETTINGS_FILE, HISTORY_FILE, CHANGES_DIR, STAGING_DIR, TMP_DIR,
-    OBJECTS_DIR, LOCK_FILE, SettingsFile,
+    OBJECTS_DIR, LOCK_FILE,
 };
 
 pub struct Init<R: RemoteImpl> {
     transport: R,
-    settings: SettingsFile,
+    settings: Settings,
 }
 
 impl<R: RemoteImpl> Init<R> {
-    pub fn new(transport: R, settings: SettingsFile) -> Init<R> {
+    pub fn new(transport: R, settings: Settings) -> Init<R> {
         Init { transport, settings }
     }
 

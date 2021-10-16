@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/12/2021
+// LAST EDITED:     10/16/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,20 +25,21 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+use std::convert::TryInto;
 use std::error::Error;
 use std::io;
+use std::io::Write;
 
 extern crate clap;
 use clap::{App, AppSettings, Arg, SubCommand};
 
 extern crate libvremote;
 use libvremote::{
-    SettingsFile, remote_type, RemoteSpec, FileRemote, Init, Add, Status,
-    Commit, Generate, Deploy,
+    remote_type, RemoteSpec, FileRemote, Init, Add, Status, Commit, Generate,
+    Deploy,
 };
 
 extern crate libvruntime;
-use libvruntime::get_oci_runtime_type;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("Volumetric")
@@ -78,19 +79,25 @@ fn main() -> Result<(), Box<dyn Error>> {
                          .takes_value(true)
                          .long("file")
                          .short("f")))
+        .subcommand(SubCommand::with_name("config")
+                    .about("View or set configuration of a repository")
+                    .arg(Arg::with_name("option")
+                         .help("Option to set"))
+                    .arg(Arg::with_name("value")
+                         .help("Value to set for option")))
         .get_matches();
 
     let uri = matches.value_of("uri").unwrap_or(".");
     let mut remote = match remote_type(uri.to_string()).unwrap() {
         RemoteSpec::File(e) => FileRemote::new(e)?,
     };
-    let mut settings = SettingsFile::from(&mut remote);
+    let mut settings = libvremote::load_settings(&mut remote)?;
 
     if let Some(matches) = matches.subcommand_matches("init") {
         let oci_runtime = matches.value_of("oci-runtime").unwrap_or("docker");
         let remote_uri = matches.value_of("remote-uri").unwrap_or(&uri);
-        settings.set_runtime(get_oci_runtime_type(oci_runtime.to_string())?);
-        settings.set_remote_uri(remote_uri.to_string());
+        settings.oci_runtime = oci_runtime.try_into()?;
+        settings.remote_uri = Some(remote_uri.to_string());
         let mut initializer = Init::new(remote, settings);
         initializer.init()?;
     }
@@ -122,6 +129,25 @@ fn main() -> Result<(), Box<dyn Error>> {
         let file = matches.value_of("file").unwrap_or("volumetric.yaml");
         let mut deployer = Deploy::new(remote);
         deployer.deploy(&file)?;
+    }
+
+    else if let Some(matches) = matches.subcommand_matches("config") {
+        let stdout = io::stdout();
+        let mut stdout = stdout.lock();
+        if let Some(option) = matches.value_of("option") {
+            if let Some(value) = matches.value_of("value") {
+                // Set option to value
+                settings.set(&option, &value)?;
+                // Write settings
+                libvremote::write_settings(&mut remote, &settings)?;
+            } else {
+                // Print option
+                let value = settings.get(&option)?;
+                write!(stdout, "{}: {}\n", &option, &value)?;
+            }
+        } else {
+            // Print entire configuration
+        }
     }
     Ok(())
 }
