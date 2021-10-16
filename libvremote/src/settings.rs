@@ -26,6 +26,7 @@
 ////
 
 use std::convert::TryInto;
+use std::iter::FromIterator;
 use std::io;
 use std::string::ToString;
 use serde::{Serialize, Deserialize};
@@ -54,6 +55,7 @@ pub struct Setter<'a, M: Sync> {
     key: &'a str,
     setter: fn(&mut M, &str) -> io::Result<()>,
     getter: fn(&M) -> String,
+    from: fn(&mut M, &M),
 }
 
 pub const SETTINGS_SETTERS: &'static [Setter<Settings>] = &[
@@ -61,37 +63,77 @@ pub const SETTINGS_SETTERS: &'static [Setter<Settings>] = &[
         key: "version",
         setter: |map, val| Ok(map.version = val.to_string()),
         getter: |map| map.version.clone(),
+        from: |dest, source| dest.version = source.version.clone(),
     },
     Setter {
         key: "oci_runtime",
         setter: |map, val| Ok(map.oci_runtime = val.try_into()?),
         getter: |map| map.oci_runtime.to_string(),
+        from: |dest, source| dest.oci_runtime = source.oci_runtime,
+    },
+    Setter {
+        key: "remote_uri",
+        setter: |map, val| Ok(map.remote_uri = Some(val.to_owned())),
+        getter: |map| match &map.remote_uri {
+            Some(uri) => uri.to_owned(),
+            None => "~".to_owned(),
+        },
+        from: |dest, source| dest.remote_uri = source.remote_uri.clone(),
     },
 ];
 
 impl Settings {
     pub fn from(reader: &mut dyn io::Read) -> io::Result<Settings> {
-        Ok(serde_yaml::from_reader(reader).unwrap())
+        let val: serde_yaml::Value = serde_yaml::from_reader(reader).unwrap();
+        Settings::from_yaml(&val.as_mapping().unwrap())
     }
 
-    pub fn serialize(&self) -> io::Result<String> {
-        Ok(serde_yaml::to_string(&self).unwrap())
+    pub fn from_yaml(serial: &serde_yaml::Mapping) -> io::Result<Settings> {
+        let mut settings = Settings::default();
+        serial.iter()
+            .for_each(|(k, v)| settings.set(
+                k.as_str().unwrap(), v.as_str()).unwrap());
+        Ok(settings)
     }
 
-    pub fn set(mut self: &mut Self, key: &str, value: &str) -> io::Result<()> {
+    pub fn set(mut self: &mut Self, key: &str, value: Option<&str>) ->
+        io::Result<()>
+    {
         let setting = SETTINGS_SETTERS.iter()
             .find(|k| k.key == key)
             .ok_or(io::Error::new(
-                io::ErrorKind::Other, "Unknown variant!"))?;
-        (setting.setter)(&mut self, value)
+                io::ErrorKind::Other, format!("Unknown variant: {}", key)))?;
+        if let Some(value) = value {
+            (setting.setter)(&mut self, value)
+        } else {
+            Ok((setting.from)(&mut self, &Settings::default()))
+        }
     }
 
     pub fn get(&self, key: &str) -> io::Result<String> {
         let setting = SETTINGS_SETTERS.iter()
             .find(|k| k.key == key)
             .ok_or(io::Error::new(
-                io::ErrorKind::Other, "Unknown variant!"))?;
+                io::ErrorKind::Other, format!("Unknown variant: {}", key)))?;
         Ok((setting.getter)(&self))
+    }
+
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = (String, String)> + 'a {
+        SETTINGS_SETTERS.iter()
+            .map(move |setter| (setter.key.to_owned(), (setter.getter)(&self)))
+    }
+}
+
+impl ToString for Settings {
+    fn to_string(&self) -> String {
+        let defaults = serde_yaml::to_value(&Settings::default()).unwrap();
+        let current = serde_yaml::to_value(&self).unwrap();
+        let current = current.as_mapping().unwrap().clone().into_iter().filter(
+            |(k, v)| v != defaults.as_mapping().unwrap().get(k).unwrap()
+                || k == "version"
+        );
+        serde_yaml::to_string(&serde_yaml::Mapping::from_iter(current))
+            .unwrap()
     }
 }
 

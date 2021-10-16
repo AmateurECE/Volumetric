@@ -58,7 +58,7 @@ pub fn load_settings<R: RemoteImpl>(transport: &mut R) -> io::Result<Settings>
 pub fn write_settings<R: RemoteImpl>(transport: &mut R, settings: &Settings) ->
     io::Result<usize>
 {
-    transport.put_file(&SETTINGS_FILE, &settings.serialize()?.as_bytes())
+    transport.put_file(&SETTINGS_FILE, &settings.to_string().as_bytes())
 }
 
 ///////////////////////////////////////////////////////////////////////////////

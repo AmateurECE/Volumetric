@@ -7,7 +7,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/14/2021
+// LAST EDITED:     10/16/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -50,7 +50,7 @@ impl<R: RemoteImpl> Init<R> {
     // Populate all the initial artifacts
     pub fn init(&mut self) -> Result<(), Box<dyn Error>> {
         self.transport.create_dir(&DATA_DIR)?;
-        let settings = serde_yaml::to_string(&self.settings)?;
+        let settings = self.settings.to_string();
         self.transport.put_file(&SETTINGS_FILE, &settings.as_bytes())?;
         self.transport.put_file(
             &LOCK_FILE, &serde_yaml::to_string(

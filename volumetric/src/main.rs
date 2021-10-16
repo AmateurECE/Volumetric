@@ -81,6 +81,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                          .short("f")))
         .subcommand(SubCommand::with_name("config")
                     .about("View or set configuration of a repository")
+                    .arg(Arg::with_name("list")
+                         .short("l")
+                         .long("list"))
                     .arg(Arg::with_name("option")
                          .help("Option to set"))
                     .arg(Arg::with_name("value")
@@ -95,9 +98,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if let Some(matches) = matches.subcommand_matches("init") {
         let oci_runtime = matches.value_of("oci-runtime").unwrap_or("docker");
-        let remote_uri = matches.value_of("remote-uri").unwrap_or(&uri);
         settings.oci_runtime = oci_runtime.try_into()?;
-        settings.remote_uri = Some(remote_uri.to_string());
+        if let Some(remote_uri) = matches.value_of("remote-uri") {
+            settings.remote_uri = Some(remote_uri.to_string());
+        }
         let mut initializer = Init::new(remote, settings);
         initializer.init()?;
     }
@@ -134,19 +138,23 @@ fn main() -> Result<(), Box<dyn Error>> {
     else if let Some(matches) = matches.subcommand_matches("config") {
         let stdout = io::stdout();
         let mut stdout = stdout.lock();
-        if let Some(option) = matches.value_of("option") {
-            if let Some(value) = matches.value_of("value") {
-                // Set option to value
-                settings.set(&option, &value)?;
-                // Write settings
-                libvremote::write_settings(&mut remote, &settings)?;
-            } else {
+        let option = matches.value_of("option");
+        if matches.is_present("list") {
+            if let Some(option) = option {
                 // Print option
                 let value = settings.get(&option)?;
                 write!(stdout, "{}: {}\n", &option, &value)?;
+            } else {
+                // Print entire configuration
+                settings.iter()
+                    .for_each(|(k, v)| write!(stdout, "{}: {}\n", &k, &v)
+                              .unwrap());
             }
         } else {
-            // Print entire configuration
+            // Set option to value (or unset)
+            settings.set(option.unwrap(), matches.value_of("value"))?;
+            // Write settings
+            libvremote::write_settings(&mut remote, &settings)?;
         }
     }
     Ok(())
