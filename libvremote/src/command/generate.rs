@@ -9,7 +9,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/14/2021
+// LAST EDITED:     10/17/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -27,6 +27,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+use std::convert::TryFrom;
 use std::error::Error;
 use std::collections::HashMap;
 use serde_yaml;
@@ -48,7 +49,7 @@ impl<R: RemoteImpl> Generate<R> {
 
     pub fn generate(&mut self) -> Result<(), Box<dyn Error>> {
         // TODO: This should be a local-only file.
-        let mut object = serde_yaml::to_value(&self.settings)?;
+        let mut object = serde_yaml::Value::try_from(&self.settings).unwrap();
         let volumes: HashMap<String, Volume> = serde_yaml::from_reader(
             self.transport.get_file(&LOCK_FILE)?)?;
         object.as_mapping_mut().unwrap()

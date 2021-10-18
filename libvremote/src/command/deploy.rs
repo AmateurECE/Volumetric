@@ -8,7 +8,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/14/2021
+// LAST EDITED:     10/17/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -26,6 +26,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+use std::convert::TryFrom;
 use std::collections::HashMap;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -52,7 +53,7 @@ impl<R: RemoteImpl> Deploy<R> {
             .remove(&serde_yaml::to_value("volumes")?)
             .unwrap();
         Ok((
-            serde_yaml::from_value::<Settings>(conf)?,
+            Settings::try_from(&conf).unwrap(),
             serde_yaml::from_value::<HashMap<String, Volume>>(volumes)?,
         ))
     }

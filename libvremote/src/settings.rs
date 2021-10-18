@@ -7,7 +7,7 @@
 //
 // CREATED:         10/12/2021
 //
-// LAST EDITED:     10/16/2021
+// LAST EDITED:     10/17/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,6 +25,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::iter::FromIterator;
 use std::io;
@@ -85,15 +86,7 @@ pub const SETTINGS_SETTERS: &'static [Setter<Settings>] = &[
 impl Settings {
     pub fn from(reader: &mut dyn io::Read) -> io::Result<Settings> {
         let val: serde_yaml::Value = serde_yaml::from_reader(reader).unwrap();
-        Settings::from_yaml(&val.as_mapping().unwrap())
-    }
-
-    pub fn from_yaml(serial: &serde_yaml::Mapping) -> io::Result<Settings> {
-        let mut settings = Settings::default();
-        serial.iter()
-            .for_each(|(k, v)| settings.set(
-                k.as_str().unwrap(), v.as_str()).unwrap());
-        Ok(settings)
+        Ok(Settings::try_from(&val).unwrap())
     }
 
     pub fn set(mut self: &mut Self, key: &str, value: Option<&str>) ->
@@ -124,15 +117,33 @@ impl Settings {
     }
 }
 
-impl ToString for Settings {
-    fn to_string(&self) -> String {
+impl TryFrom<&Settings> for serde_yaml::Value {
+    type Error = ();
+    fn try_from(settings: &Settings) -> Result<Self, Self::Error> {
         let defaults = serde_yaml::to_value(&Settings::default()).unwrap();
-        let current = serde_yaml::to_value(&self).unwrap();
+        let current = serde_yaml::to_value(&settings).unwrap();
         let current = current.as_mapping().unwrap().clone().into_iter().filter(
             |(k, v)| v != defaults.as_mapping().unwrap().get(k).unwrap()
                 || k == "version"
         );
-        serde_yaml::to_string(&serde_yaml::Mapping::from_iter(current))
+        Ok(serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(current)))
+    }
+}
+
+impl TryFrom<&serde_yaml::Value> for Settings {
+    type Error = ();
+    fn try_from(value: &serde_yaml::Value) -> Result<Self, Self::Error> {
+        let mut settings = Settings::default();
+        value.as_mapping().unwrap().iter()
+            .for_each(|(k, v)| settings.set(
+                k.as_str().unwrap(), v.as_str()).unwrap());
+        Ok(settings)
+    }
+}
+
+impl ToString for Settings {
+    fn to_string(&self) -> String {
+        serde_yaml::to_string(&serde_yaml::Value::try_from(self).unwrap())
             .unwrap()
     }
 }
