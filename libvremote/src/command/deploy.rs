@@ -96,7 +96,11 @@ impl<R: RemoteImpl> Deploy<R> {
         //   runtime, delete it. Create the volume, and populate it.
         for (_, volume) in volumes {
             if driver.volume_exists(&volume.name).unwrap() {
-                driver.remove_volume(&volume.name).unwrap();
+                match settings.deployment_policy {
+                    DeploymentPolicy::Overwrite =>
+                        driver.remove_volume(&volume.name).unwrap(),
+                    DeploymentPolicy::DoNotOverwrite => continue,
+                }
             }
 
             driver.create_volume(&volume.name).unwrap();
