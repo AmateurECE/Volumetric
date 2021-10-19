@@ -8,7 +8,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/17/2021
+// LAST EDITED:     10/18/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -28,14 +28,40 @@
 
 use std::convert::TryFrom;
 use std::collections::HashMap;
+use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
+use serde::{Serialize, Deserialize};
 use serde_yaml;
 
 use crate::RemoteImpl;
 use crate::settings::Settings;
 use crate::command::OBJECTS_DIR;
 use crate::volume::Volume;
+use crate::variant_error::VariantError;
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DeploymentPolicy {
+    Overwrite,
+    DoNotOverwrite,
+}
+
+impl TryFrom<&str> for DeploymentPolicy {
+    type Error = VariantError;
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match &value.to_lowercase().as_str() {
+            &"overwrite" => Ok(DeploymentPolicy::Overwrite),
+            &"donotoverwrite" => Ok(DeploymentPolicy::DoNotOverwrite),
+            &_ => Err(VariantError::new(value)),
+        }
+    }
+}
+
+impl fmt::Display for DeploymentPolicy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        fmt::Debug::fmt(self, f)
+    }
+}
 
 pub struct Deploy<R: RemoteImpl> {
     transport: R,

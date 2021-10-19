@@ -7,7 +7,7 @@
 //
 // CREATED:         10/12/2021
 //
-// LAST EDITED:     10/17/2021
+// LAST EDITED:     10/18/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -34,12 +34,14 @@ use serde::{Serialize, Deserialize};
 use libvruntime::OciRuntimeType;
 
 use crate::REPOSITORY_VERSION;
+use crate::command::deploy::DeploymentPolicy;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Settings {
     pub version: String,
     pub oci_runtime: OciRuntimeType,
     pub remote_uri: Option<String>,
+    pub deployment_policy: DeploymentPolicy,
 }
 
 impl Default for Settings {
@@ -48,6 +50,7 @@ impl Default for Settings {
             version: REPOSITORY_VERSION.to_string(),
             oci_runtime: OciRuntimeType::Docker,
             remote_uri: None,
+            deployment_policy: DeploymentPolicy::DoNotOverwrite,
         }
     }
 }
@@ -80,6 +83,13 @@ pub const SETTINGS_SETTERS: &'static [Setter<Settings>] = &[
             None => "~".to_owned(),
         },
         from: |dest, source| dest.remote_uri = source.remote_uri.clone(),
+    },
+    Setter {
+        key: "deployment_policy",
+        setter: |map, val| Ok(
+            map.deployment_policy = DeploymentPolicy::try_from(val).unwrap()),
+        getter: |map| map.deployment_policy.to_string(),
+        from: |dest, source| dest.deployment_policy = source.deployment_policy,
     },
 ];
 

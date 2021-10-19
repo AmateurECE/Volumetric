@@ -8,7 +8,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/16/2021
+// LAST EDITED:     10/18/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -35,6 +35,7 @@ mod file_remote;
 mod hash;
 mod volume;
 mod settings;
+mod variant_error;
 
 pub use command::init::Init;
 pub use command::add::Add;
