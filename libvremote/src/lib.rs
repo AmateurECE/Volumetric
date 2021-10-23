@@ -43,11 +43,13 @@ pub use command::status::Status;
 pub use command::commit::Commit;
 pub use command::generate::Generate;
 pub use command::deploy::Deploy;
+pub use command::external::External;
 pub use command::load_settings;
 pub use command::write_settings;
 
 pub use file_remote::{FileRemote, FileRemoteSpec};
 pub use settings::Settings;
+pub use volume::Volume;
 
 // More or less: Maj.Min.Patch
 pub const REPOSITORY_VERSION: &'static str = "0.1.0";

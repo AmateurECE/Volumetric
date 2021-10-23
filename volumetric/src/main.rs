@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/16/2021
+// LAST EDITED:     10/18/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -36,7 +36,7 @@ use clap::{App, AppSettings, Arg, SubCommand};
 extern crate libvremote;
 use libvremote::{
     remote_type, RemoteSpec, FileRemote, Init, Add, Status, Commit, Generate,
-    Deploy,
+    Deploy, External, Volume,
 };
 
 extern crate libvruntime;
@@ -88,6 +88,19 @@ fn main() -> Result<(), Box<dyn Error>> {
                          .help("Option to set"))
                     .arg(Arg::with_name("value")
                          .help("Value to set for option")))
+        .subcommand(SubCommand::with_name("external")
+                    .about("Track snapshot of a volume hosted elsewhere")
+                    .subcommand(SubCommand::with_name("add")
+                                .about("Add an external volume")
+                                .arg(Arg::with_name("volume")
+                                     .help("Volume name")
+                                     .required(true))
+                                .arg(Arg::with_name("hash")
+                                     .help("Hash of the snapshot")
+                                     .required(true))
+                                .arg(Arg::with_name("uri")
+                                     .help("URI of the volume")
+                                     .required(true))))
         .get_matches();
 
     let uri = matches.value_of("uri").unwrap_or(".");
@@ -155,6 +168,18 @@ fn main() -> Result<(), Box<dyn Error>> {
             settings.set(option.unwrap(), matches.value_of("value"))?;
             // Write settings
             libvremote::write_settings(&mut remote, &settings)?;
+        }
+    }
+
+    else if let Some(matches) = matches.subcommand_matches("external") {
+        if let Some(sub_matches) = matches.subcommand_matches("add") {
+            // external add subcommand
+            let volume = sub_matches.value_of("volume").unwrap();
+            let hash = sub_matches.value_of("hash").unwrap();
+            let uri = sub_matches.value_of("uri").unwrap();
+            let mut externalizer = External::new(remote, settings);
+            let volume = Volume::new(&volume);
+            externalizer.add(volume, hash.to_string(), uri.to_string())?;
         }
     }
     Ok(())

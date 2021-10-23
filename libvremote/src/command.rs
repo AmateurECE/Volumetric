@@ -31,6 +31,7 @@ pub mod status;
 pub mod commit;
 pub mod generate;
 pub mod deploy;
+pub mod external;
 
 use std::io;
 use std::default::Default;

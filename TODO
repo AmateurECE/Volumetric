@@ -1,0 +1,20 @@
+* Re-architect RemoteImpl into ReadRemote and ReadWriteRemote. This allows us
+  to eventually support remotes like HTTP for some commands
+* Put each command into a separate binary? This way, users can eventually add
+  more commands (like git extensions)
+* Command: "external add"
+* Command: "push"
+* Command: "checkout"
+* Better status reporting
+* Show volumes that have changed in the runtime from their image
+* Eventually write in layer "changesets" that allow to store only small diffs
+  corresponding to the exact changed files in a volume
+  ...To riff on that, maybe I could even just add a policy that will cache a
+  complete volume image in a local checkout, so that the volume doesn't have to
+  be completely recreated by applying each of the diffs, every time it's
+  deployed. Additionally, maybe this "image" could really be something that's
+  mounted, like a loopback device. Maybe I could even add functionality to
+  checkout a volume image set to a series of LVM partitions, or something cool
+  like that
+* Perhaps integrate with Flocker?
+* Develop a Docker storage driver
