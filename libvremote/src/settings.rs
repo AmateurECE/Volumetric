@@ -7,7 +7,7 @@
 //
 // CREATED:         10/12/2021
 //
-// LAST EDITED:     10/18/2021
+// LAST EDITED:     10/26/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -50,7 +50,7 @@ impl Default for Settings {
             version: REPOSITORY_VERSION.to_string(),
             oci_runtime: OciRuntimeType::Docker,
             remote_uri: None,
-            deployment_policy: DeploymentPolicy::DoNotOverwrite,
+            deployment_policy: DeploymentPolicy::NoOverwrite,
         }
     }
 }

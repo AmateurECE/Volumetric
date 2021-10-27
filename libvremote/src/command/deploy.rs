@@ -44,7 +44,7 @@ use crate::variant_error::VariantError;
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeploymentPolicy {
     Overwrite,
-    DoNotOverwrite,
+    NoOverwrite,
 }
 
 impl TryFrom<&str> for DeploymentPolicy {
@@ -52,7 +52,7 @@ impl TryFrom<&str> for DeploymentPolicy {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match &value.to_lowercase().as_str() {
             &"overwrite" => Ok(DeploymentPolicy::Overwrite),
-            &"donotoverwrite" => Ok(DeploymentPolicy::DoNotOverwrite),
+            &"donotoverwrite" => Ok(DeploymentPolicy::NoOverwrite),
             &_ => Err(VariantError::new(value)),
         }
     }
@@ -103,7 +103,7 @@ impl<R: RemoteImpl> Deploy<R> {
                 match settings.deployment_policy {
                     DeploymentPolicy::Overwrite =>
                         driver.remove_volume(&volume.name).unwrap(),
-                    DeploymentPolicy::DoNotOverwrite => continue,
+                    DeploymentPolicy::NoOverwrite => continue,
                 }
             }
 
