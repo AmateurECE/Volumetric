@@ -8,7 +8,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/18/2021
+// LAST EDITED:     10/26/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -31,6 +31,7 @@ use std::path::{Path, PathBuf};
 use std::iter::Iterator;
 
 mod command;
+mod compressor;
 mod file_remote;
 mod hash;
 mod volume;
@@ -50,6 +51,7 @@ pub use command::write_settings;
 pub use file_remote::{FileRemote, FileRemoteSpec};
 pub use settings::Settings;
 pub use volume::Volume;
+pub use compressor::Compressor;
 
 // More or less: Maj.Min.Patch
 pub const REPOSITORY_VERSION: &'static str = "0.1.0";

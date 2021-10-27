@@ -8,7 +8,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/18/2021
+// LAST EDITED:     10/26/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -37,6 +37,7 @@ use serde_yaml;
 use crate::RemoteImpl;
 use crate::settings::Settings;
 use crate::command::OBJECTS_DIR;
+use crate::compressor::Compressor;
 use crate::volume::Volume;
 use crate::variant_error::VariantError;
 
@@ -65,10 +66,13 @@ impl fmt::Display for DeploymentPolicy {
 
 pub struct Deploy<R: RemoteImpl> {
     transport: R,
+    compressor: Compressor,
 }
 
 impl<R: RemoteImpl> Deploy<R> {
-    pub fn new(transport: R) -> Deploy<R> { Deploy { transport } }
+    pub fn new(transport: R, compressor: Compressor) -> Deploy<R> {
+        Deploy { transport, compressor }
+    }
 
     fn read_configuration<P: AsRef<Path>>(&mut self, name: P) ->
         serde_yaml::Result<(Settings, HashMap<String, Volume>)>
@@ -105,8 +109,10 @@ impl<R: RemoteImpl> Deploy<R> {
 
             driver.create_volume(&volume.name).unwrap();
             let image_path = PathBuf::from(OBJECTS_DIR).join(&volume.hash);
-            volume.restore(driver.as_ref(),
-                           self.transport.get_path(&image_path))?;
+            self.compressor.restore(
+                driver.get_volume_host_path(&volume.name).unwrap(),
+                self.transport.get_path(&image_path)
+            )?;
         }
 
         Ok(())

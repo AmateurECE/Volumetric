@@ -7,7 +7,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/14/2021
+// LAST EDITED:     10/26/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -31,6 +31,7 @@ use std::io;
 use std::path;
 
 use crate::RemoteImpl;
+use crate::compressor::Compressor;
 use crate::volume::Volume;
 use crate::settings::Settings;
 use crate::command::{STAGING_DIR, LOCK_FILE, TMP_DIR};
@@ -38,11 +39,12 @@ use crate::command::{STAGING_DIR, LOCK_FILE, TMP_DIR};
 pub struct Add<R: RemoteImpl> {
     transport: R,
     settings: Settings,
+    compressor: Compressor,
 }
 
 impl<R: RemoteImpl> Add<R> {
-    pub fn new(transport: R, settings: Settings) -> Add<R> {
-        Add { transport, settings }
+    pub fn new(transport: R, settings: Settings, comp: Compressor) -> Add<R> {
+        Add { transport, settings, compressor: comp, }
     }
 
     fn lock_staged_volume(&mut self, volume: Volume) -> io::Result<()> {
@@ -80,7 +82,10 @@ impl<R: RemoteImpl> Add<R> {
         let tmp_object = path::PathBuf::from(TMP_DIR)
             .join(volume.to_owned() + ".tar.gz");
         let mut volume = Volume::new(&volume);
-        volume.stage(driver, &self.transport.get_path(&tmp_object))?;
+        self.compressor.stage(
+            driver.get_volume_host_path(&volume.name)?,
+            &self.transport.get_path(&tmp_object)
+        )?;
         let snapshot_object = path::PathBuf::from(STAGING_DIR)
             .join("objects").join(&volume.hash);
         self.transport.rename(&tmp_object, &snapshot_object)?;
