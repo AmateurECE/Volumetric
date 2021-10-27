@@ -28,17 +28,33 @@
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Scheme {
+    Managed,
+    External,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Volume {
     name: String,
     hash: String,
+    scheme: Scheme,
 }
 
 impl Volume {
-    pub fn new(name: &str) -> Volume {
+    fn new(name: &str, scheme: Scheme) -> Volume {
         Volume {
             name: name.to_owned(),
             hash: "/dev/null".to_string(),
+            scheme,
         }
+    }
+
+    pub fn managed(name: &str) -> Volume {
+        Volume::new(name, Scheme::Managed)
+    }
+
+    pub fn external(name: &str) -> Volume {
+        Volume::new(name, Scheme::External)
     }
 
     pub fn get_name(&self) -> &str { &self.name }

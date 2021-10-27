@@ -36,7 +36,7 @@ use clap::{App, AppSettings, Arg, SubCommand};
 extern crate libvremote;
 use libvremote::{
     remote_type, RemoteSpec, FileRemote, Init, Add, Status, Commit, Generate,
-    Deploy, External, Volume, Compressor,
+    Deploy, External, Compressor,
 };
 
 extern crate libvruntime;
@@ -178,8 +178,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let hash = sub_matches.value_of("hash").unwrap();
             let uri = sub_matches.value_of("uri").unwrap();
             let mut externalizer = External::new(remote, settings);
-            let volume = Volume::new(&volume);
-            externalizer.add(volume, hash.to_string(), uri.to_string())?;
+            externalizer.add(&volume, &hash, &uri)?;
         }
     }
     Ok(())

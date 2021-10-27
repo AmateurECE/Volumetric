@@ -7,7 +7,7 @@
 //
 // CREATED:         10/18/2021
 //
-// LAST EDITED:     10/18/2021
+// LAST EDITED:     10/26/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -41,7 +41,7 @@ impl<R: RemoteImpl> External<R> {
         External { transport, settings }
     }
 
-    pub fn add(&mut self, volume: Volume, hash: String, uri: String) ->
+    pub fn add(&mut self, volume: &str, hash: &str, uri: &str) ->
         Result<(), Box<dyn Error>>
     {
         unimplemented!()

@@ -81,7 +81,7 @@ impl<R: RemoteImpl> Add<R> {
         // TODO: Cannot support remote transports with this
         let tmp_object = path::PathBuf::from(TMP_DIR)
             .join(volume.to_owned() + ".tar.gz");
-        let mut volume = Volume::new(&volume);
+        let mut volume = Volume::managed(&volume);
         self.compressor.stage(
             driver.get_volume_host_path(&volume.get_name())?,
             &self.transport.get_path(&tmp_object)
