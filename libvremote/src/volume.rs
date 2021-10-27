@@ -59,6 +59,7 @@ impl Volume {
 
     pub fn get_name(&self) -> &str { &self.name }
     pub fn get_hash(&self) -> &str { &self.hash }
+    pub fn set_hash(&mut self, hash: &str) { self.hash = hash.to_string(); }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

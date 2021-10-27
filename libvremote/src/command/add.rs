@@ -31,6 +31,7 @@ use std::io;
 use std::path;
 
 use crate::RemoteImpl;
+use crate::hash;
 use crate::compressor::Compressor;
 use crate::volume::Volume;
 use crate::settings::Settings;
@@ -86,6 +87,8 @@ impl<R: RemoteImpl> Add<R> {
             driver.get_volume_host_path(&volume.get_name())?,
             &self.transport.get_path(&tmp_object)
         )?;
+        let hash = hash::sha256sum(&tmp_object)?;
+        volume.set_hash(&hash);
         let snapshot_object = path::PathBuf::from(STAGING_DIR)
             .join("objects").join(&volume.get_hash());
         self.transport.rename(&tmp_object, &snapshot_object)?;
