@@ -99,18 +99,19 @@ impl<R: RemoteImpl> Deploy<R> {
         // For each volume in the configuration: If the volume exists in the
         //   runtime, delete it. Create the volume, and populate it.
         for (_, volume) in volumes {
-            if driver.volume_exists(&volume.name).unwrap() {
+            if driver.volume_exists(&volume.get_name()).unwrap() {
                 match settings.deployment_policy {
                     DeploymentPolicy::Overwrite =>
-                        driver.remove_volume(&volume.name).unwrap(),
+                        driver.remove_volume(&volume.get_name()).unwrap(),
                     DeploymentPolicy::NoOverwrite => continue,
                 }
             }
 
-            driver.create_volume(&volume.name).unwrap();
-            let image_path = PathBuf::from(OBJECTS_DIR).join(&volume.hash);
+            driver.create_volume(&volume.get_name()).unwrap();
+            let image_path = PathBuf::from(OBJECTS_DIR)
+                .join(&volume.get_hash());
             self.compressor.restore(
-                driver.get_volume_host_path(&volume.name).unwrap(),
+                driver.get_volume_host_path(&volume.get_name()).unwrap(),
                 self.transport.get_path(&image_path)
             )?;
         }

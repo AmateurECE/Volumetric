@@ -64,7 +64,7 @@ impl<R: RemoteImpl> Add<R> {
                 },
             };
 
-        volumes.insert(volume.name.to_owned(), volume);
+        volumes.insert(volume.get_name().to_owned(), volume);
         let volumes = serde_yaml::to_string(&volumes).unwrap();
         self.transport.put_file(&staging_lock, &volumes.as_bytes())?;
         Ok(())
@@ -83,11 +83,11 @@ impl<R: RemoteImpl> Add<R> {
             .join(volume.to_owned() + ".tar.gz");
         let mut volume = Volume::new(&volume);
         self.compressor.stage(
-            driver.get_volume_host_path(&volume.name)?,
+            driver.get_volume_host_path(&volume.get_name())?,
             &self.transport.get_path(&tmp_object)
         )?;
         let snapshot_object = path::PathBuf::from(STAGING_DIR)
-            .join("objects").join(&volume.hash);
+            .join("objects").join(&volume.get_hash());
         self.transport.rename(&tmp_object, &snapshot_object)?;
 
         // Update .volumetric/staging/lock with the hash of the new volume.

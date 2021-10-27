@@ -29,8 +29,8 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Volume {
-    pub name: String,
-    pub hash: String,
+    name: String,
+    hash: String,
 }
 
 impl Volume {
@@ -40,6 +40,9 @@ impl Volume {
             hash: "/dev/null".to_string(),
         }
     }
+
+    pub fn get_name(&self) -> &str { &self.name }
+    pub fn get_hash(&self) -> &str { &self.hash }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
