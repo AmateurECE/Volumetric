@@ -34,6 +34,7 @@ mod command;
 mod compressor;
 mod file_remote;
 mod hash;
+mod persistence;
 mod settings;
 mod volume;
 mod variant_error;
