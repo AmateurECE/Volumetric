@@ -27,15 +27,15 @@
 ////
 
 use std::io;
-use std::path::{Path, PathBuf};
 use std::iter::Iterator;
+use std::path::{Path, PathBuf};
 
 mod command;
 mod compressor;
 mod file_remote;
 mod hash;
-mod volume;
 mod settings;
+mod volume;
 mod variant_error;
 
 pub use command::init::Init;
@@ -48,10 +48,10 @@ pub use command::external::External;
 pub use command::load_settings;
 pub use command::write_settings;
 
+pub use compressor::Compressor;
 pub use file_remote::{FileRemote, FileRemoteSpec};
 pub use settings::Settings;
 pub use volume::Volume;
-pub use compressor::Compressor;
 
 // More or less: Maj.Min.Patch
 pub const REPOSITORY_VERSION: &'static str = "0.1.0";
