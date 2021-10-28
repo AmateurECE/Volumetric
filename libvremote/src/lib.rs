@@ -35,6 +35,7 @@ mod compressor;
 mod file_remote;
 mod hash;
 mod persistence;
+mod repository;
 mod settings;
 mod volume;
 mod variant_error;

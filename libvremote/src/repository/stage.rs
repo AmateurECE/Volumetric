@@ -1,6 +1,6 @@
 
-use crate::lock::Lock;
-use crate::object_store::ObjectStore;
+use crate::repository::lock::Lock;
+use crate::repository::object_store::ObjectStore;
 
 pub struct Stage {
     lock: Lock,
@@ -8,5 +8,7 @@ pub struct Stage {
 }
 
 impl Stage {
-    pub fn new() -> Stage { Stage {} }
+    pub fn new(lock: Lock, object_store: ObjectStore) -> Stage {
+        Stage { lock, object_store }
+    }
 }

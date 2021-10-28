@@ -1,7 +1,8 @@
 
 use std::io;
+use std::error::Error;
 
 pub trait Persistent {
-    fn load(target: &dyn io::Read) -> io::Result<Self> where Self: Sized;
-    fn store(target: &dyn io::Write) -> io::Result<()>;
+    fn load(target: &mut dyn io::Read) -> Result<Self, Box<dyn Error>> where Self: Sized;
+    fn store(&self, target: &mut dyn io::Write) -> Result<(), Box<dyn Error>>;
 }
