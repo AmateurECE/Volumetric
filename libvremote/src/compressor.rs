@@ -38,7 +38,7 @@ impl Compressor {
     where P: AsRef<Path>, Q: AsRef<Path>,
     {
         let status = process::Command::new("tar")
-            .args(["czvf", temp.as_ref().to_str().unwrap(),
+            .args(&["czvf", temp.as_ref().to_str().unwrap(),
                    "-C", host_path.as_ref().to_str().unwrap(), "."])
             .status()
             .expect("Error running tar");
@@ -54,7 +54,7 @@ impl Compressor {
     where P: AsRef<Path>, Q: AsRef<Path>,
     {
         let status = process::Command::new("tar")
-            .args(["xzvf", image.as_ref().to_str().unwrap(),
+            .args(&["xzvf", image.as_ref().to_str().unwrap(),
                    "-C", host_path.as_ref().to_str().unwrap()])
             .status()
             .expect("Error running tar");

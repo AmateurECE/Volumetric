@@ -42,7 +42,7 @@ impl Docker {
 impl OciRuntime for Docker {
     fn volume_exists(&self, volume: &str) -> Result<bool, Box<dyn Error>> {
         let output = process::Command::new("docker")
-            .args(["volume", "ls"])
+            .args(&["volume", "ls"])
             .output()
             .expect("Error running docker volume ls");
         let output = io::BufReader::new(io::Cursor::new(output.stdout));
@@ -64,7 +64,7 @@ impl OciRuntime for Docker {
         Result<path::PathBuf, Box<dyn Error>>
     {
         let output = process::Command::new("podman")
-            .args(["inspect", "-f", "{{.Mountpoint}}", &volume])
+            .args(&["inspect", "-f", "{{.Mountpoint}}", &volume])
             .output()
             .expect("Error running podman inspect");
         let mut mount_point = String::new();
@@ -75,7 +75,7 @@ impl OciRuntime for Docker {
 
     fn remove_volume(&self, volume: &str) -> Result<(), Box<dyn Error>> {
         let status = process::Command::new("podman")
-            .args(["volume", "rm", &volume])
+            .args(&["volume", "rm", &volume])
             .status()
             .expect("Error running podman volume");
         if !status.success() {
@@ -87,7 +87,7 @@ impl OciRuntime for Docker {
 
     fn create_volume(&self, volume: &str) -> Result<(), Box<dyn Error>> {
         let status = process::Command::new("podman")
-            .args(["volume", "create", &volume])
+            .args(&["volume", "create", &volume])
             .status()
             .expect("Error running podman volume");
         if !status.success() {

@@ -32,7 +32,7 @@ use std::process;
 
 pub fn sha256sum<P: AsRef<Path>>(path: P) -> io::Result<String> {
     let output = process::Command::new("sha256sum")
-        .args([path.as_ref().to_str().unwrap()])
+        .args(&[path.as_ref().to_str().unwrap()])
         .output()
         .expect("Error running sha256sum");
     let mut shasum = String::new();
