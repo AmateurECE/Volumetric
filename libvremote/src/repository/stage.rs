@@ -11,4 +11,6 @@ impl Stage {
     pub fn new(lock: Lock, object_store: ObjectStore) -> Stage {
         Stage { lock, object_store }
     }
+
+    pub fn get_mut_lock<'a>(&'a mut self) -> &'a mut Lock { &mut self.lock }
 }

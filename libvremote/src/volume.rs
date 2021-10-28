@@ -7,7 +7,7 @@
 //
 // CREATED:         10/26/2021
 //
-// LAST EDITED:     10/26/2021
+// LAST EDITED:     10/27/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -30,7 +30,7 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Scheme {
     Managed,
-    External,
+    External(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,25 +41,29 @@ pub struct Volume {
 }
 
 impl Volume {
-    fn new(name: &str, scheme: Scheme) -> Volume {
+    fn new(name: &str, hash: Option<&str>, scheme: Scheme) -> Volume {
         Volume {
             name: name.to_owned(),
-            hash: "/dev/null".to_string(),
+            hash: hash.unwrap_or("/dev/null").to_string(),
             scheme,
         }
     }
 
     pub fn managed(name: &str) -> Volume {
-        Volume::new(name, Scheme::Managed)
+        Volume::new(name, None, Scheme::Managed)
     }
 
-    pub fn external(name: &str) -> Volume {
-        Volume::new(name, Scheme::External)
+    pub fn external(name: &str, hash: &str, uri: &str) -> Volume {
+        Volume::new(name, Some(hash), Scheme::External(uri.to_owned()))
     }
 
     pub fn get_name(&self) -> &str { &self.name }
+
     pub fn get_hash(&self) -> &str { &self.hash }
     pub fn set_hash(&mut self, hash: &str) { self.hash = hash.to_string(); }
+
+    pub fn get_scheme(&self) -> &Scheme { &self.scheme }
+    pub fn set_scheme(&mut self, scheme: Scheme) { self.scheme = scheme; }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

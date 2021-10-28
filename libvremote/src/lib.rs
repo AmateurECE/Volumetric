@@ -8,7 +8,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/26/2021
+// LAST EDITED:     10/28/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -52,6 +52,11 @@ pub use command::write_settings;
 
 pub use compressor::Compressor;
 pub use file_remote::{FileRemote, FileRemoteSpec};
+
+pub use repository::Lock;
+pub use repository::ObjectStore;
+pub use repository::Stage;
+
 pub use settings::Settings;
 pub use volume::Volume;
 

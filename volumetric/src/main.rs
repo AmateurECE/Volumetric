@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/26/2021
+// LAST EDITED:     10/28/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -36,7 +36,7 @@ use clap::{App, AppSettings, Arg, SubCommand};
 extern crate libvremote;
 use libvremote::{
     remote_type, RemoteSpec, FileRemote, Init, Add, Status, Commit, Generate,
-    Deploy, External, Compressor,
+    Deploy, External, Compressor, Stage, Lock, ObjectStore,
 };
 
 extern crate libvruntime;
@@ -122,7 +122,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     else if let Some(matches) = matches.subcommand_matches("add") {
         let volume = matches.value_of("volume")
             .expect("Must provide a volume name!");
-        let mut adder = Add::new(remote, settings, Compressor::new());
+        let mut adder = Add::new(
+            remote, settings, Compressor::new(), Lock::new());
         adder.add(volume.to_string())?;
     }
 
@@ -177,7 +178,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             let volume = sub_matches.value_of("volume").unwrap();
             let hash = sub_matches.value_of("hash").unwrap();
             let uri = sub_matches.value_of("uri").unwrap();
-            let mut externalizer = External::new(remote, settings);
+            let mut externalizer = External::new(
+                remote, Stage::new(Lock::new(), ObjectStore::new()), settings);
             externalizer.add(&volume, &hash, &uri)?;
         }
     }

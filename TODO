@@ -18,3 +18,5 @@
   like that
 * Perhaps integrate with Flocker?
 * Develop a Docker storage driver
+* In order for the VolumeImage to know how to structure a URI, it has to know
+  the inner workings of the repository. Maybe we can put it there?

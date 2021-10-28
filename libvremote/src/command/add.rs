@@ -7,7 +7,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/26/2021
+// LAST EDITED:     10/28/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -36,39 +36,20 @@ use crate::compressor::Compressor;
 use crate::volume::Volume;
 use crate::settings::Settings;
 use crate::command::{STAGING_DIR, LOCK_FILE, TMP_DIR};
+use crate::repository::Lock;
 
 pub struct Add<R: RemoteImpl> {
     transport: R,
     settings: Settings,
     compressor: Compressor,
+    lock: Lock,
 }
 
 impl<R: RemoteImpl> Add<R> {
-    pub fn new(transport: R, settings: Settings, comp: Compressor) -> Add<R> {
-        Add { transport, settings, compressor: comp, }
-    }
-
-    fn lock_staged_volume(&mut self, volume: Volume) -> io::Result<()> {
-        let staging_lock = path::PathBuf::from(STAGING_DIR).join("lock");
-        let mut volumes: HashMap<String, Volume>
-            = match self.transport.get_file(&staging_lock) {
-                Ok(file) => serde_yaml::from_reader(file).unwrap(),
-                // If the file does not exist...
-                Err(e) => match e.kind() {
-                    io::ErrorKind::NotFound => {
-                        // Attempt to copy it from DATA_DIR
-                        self.transport.copy(&LOCK_FILE, &staging_lock)?;
-                        serde_yaml::from_reader(
-                            self.transport.get_file(&staging_lock)?).unwrap()
-                    },
-                    _ => return Err(e),
-                },
-            };
-
-        volumes.insert(volume.get_name().to_owned(), volume);
-        let volumes = serde_yaml::to_string(&volumes).unwrap();
-        self.transport.put_file(&staging_lock, &volumes.as_bytes())?;
-        Ok(())
+    pub fn new(
+        transport: R, settings: Settings, compressor: Compressor, lock: Lock
+    ) -> Add<R> {
+        Add { transport, settings, compressor, lock }
     }
 
     // Stage a volume for commit.
@@ -94,7 +75,7 @@ impl<R: RemoteImpl> Add<R> {
         self.transport.rename(&tmp_object, &snapshot_object)?;
 
         // Update .volumetric/staging/lock with the hash of the new volume.
-        self.lock_staged_volume(volume)?;
+        self.lock.add_volume(volume)?;
         Ok(())
     }
 }
