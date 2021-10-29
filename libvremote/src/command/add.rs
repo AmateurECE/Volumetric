@@ -35,7 +35,7 @@ use crate::hash;
 use crate::compressor::Compressor;
 use crate::volume::Volume;
 use crate::settings::Settings;
-use crate::command::{STAGING_DIR, LOCK_FILE, TMP_DIR};
+use crate::command::{STAGING_DIR, TMP_DIR};
 use crate::repository::Lock;
 
 pub struct Add<R: RemoteImpl> {
