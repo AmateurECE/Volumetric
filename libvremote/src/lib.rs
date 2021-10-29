@@ -36,7 +36,6 @@ mod file_remote;
 mod hash;
 mod persistence;
 mod repository;
-mod settings;
 mod volume;
 mod variant_error;
 
@@ -55,9 +54,9 @@ pub use file_remote::{FileRemote, FileRemoteSpec};
 
 pub use repository::Lock;
 pub use repository::ObjectStore;
+pub use repository::Settings;
 pub use repository::Stage;
 
-pub use settings::Settings;
 pub use volume::Volume;
 
 // More or less: Maj.Min.Patch

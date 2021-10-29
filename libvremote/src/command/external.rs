@@ -30,7 +30,7 @@ use std::error::Error;
 use crate::repository::Stage;
 use crate::volume::Volume;
 use crate::RemoteImpl;
-use crate::settings::Settings;
+use crate::repository::Settings;
 
 pub struct External<R: RemoteImpl> {
     transport: R,

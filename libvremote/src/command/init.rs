@@ -7,7 +7,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/16/2021
+// LAST EDITED:     10/28/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -31,7 +31,7 @@ use std::path;
 
 use crate::RemoteImpl;
 use crate::volume::Volume;
-use crate::settings::Settings;
+use crate::repository::Settings;
 use crate::command::{
     DATA_DIR, SETTINGS_FILE, HISTORY_FILE, CHANGES_DIR, STAGING_DIR, TMP_DIR,
     OBJECTS_DIR, LOCK_FILE,

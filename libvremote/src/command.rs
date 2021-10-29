@@ -7,7 +7,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/18/2021
+// LAST EDITED:     10/28/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -35,7 +35,7 @@ pub mod external;
 
 use std::io;
 use std::default::Default;
-use crate::settings::Settings;
+use crate::repository::Settings;
 use crate::RemoteImpl;
 
 const VOLUMETRIC_FILE: &'static str = "volumetric.yaml";

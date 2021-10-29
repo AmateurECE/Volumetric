@@ -9,7 +9,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/17/2021
+// LAST EDITED:     10/28/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -34,7 +34,7 @@ use serde_yaml;
 
 use crate::RemoteImpl;
 use crate::volume::Volume;
-use crate::settings::Settings;
+use crate::repository::Settings;
 use crate::command::{LOCK_FILE, VOLUMETRIC_FILE};
 
 pub struct Generate<R: RemoteImpl> {

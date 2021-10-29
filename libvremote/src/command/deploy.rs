@@ -8,7 +8,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/26/2021
+// LAST EDITED:     10/28/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -35,7 +35,7 @@ use serde::{Serialize, Deserialize};
 use serde_yaml;
 
 use crate::RemoteImpl;
-use crate::settings::Settings;
+use crate::repository::Settings;
 use crate::command::OBJECTS_DIR;
 use crate::compressor::Compressor;
 use crate::volume::Volume;

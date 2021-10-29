@@ -25,7 +25,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-use std::collections::HashMap;
 use std::error::Error;
 use std::io;
 use std::path;
@@ -34,7 +33,7 @@ use crate::RemoteImpl;
 use crate::hash;
 use crate::compressor::Compressor;
 use crate::volume::Volume;
-use crate::settings::Settings;
+use crate::repository::Settings;
 use crate::command::{STAGING_DIR, TMP_DIR};
 use crate::repository::Lock;
 
