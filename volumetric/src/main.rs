@@ -30,9 +30,6 @@ use std::error::Error;
 use std::io;
 use std::io::Write;
 
-extern crate clap;
-use clap::{App, AppSettings, Arg, SubCommand};
-
 extern crate libvremote;
 use libvremote::{
     remote_type, RemoteSpec, FileRemote, Init, Add, Status, Commit, Generate,
@@ -41,68 +38,10 @@ use libvremote::{
 
 extern crate libvruntime;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let matches = App::new("Volumetric")
-        .version("0.1.0")
-        .author("Ethan D. Twardy <ethan.twardy@gmail.com>")
-        .about("Version control for OCI Volumes")
-        .settings(&[AppSettings::SubcommandRequiredElseHelp])
-        .arg(Arg::with_name("uri")
-             .help("URI of a repository"))
-        .subcommand(SubCommand::with_name("init")
-                    .about("Initialize a repository in the current directory")
-                    .arg(Arg::with_name("uri")
-                         .help("URI of a directory to initialize a repo in."))
-                    .arg(Arg::with_name("oci-runtime")
-                         .takes_value(true)
-                         .long("oci-runtime")
-                         .short("r"))
-                    .arg(Arg::with_name("remote-uri")
-                         .help("Remote URI that the repository is reached at")
-                         .takes_value(true)
-                         .long("remote-uri")
-                         .short("u")))
-        .subcommand(SubCommand::with_name("add")
-                    .about("Track changes to a volume in the OCI Runtime")
-                    .arg(Arg::with_name("volume")
-                         .help("Name of a persistent volume in the runtime")))
-        .subcommand(SubCommand::with_name("status")
-                    .about("Show status of the volumes repository"))
-        .subcommand(SubCommand::with_name("commit")
-                    .about("Commit staged changes"))
-        .subcommand(SubCommand::with_name("generate")
-                    .about("Generate a volumetric.yaml from the repository"))
-        .subcommand(SubCommand::with_name("deploy")
-                    .about("Deploy a volumetric configuration to the runtime")
-                    .arg(Arg::with_name("file")
-                         .help("Volumetric configuration (volumetric.yaml)")
-                         .takes_value(true)
-                         .long("file")
-                         .short("f")))
-        .subcommand(SubCommand::with_name("config")
-                    .about("View or set configuration of a repository")
-                    .arg(Arg::with_name("list")
-                         .short("l")
-                         .long("list"))
-                    .arg(Arg::with_name("option")
-                         .help("Option to set"))
-                    .arg(Arg::with_name("value")
-                         .help("Value to set for option")))
-        .subcommand(SubCommand::with_name("external")
-                    .about("Track snapshot of a volume hosted elsewhere")
-                    .subcommand(SubCommand::with_name("add")
-                                .about("Add an external volume")
-                                .arg(Arg::with_name("volume")
-                                     .help("Volume name")
-                                     .required(true))
-                                .arg(Arg::with_name("hash")
-                                     .help("Hash of the snapshot")
-                                     .required(true))
-                                .arg(Arg::with_name("uri")
-                                     .help("URI of the volume")
-                                     .required(true))))
-        .get_matches();
+mod arguments;
 
+fn main() -> Result<(), Box<dyn Error>> {
+    let matches = arguments::get_arguments();
     let uri = matches.value_of("uri").unwrap_or(".");
     let mut remote = match remote_type(uri.to_string()).unwrap() {
         RemoteSpec::File(e) => FileRemote::new(e)?,
