@@ -8,7 +8,7 @@
 //
 // CREATED:         10/04/2021
 //
-// LAST EDITED:     10/14/2021
+// LAST EDITED:     10/29/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -36,9 +36,10 @@ use serde;
 use serde::{Serialize, Deserialize};
 
 mod docker;
-pub use docker::Docker;
-
 mod podman;
+pub mod error;
+
+pub use docker::Docker;
 pub use podman::Podman;
 
 pub trait OciRuntime {

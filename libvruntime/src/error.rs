@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            variant_error.rs
+// NAME:            error.rs
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
@@ -8,7 +8,7 @@
 //
 // CREATED:         10/18/2021
 //
-// LAST EDITED:     10/18/2021
+// LAST EDITED:     10/29/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
