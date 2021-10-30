@@ -1,6 +1,5 @@
 
 use std::collections::HashMap;
-use std::error::Error;
 use std::io;
 use serde::{Serialize, Deserialize};
 use serde_yaml;

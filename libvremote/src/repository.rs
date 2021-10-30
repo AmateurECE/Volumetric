@@ -36,4 +36,33 @@ pub use settings::Settings;
 pub use settings::DeploymentPolicy;
 pub use stage::Stage;
 
+const VOLUMETRIC_FILE: &'static str = "volumetric.yaml";
+const LOCK_FILE: &'static str       = ".volumetric/lock";
+const SETTINGS_FILE: &'static str   = ".volumetric/settings";
+const HISTORY_FILE: &'static str    = ".volumetric/history";
+const OBJECTS_DIR: &'static str     = ".volumetric/objects";
+const CHANGES_DIR: &'static str     = ".volumetric/changes";
+
+const TMP_DIR: &'static str         = ".volumetric/staging/tmp";
+const STAGING_LOCK: &'static str    = ".volumetric/staging/lock";
+const STAGING_OBJECTS: &'static str = ".volumetric/staging/objects";
+
+pub struct StageStructure {}
+impl StageStructure {
+    pub fn get_tmp() -> &'static str { &TMP_DIR }
+    pub fn get_lock() -> &'static str { &STAGING_LOCK }
+    pub fn get_objects() -> &'static str { &STAGING_OBJECTS }
+}
+
+pub struct RepositoryStructure {}
+impl RepositoryStructure {
+    pub fn get_volumetric() -> &'static str { &VOLUMETRIC_FILE }
+    pub fn get_lock() -> &'static str { &LOCK_FILE }
+    pub fn get_settings() -> &'static str { &SETTINGS_FILE }
+    pub fn get_history() -> &'static str { &HISTORY_FILE }
+    pub fn get_objects() -> &'static str { &OBJECTS_DIR }
+    pub fn get_changes() -> &'static str { &CHANGES_DIR }
+    pub fn get_stage() -> StageStructure { return StageStructure {} }
+}
+
 ///////////////////////////////////////////////////////////////////////////////

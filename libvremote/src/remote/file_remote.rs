@@ -26,7 +26,6 @@
 ////
 
 use std::io;
-use std::io::Write;
 use std::io::ErrorKind;
 use std::iter::Iterator;
 use std::fs;

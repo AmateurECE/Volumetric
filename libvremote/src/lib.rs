@@ -26,10 +26,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-use std::io;
-use std::iter::Iterator;
-use std::path::{Path, PathBuf};
-
 mod compressor;
 mod remote;
 mod hash;
@@ -49,22 +45,14 @@ pub use remote::{FileRemote, FileRemoteSpec};
 pub use repository::DeploymentPolicy;
 pub use repository::Lock;
 pub use repository::ObjectStore;
+pub use repository::RepositoryStructure;
 pub use repository::Settings;
 pub use repository::Stage;
+pub use repository::StageStructure;
 
 pub use volume::Volume;
 
 // More or less: Maj.Min.Patch
 pub const REPOSITORY_VERSION: &'static str = "0.1.0";
-
-const VOLUMETRIC_FILE: &'static str = "volumetric.yaml";
-const DATA_DIR: &'static str      = ".volumetric";
-const LOCK_FILE: &'static str     = ".volumetric/lock";
-const SETTINGS_FILE: &'static str = ".volumetric/settings";
-const HISTORY_FILE: &'static str  = ".volumetric/history";
-const OBJECTS_DIR: &'static str   = ".volumetric/objects";
-const CHANGES_DIR: &'static str   = ".volumetric/changes";
-const STAGING_DIR: &'static str   = ".volumetric/staging";
-const TMP_DIR: &'static str       = ".volumetric/tmp";
 
 ///////////////////////////////////////////////////////////////////////////////
