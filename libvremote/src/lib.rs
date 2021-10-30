@@ -30,26 +30,15 @@ use std::io;
 use std::iter::Iterator;
 use std::path::{Path, PathBuf};
 
-mod command;
 mod compressor;
 mod remote;
 mod hash;
 mod persistence;
 mod repository;
 mod volume;
-mod variant_error;
-
-pub use command::init::Init;
-pub use command::add::Add;
-pub use command::status::Status;
-pub use command::commit::Commit;
-pub use command::generate::Generate;
-pub use command::deploy::Deploy;
-pub use command::external::External;
-pub use command::load_settings;
-pub use command::write_settings;
 
 pub use compressor::Compressor;
+pub use persistence::Persistent;
 
 pub use remote::ReadRemote;
 pub use remote::WriteRemote;
@@ -57,6 +46,7 @@ pub use remote::RemoteSpec;
 pub use remote::remote_type;
 pub use remote::{FileRemote, FileRemoteSpec};
 
+pub use repository::DeploymentPolicy;
 pub use repository::Lock;
 pub use repository::ObjectStore;
 pub use repository::Settings;

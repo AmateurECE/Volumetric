@@ -32,9 +32,12 @@ use std::io;
 use std::string::ToString;
 use serde::{Serialize, Deserialize};
 use libvruntime::OciRuntimeType;
+use libvruntime::error::VariantError;
 
 use crate::REPOSITORY_VERSION;
-use crate::command::deploy::DeploymentPolicy;
+
+mod deployment_policy;
+pub use deployment_policy::DeploymentPolicy;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Settings {
@@ -57,7 +60,7 @@ impl Default for Settings {
 
 pub struct Setter<'a, M: Sync> {
     key: &'a str,
-    setter: fn(&mut M, &str) -> io::Result<()>,
+    setter: fn(&mut M, &str) -> Result<(), VariantError>,
     getter: fn(&M) -> String,
     from: fn(&mut M, &M),
 }
@@ -86,8 +89,7 @@ pub const SETTINGS_SETTERS: &'static [Setter<Settings>] = &[
     },
     Setter {
         key: "deployment_policy",
-        setter: |map, val| Ok(
-            map.deployment_policy = DeploymentPolicy::try_from(val).unwrap()),
+        setter: |map, val| Ok(map.deployment_policy = val.try_into()?),
         getter: |map| map.deployment_policy.to_string(),
         from: |dest, source| dest.deployment_policy = source.deployment_policy,
     },
@@ -100,12 +102,11 @@ impl Settings {
     }
 
     pub fn set(mut self: &mut Self, key: &str, value: Option<&str>) ->
-        io::Result<()>
+        Result<(), VariantError>
     {
         let setting = SETTINGS_SETTERS.iter()
             .find(|k| k.key == key)
-            .ok_or(io::Error::new(
-                io::ErrorKind::Other, format!("Unknown variant: {}", key)))?;
+            .ok_or_else(|| VariantError::new(key))?;
         if let Some(value) = value {
             (setting.setter)(&mut self, value)
         } else {
@@ -113,11 +114,10 @@ impl Settings {
         }
     }
 
-    pub fn get(&self, key: &str) -> io::Result<String> {
+    pub fn get(&self, key: &str) -> Result<String, VariantError> {
         let setting = SETTINGS_SETTERS.iter()
             .find(|k| k.key == key)
-            .ok_or(io::Error::new(
-                io::ErrorKind::Other, format!("Unknown variant: {}", key)))?;
+            .ok_or_else(|| VariantError::new(key))?;
         Ok((setting.getter)(&self))
     }
 
@@ -158,18 +158,18 @@ impl ToString for Settings {
     }
 }
 
-pub fn load_settings<R: RemoteImpl>(transport: &mut R) -> io::Result<Settings>
-{
-    match transport.get_file(&SETTINGS_FILE) {
-        Ok(mut reader) => Settings::from(reader.as_mut()),
-        Err(_) => Ok(Settings::default()),
-    }
-}
+// pub fn load_settings<R: RemoteImpl>(transport: &mut R) -> io::Result<Settings>
+// {
+//     match transport.get_file(&SETTINGS_FILE) {
+//         Ok(mut reader) => Settings::from(reader.as_mut()),
+//         Err(_) => Ok(Settings::default()),
+//     }
+// }
 
-pub fn write_settings<R: RemoteImpl>(transport: &mut R, settings: &Settings) ->
-    io::Result<usize>
-{
-    transport.put_file(&SETTINGS_FILE, &settings.to_string().as_bytes())
-}
+// pub fn write_settings<R: RemoteImpl>(transport: &mut R, settings: &Settings) ->
+//     io::Result<usize>
+// {
+//     transport.put_file(&SETTINGS_FILE, &settings.to_string().as_bytes())
+// }
 
 ///////////////////////////////////////////////////////////////////////////////

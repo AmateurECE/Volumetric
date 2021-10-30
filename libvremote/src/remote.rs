@@ -7,7 +7,7 @@
 //
 // CREATED:         10/29/2021
 //
-// LAST EDITED:     10/29/2021
+// LAST EDITED:     10/30/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -28,21 +28,34 @@
 use std::io;
 use std::path::{Path, PathBuf};
 
+mod file_remote;
+pub use file_remote::{FileRemote, FileRemoteSpec};
+
 // These traits guarantees a consistent interface for remote endpoints.
 pub trait ReadRemote<R: io::Read> {
-    fn get_file(&mut self, name: &Path) -> io::Result<R> where R: Sized;
-    fn read_dir(&mut self, name: &Path) ->
-        io::Result<Box<dyn Iterator<Item = PathBuf>>>;
-    fn get_path(&self, path: &Path) -> PathBuf;
+    fn get_file<P>(&mut self, name: P) -> io::Result<R>
+    where R: Sized, P: AsRef<Path>;
+
+    fn read_dir<P>(&mut self, name: P) ->
+        io::Result<Box<dyn Iterator<Item = PathBuf>>>
+    where P: AsRef<Path>;
+
+    fn get_path<P>(&self, path: P) -> PathBuf where P: AsRef<Path>;
 }
 
 pub trait WriteRemote<R: io::Write + io::Read>: ReadRemote<R> {
-    fn upload_file(&mut self, name: &Path) -> io::Result<R> where R: Sized;
-    fn create_dir(&mut self, name: &Path) -> io::Result<()>;
-    fn rename(&mut self, src: &Path, dest: &Path) -> io::Result<()>;
-    fn copy(&mut self, src: &Path, dest: &Path) -> io::Result<()>;
-}
+    fn upload_file<P>(&mut self, name: P) -> io::Result<R>
+    where R: Sized, P: AsRef<Path>;
 
+    fn create_dir<P>(&mut self, name: P) -> io::Result<()>
+    where P: AsRef<Path>;
+
+    fn rename<P, Q>(&mut self, src: P, dest: Q) -> io::Result<()>
+    where P: AsRef<Path>, Q: AsRef<Path>;
+
+    fn copy<P, Q>(&mut self, src: P, dest: Q) -> io::Result<()>
+    where P: AsRef<Path>, Q: AsRef<Path>;
+}
 
 // Enum to differentiate between Remotes
 pub enum RemoteSpec {

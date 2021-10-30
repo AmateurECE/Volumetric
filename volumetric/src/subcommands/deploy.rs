@@ -8,7 +8,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/29/2021
+// LAST EDITED:     10/30/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -55,29 +55,6 @@ use crate::command::OBJECTS_DIR;
 use crate::compressor::Compressor;
 use crate::volume::Volume;
 use crate::variant_error::VariantError;
-
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-pub enum DeploymentPolicy {
-    Overwrite,
-    NoOverwrite,
-}
-
-impl TryFrom<&str> for DeploymentPolicy {
-    type Error = VariantError;
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match &value.to_lowercase().as_str() {
-            &"overwrite" => Ok(DeploymentPolicy::Overwrite),
-            &"donotoverwrite" => Ok(DeploymentPolicy::NoOverwrite),
-            &_ => Err(VariantError::new(value)),
-        }
-    }
-}
-
-impl fmt::Display for DeploymentPolicy {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        fmt::Debug::fmt(self, f)
-    }
-}
 
 pub struct Deploy<R: RemoteImpl> {
     transport: R,

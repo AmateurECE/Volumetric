@@ -1,11 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            repository.rs
+// NAME:            deployment_policy.rs
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Logic to encapsulate repositories
+// DESCRIPTION:     Information about the process of deployment
 //
-// CREATED:         10/28/2021
+// CREATED:         10/30/2021
 //
 // LAST EDITED:     10/30/2021
 //
@@ -25,15 +25,32 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-mod lock;
-mod object_store;
-mod settings;
-mod stage;
+use std::convert::TryFrom;
+use std::fmt;
+use serde::{Serialize, Deserialize};
+use libvruntime::error::VariantError;
 
-pub use lock::Lock;
-pub use object_store::ObjectStore;
-pub use settings::Settings;
-pub use settings::DeploymentPolicy;
-pub use stage::Stage;
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DeploymentPolicy {
+    Overwrite,
+    NoOverwrite,
+}
+
+impl TryFrom<&str> for DeploymentPolicy {
+    type Error = VariantError;
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match &value.to_lowercase().as_str() {
+            &"overwrite" => Ok(DeploymentPolicy::Overwrite),
+            &"donotoverwrite" => Ok(DeploymentPolicy::NoOverwrite),
+            &_ => Err(VariantError::new(value)),
+        }
+    }
+}
+
+impl fmt::Display for DeploymentPolicy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        fmt::Debug::fmt(self, f)
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////

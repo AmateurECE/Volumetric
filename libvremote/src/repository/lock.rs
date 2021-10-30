@@ -45,14 +45,14 @@ impl Lock {
 
 impl Persistent for Lock {
     fn load(target: &mut dyn io::Read) -> io::Result<Self> {
-        Ok(serde_yaml::from_reader::<&mut dyn io::Read, Lock>(target)
-           .ok_or(io::Error::new(
-               io::ErrorKind::Invalid, "Serialization error")))
+        serde_yaml::from_reader::<&mut dyn io::Read, Lock>(target)
+            .map_err(|_| io::Error::new(
+                io::ErrorKind::InvalidInput, "Deserialization error"))
     }
 
     fn store(&self, target: &mut dyn io::Write) -> io::Result<()> {
-        let contents = serde_yaml::to_string(&self).ok_or();
-        target.write(&contents.as_bytes())?;
-        Ok(())
+        serde_yaml::to_writer::<&mut dyn io::Write, Lock>(target, &self)
+            .map_err(|_| io::Error::new(
+                io::ErrorKind::InvalidInput, "Serialization error"))
     }
 }

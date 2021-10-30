@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/10/2021
+// LAST EDITED:     10/30/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -32,7 +32,7 @@ use std::iter::Iterator;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::RemoteImpl;
+use crate::remote::{ReadRemote, WriteRemote};
 
 // Remote repository that exists on a currently mounted filesystem.
 pub struct FileRemote {
@@ -50,25 +50,39 @@ impl FileRemote {
     }
 }
 
-impl RemoteImpl for FileRemote {
-    fn get_file<P: AsRef<Path>>(&mut self, name: P) ->
-        io::Result<Box<dyn io::Read>>
-    {
+impl ReadRemote<fs::File> for FileRemote {
+    fn get_file<P: AsRef<Path>>(&mut self, name: P) -> io::Result<fs::File> {
         let name = self.get_path(name);
-        Ok(Box::new(fs::File::open(name)?))
+        Ok(fs::File::open(name)?)
     }
 
-    fn put_file<P: AsRef<Path>>(&mut self, name: P, buffer: &[u8]) ->
-        io::Result<usize>
-    {
-        let name = self.get_path(name);
-        let mut writer = fs::File::create(&name)?;
-        writer.write(&buffer)?;
-
-        Ok(buffer.len())
+    fn get_path<P: AsRef<Path>>(&self, path: P) -> PathBuf {
+        self.spec.path.clone().join(path)
     }
 
-    fn create_dir<P: AsRef<Path>>(&mut self, name: P) -> io::Result<()> {
+    fn read_dir<P: AsRef<Path>>(&mut self, path: P) ->
+        io::Result<Box<dyn Iterator<Item = PathBuf>>>
+    {
+        let path = self.get_path(path);
+        let path_prefix = self.spec.path.to_owned();
+        let contents = fs::read_dir(path)?.into_iter()
+            .map(move |l| l.unwrap().path()
+                 .strip_prefix(&path_prefix).unwrap().to_path_buf());
+        Ok(Box::new(contents))
+    }
+}
+
+impl WriteRemote<fs::File> for FileRemote {
+    fn upload_file<P>(&mut self, name: P) -> io::Result<fs::File>
+    where P: AsRef<Path>
+    {
+        let name = self.get_path(name);
+        fs::File::create(&name)
+    }
+
+    fn create_dir<P>(&mut self, name: P) -> io::Result<()>
+    where P: AsRef<Path>
+    {
         let name = self.get_path(name);
         match fs::create_dir(&name) {
             Ok(()) => Ok(()),
@@ -80,32 +94,17 @@ impl RemoteImpl for FileRemote {
         }
     }
 
-    fn rename<P: AsRef<Path>, Q: AsRef<Path>>(&mut self, src: P, dest: Q) ->
-        io::Result<()>
+    fn rename<P, Q>(&mut self, src: P, dest: Q) -> io::Result<()>
+    where P: AsRef<Path>, Q: AsRef<Path>
     {
         fs::rename(self.get_path(src), self.get_path(dest))
     }
 
-    fn copy<P: AsRef<Path>, Q: AsRef<Path>>(&mut self, src: P, dest: Q) ->
-        io::Result<()>
+    fn copy<P, Q>(&mut self, src: P, dest: Q) -> io::Result<()>
+    where P: AsRef<Path>, Q: AsRef<Path>
     {
         fs::copy(self.get_path(src), self.get_path(dest))?;
         Ok(())
-    }
-
-    fn get_path<P: AsRef<Path>>(&self, path: P) -> PathBuf {
-        self.spec.path.clone().join(path)
-    }
-
-    fn read_dir<P: AsRef<Path>>(&self, path: P) ->
-        io::Result<Box<dyn Iterator<Item = PathBuf>>>
-    {
-        let path = self.get_path(path);
-        let path_prefix = self.spec.path.to_owned();
-        let contents = fs::read_dir(path)?.into_iter()
-            .map(move |l| l.unwrap().path()
-                 .strip_prefix(&path_prefix).unwrap().to_path_buf());
-        Ok(Box::new(contents))
     }
 }
 
