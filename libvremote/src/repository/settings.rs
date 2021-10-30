@@ -7,7 +7,7 @@
 //
 // CREATED:         10/12/2021
 //
-// LAST EDITED:     10/26/2021
+// LAST EDITED:     10/30/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -156,6 +156,20 @@ impl ToString for Settings {
         serde_yaml::to_string(&serde_yaml::Value::try_from(self).unwrap())
             .unwrap()
     }
+}
+
+pub fn load_settings<R: RemoteImpl>(transport: &mut R) -> io::Result<Settings>
+{
+    match transport.get_file(&SETTINGS_FILE) {
+        Ok(mut reader) => Settings::from(reader.as_mut()),
+        Err(_) => Ok(Settings::default()),
+    }
+}
+
+pub fn write_settings<R: RemoteImpl>(transport: &mut R, settings: &Settings) ->
+    io::Result<usize>
+{
+    transport.put_file(&SETTINGS_FILE, &settings.to_string().as_bytes())
 }
 
 ///////////////////////////////////////////////////////////////////////////////

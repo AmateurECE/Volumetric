@@ -8,7 +8,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/29/2021
+// LAST EDITED:     10/30/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -66,5 +66,15 @@ pub use volume::Volume;
 
 // More or less: Maj.Min.Patch
 pub const REPOSITORY_VERSION: &'static str = "0.1.0";
+
+const VOLUMETRIC_FILE: &'static str = "volumetric.yaml";
+const DATA_DIR: &'static str      = ".volumetric";
+const LOCK_FILE: &'static str     = ".volumetric/lock";
+const SETTINGS_FILE: &'static str = ".volumetric/settings";
+const HISTORY_FILE: &'static str  = ".volumetric/history";
+const OBJECTS_DIR: &'static str   = ".volumetric/objects";
+const CHANGES_DIR: &'static str   = ".volumetric/changes";
+const STAGING_DIR: &'static str   = ".volumetric/staging";
+const TMP_DIR: &'static str       = ".volumetric/tmp";
 
 ///////////////////////////////////////////////////////////////////////////////
