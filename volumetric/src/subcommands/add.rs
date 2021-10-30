@@ -3,11 +3,11 @@
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Adds resources to the staging area
+// DESCRIPTION:     Implementation of the add subcommand.
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/28/2021
+// LAST EDITED:     10/29/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -24,6 +24,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
+
+use std::io;
+use std::error::Error;
+use clap::ArgMatches;
+use libvremote::WriteRemote;
+
+pub fn add<P, R>(remote: R, matches: ArgMatches) -> Result<(), Box<dyn Error>>
+where
+    P: io::Read + io::Write,
+    R: WriteRemote<P>,
+{
+    let volume = matches.value_of("volume")
+        .expect("Must provide a volume name!");
+    let mut adder = Add::new(
+        remote, settings, Compressor::new(), Lock::new());
+    adder.add(volume.to_string())?;
+}
 
 use std::error::Error;
 use std::io;

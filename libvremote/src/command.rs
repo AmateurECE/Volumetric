@@ -7,7 +7,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/28/2021
+// LAST EDITED:     10/29/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,9 +25,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-pub mod init;
-pub mod add;
-pub mod status;
 pub mod commit;
 pub mod generate;
 pub mod deploy;

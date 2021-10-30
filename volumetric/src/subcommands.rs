@@ -25,7 +25,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+mod add;
 mod init;
+
+pub use add::add;
 pub use init::init;
 
 ///////////////////////////////////////////////////////////////////////////////

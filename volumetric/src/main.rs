@@ -50,7 +50,7 @@ where
     let (subcommand, arg_matches) = matches.subcommand();
     match subcommand {
         &"init" => subcommands::init(remote, arg_matches),
-        &"add" => Ok(()),
+        &"add" => subcommands::add(remote, arg_matches),
         &"status" => Ok(()),
         &"commit" => Ok(()),
         &"generate" => Ok(()),
@@ -69,28 +69,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     let mut settings = libvremote::load_settings(&mut remote)?;
 
-    if let Some(matches) = matches.subcommand_matches("init") {
-        let oci_runtime = matches.value_of("oci-runtime").unwrap_or("docker");
-        settings.oci_runtime = oci_runtime.try_into()?;
-        if let Some(remote_uri) = matches.value_of("remote-uri") {
-            settings.remote_uri = Some(remote_uri.to_string());
-        }
-        let mut initializer = Init::new(remote, settings);
-        initializer.init()?;
-    }
-
-    else if let Some(matches) = matches.subcommand_matches("add") {
-        let volume = matches.value_of("volume")
-            .expect("Must provide a volume name!");
-        let mut adder = Add::new(
-            remote, settings, Compressor::new(), Lock::new());
-        adder.add(volume.to_string())?;
-    }
-
     else if matches.subcommand_name().unwrap() == "status" {
-        let stdout = io::stdout();
-        let mut printer = Status::new(remote);
-        printer.status(stdout.lock())?;
     }
 
     else if matches.subcommand_name().unwrap() == "commit" {
