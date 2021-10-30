@@ -28,7 +28,6 @@
 
 use std::convert::TryFrom;
 use std::error::Error;
-use std::io;
 use std::fmt;
 use std::path;
 
@@ -57,13 +56,12 @@ pub enum OciRuntimeType {
 }
 
 impl TryFrom<&str> for OciRuntimeType {
-    type Error = io::Error;
+    type Error = error::VariantError;
     fn try_from(source: &str) -> Result<Self, Self::Error> {
-        match source.to_lowercase().as_str() {
-            "docker" => Ok(OciRuntimeType::Docker),
-            "podman" => Ok(OciRuntimeType::Podman),
-            &_ => Err(io::Error::new(io::ErrorKind::Other,
-                "Unknown variant!".to_string())),
+        match &source.to_lowercase().as_str() {
+            &"docker" => Ok(OciRuntimeType::Docker),
+            &"podman" => Ok(OciRuntimeType::Podman),
+            &a => Err(error::VariantError::new(&a)),
         }
     }
 }
