@@ -30,18 +30,12 @@ use std::error::Error;
 use std::io;
 use std::io::Write;
 
-extern crate libvremote;
-use libvremote::{
-    remote_type, RemoteSpec, FileRemote, Init, Add, Status, Commit, Generate,
-    Deploy, External, Compressor, Stage, Lock, ObjectStore,
-};
-
 extern crate libvruntime;
 
 mod arguments;
 mod subcommands;
 
-fn dispatch_read<P, R>(remote: R, matches: clap::ArgMatches) ->
+fn dispatch<P, R>(remote: R, matches: clap::ArgMatches) ->
     Result<(), Box<dyn Error>>
 where
     P: io::Read,
@@ -49,15 +43,27 @@ where
 {
     let (subcommand, arg_matches) = matches.subcommand();
     match subcommand {
+        &"status" => subcommands::status(remote, arg_matches),
+        &"deploy" => subcommands::deploy(remote, arg_matches),
+        &_ => libvruntime::VariantError::new(),
+    }
+}
+
+fn dispatch_mut<P, R>(remote: R, matches: clap::ArgMatches) ->
+    Result<(), Box<dyn Error>>
+where
+    P: io::Read + io::Write,
+    R: WriteRemote<R>
+{
+    let (subcommand, arg_matches) = matches.subcommand();
+    match subcommand {
         &"init" => subcommands::init(remote, arg_matches),
         &"add" => subcommands::add(remote, arg_matches),
-        &"status" => Ok(()),
-        &"commit" => Ok(()),
-        &"generate" => Ok(()),
-        &"deploy" => Ok(()),
-        &"config" => Ok(()),
-        &"external" => Ok(()),
-        &_ => libvruntime::VariantError::new(),
+        &"commit" => subcommands::commit(remote, arg_matches),
+        &"generate" => subcommands::generate(remote, arg_matches),
+        &"config" => subcommands::config(remote, arg_matches),
+        &"external" => subcommands::external(remote, arg_matches),
+        &_ => dispatch(remote, matches),
     }
 }
 
@@ -65,63 +71,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let matches = arguments::get_arguments();
     let uri = matches.value_of("uri").unwrap_or(".");
     let mut remote = match remote_type(uri.to_string()).unwrap() {
-        RemoteSpec::File(e) => FileRemote::new(e)?,
+        RemoteSpec::File(e) => dispatch_mut(FileRemote::new(e)?, matches),
     };
-    let mut settings = libvremote::load_settings(&mut remote)?;
 
-    else if matches.subcommand_name().unwrap() == "status" {
-    }
-
-    else if matches.subcommand_name().unwrap() == "commit" {
-        let mut committer = Commit::new(remote);
-        committer.commit()?;
-    }
-
-    else if matches.subcommand_name().unwrap() == "generate" {
-        let mut generator = Generate::new(remote, settings);
-        generator.generate()?;
-    }
-
-    else if let Some(matches) = matches.subcommand_matches("deploy") {
-        let file = matches.value_of("file").unwrap_or("volumetric.yaml");
-        let mut deployer = Deploy::new(remote, Compressor::new());
-        deployer.deploy(&file)?;
-    }
-
-    else if let Some(matches) = matches.subcommand_matches("config") {
-        let stdout = io::stdout();
-        let mut stdout = stdout.lock();
-        let option = matches.value_of("option");
-        if matches.is_present("list") {
-            if let Some(option) = option {
-                // Print option
-                let value = settings.get(&option)?;
-                write!(stdout, "{}: {}\n", &option, &value)?;
-            } else {
-                // Print entire configuration
-                settings.iter()
-                    .for_each(|(k, v)| write!(stdout, "{}: {}\n", &k, &v)
-                              .unwrap());
-            }
-        } else {
-            // Set option to value (or unset)
-            settings.set(option.unwrap(), matches.value_of("value"))?;
-            // Write settings
-            libvremote::write_settings(&mut remote, &settings)?;
-        }
-    }
-
-    else if let Some(matches) = matches.subcommand_matches("external") {
-        if let Some(sub_matches) = matches.subcommand_matches("add") {
-            // external add subcommand
-            let volume = sub_matches.value_of("volume").unwrap();
-            let hash = sub_matches.value_of("hash").unwrap();
-            let uri = sub_matches.value_of("uri").unwrap();
-            let mut externalizer = External::new(
-                remote, Stage::new(Lock::new(), ObjectStore::new()), settings);
-            externalizer.add(&volume, &hash, &uri)?;
-        }
-    }
     Ok(())
 }
 

@@ -7,7 +7,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/10/2021
+// LAST EDITED:     10/29/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -24,6 +24,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
+
+use std::error::Error;
+use clap::ArgMatches;
+use libvremote::WriteRemote;
+
+pub fn commit<P, R>(remote: R, matches: ArgMatches) ->
+    Result<(), Box<dyn Error>>
+where
+    P: io::Read + io::Write,
+    R: WriteRemote<P>
+{
+    let mut committer = Commit::new(remote);
+    committer.commit()?;
+}
 
 use std::io;
 use std::io::BufRead;

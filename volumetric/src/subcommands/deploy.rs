@@ -8,7 +8,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/28/2021
+// LAST EDITED:     10/29/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,6 +25,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
+
+use std::error::Error;
+use clap::ArgMatches;
+use libvremote::ReadRemote;
+
+pub fn deploy<P, R>(remote: R, matches: ArgMatches) ->
+    Result<(), Box<dyn Error>>
+where
+    P: io::Read,
+    R: ReadRemote<R>
+{
+    let file = matches.value_of("file").unwrap_or("volumetric.yaml");
+    let mut deployer = Deploy::new(remote, Compressor::new());
+    deployer.deploy(&file)?;
+}
 
 use std::convert::TryFrom;
 use std::collections::HashMap;

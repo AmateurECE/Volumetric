@@ -3,11 +3,11 @@
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     External command logic
+// DESCRIPTION:     Logic to handle externally versioned volumes.
 //
 // CREATED:         10/18/2021
 //
-// LAST EDITED:     10/28/2021
+// LAST EDITED:     10/29/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -24,6 +24,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
+
+use std::error::Error;
+use clap::ArgMatches;
+use libvremote::WriteRemote;
+
+pub fn external<P, R>(remote: R, matches: ArgMatches) ->
+    Result<(), Box<dyn Error>>
+where
+    P: io::Read + io::Write,
+    R: WriteRemote<P>
+{
+    if let Some(sub_matches) = matches.subcommand_matches("add") {
+        // external add subcommand
+        let volume = sub_matches.value_of("volume").unwrap();
+        let hash = sub_matches.value_of("hash").unwrap();
+        let uri = sub_matches.value_of("uri").unwrap();
+        let mut externalizer = External::new(
+            remote, Stage::new(Lock::new(), ObjectStore::new()), settings);
+        externalizer.add(&volume, &hash, &uri)?;
+    }
+}
 
 use std::error::Error;
 
