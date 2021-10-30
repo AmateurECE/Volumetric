@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/28/2021
+// LAST EDITED:     10/29/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -39,6 +39,27 @@ use libvremote::{
 extern crate libvruntime;
 
 mod arguments;
+mod subcommands;
+
+fn dispatch_read<P, R>(remote: R, matches: clap::ArgMatches) ->
+    Result<(), Box<dyn Error>>
+where
+    P: io::Read,
+    R: ReadRemote<R>,
+{
+    let (subcommand, arg_matches) = matches.subcommand();
+    match subcommand {
+        &"init" => subcommands::init(remote, arg_matches),
+        &"add" => Ok(()),
+        &"status" => Ok(()),
+        &"commit" => Ok(()),
+        &"generate" => Ok(()),
+        &"deploy" => Ok(()),
+        &"config" => Ok(()),
+        &"external" => Ok(()),
+        &_ => libvruntime::VariantError::new(),
+    }
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = arguments::get_arguments();

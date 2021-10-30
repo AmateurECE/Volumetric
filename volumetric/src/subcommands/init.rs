@@ -1,9 +1,9 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            persistence.rs
+// NAME:            init.rs
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Trait to encapsulate object persistence (e.g. to disk).
+// DESCRIPTION:     Logic to encapsulate init subcommand.
 //
 // CREATED:         10/29/2021
 //
@@ -26,10 +26,14 @@
 ////
 
 use std::io;
+use libvremote::ReadRemote;
 
-pub trait Persistent {
-    fn load(target: &mut dyn io::Read) -> io::Result<Self> where Self: Sized;
-    fn store(&self, target: &mut dyn io::Write) -> io::Result<()>;
+pub fn init<P, R>() -> Result<(), Box<dyn Error>>
+where
+    P: io::Read,
+    R: ReadRemote<P>,
+{
+    unimplemented!()
 }
 
 ///////////////////////////////////////////////////////////////////////////////

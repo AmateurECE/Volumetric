@@ -1,9 +1,9 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            persistence.rs
+// NAME:            subcommands.rs
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Trait to encapsulate object persistence (e.g. to disk).
+// DESCRIPTION:     Module to encapsulate subcommand logic.
 //
 // CREATED:         10/29/2021
 //
@@ -25,11 +25,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-use std::io;
-
-pub trait Persistent {
-    fn load(target: &mut dyn io::Read) -> io::Result<Self> where Self: Sized;
-    fn store(&self, target: &mut dyn io::Write) -> io::Result<()>;
-}
+mod init;
+pub use init::init;
 
 ///////////////////////////////////////////////////////////////////////////////
