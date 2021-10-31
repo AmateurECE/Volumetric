@@ -92,7 +92,6 @@ version = "0.1.0"
 dependencies = [
  "libvruntime",
  "serde",
- "serde_history",
  "serde_yaml",
 ]
 
@@ -145,13 +144,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "serde_history"
-version = "0.1.0"
-dependencies = [
- "serde",
 ]
 
 [[package]]

@@ -25,17 +25,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-use std::io;
+use std::io::{self, BufRead};
 use serde::{Serialize, Deserialize};
 
 use crate::persistence::Persistent;
-use crate::commit::Commit;
-
-extern crate serde_history;
 
 #[derive(Serialize, Deserialize)]
 pub struct History {
-    commits: Vec<Commit>,
+    commits: Vec<String>,
 }
 
 impl History {}
@@ -48,15 +45,17 @@ impl Default for History {
 
 impl Persistent for History {
     fn load(target: &mut dyn io::Read) -> io::Result<History> {
-        serde_history::from_reader::<&mut dyn io::Read, History>(target)
-            .map_err(|_| io::Error::new(
-                io::ErrorKind::Other, "deserialization error"))
+        let commits = io::BufReader::new(target)
+            .lines()
+            .map(|l| l.unwrap().to_owned())
+            .collect::<Vec<String>>();
+        Ok(History { commits })
     }
 
     fn store(&self, target: &mut dyn io::Write) -> io::Result<()> {
-        serde_history::to_writer::<&mut dyn io::Write, History>(target, &self)
-            .map_err(|_| io::Error::new(
-                io::ErrorKind::Other, "serialization error"))
+        let text = self.commits.join("\n");
+        target.write(text.as_str().as_bytes())?;
+        Ok(())
     }
 }
 

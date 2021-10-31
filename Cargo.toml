@@ -4,5 +4,4 @@ members = [
     "volumetric",
     "libvremote",
     "libvruntime",
-    "serde_history",
 ]
