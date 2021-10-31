@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/29/2021
+// LAST EDITED:     10/31/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,12 +25,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-use std::convert::TryInto;
 use std::error::Error;
 use std::io;
-use std::io::Write;
 
 extern crate libvruntime;
+extern crate libvremote;
+use libvremote::{FileRemote, ReadRemote, WriteRemote};
 
 mod arguments;
 mod subcommands;
@@ -43,9 +43,9 @@ where
 {
     let (subcommand, arg_matches) = matches.subcommand();
     match subcommand {
-        &"status" => subcommands::status(remote, arg_matches),
-        &"deploy" => subcommands::deploy(remote, arg_matches),
-        &_ => libvruntime::VariantError::new(),
+        // &"status" => subcommands::status(remote, arg_matches),
+        // &"deploy" => subcommands::deploy(remote, arg_matches),
+        &_ => libvruntime::error::VariantError::new(),
     }
 }
 
@@ -58,11 +58,11 @@ where
     let (subcommand, arg_matches) = matches.subcommand();
     match subcommand {
         &"init" => subcommands::init(remote, arg_matches),
-        &"add" => subcommands::add(remote, arg_matches),
-        &"commit" => subcommands::commit(remote, arg_matches),
-        &"generate" => subcommands::generate(remote, arg_matches),
-        &"config" => subcommands::config(remote, arg_matches),
-        &"external" => subcommands::external(remote, arg_matches),
+        // &"add" => subcommands::add(remote, arg_matches),
+        // &"commit" => subcommands::commit(remote, arg_matches),
+        // &"generate" => subcommands::generate(remote, arg_matches),
+        // &"config" => subcommands::config(remote, arg_matches),
+        // &"external" => subcommands::external(remote, arg_matches),
         &_ => dispatch(remote, matches),
     }
 }
@@ -70,7 +70,7 @@ where
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = arguments::get_arguments();
     let uri = matches.value_of("uri").unwrap_or(".");
-    let mut remote = match remote_type(uri.to_string()).unwrap() {
+    let mut remote = match libvremote::remote_type(uri.to_string()).unwrap() {
         RemoteSpec::File(e) => dispatch_mut(FileRemote::new(e)?, matches),
     };
 

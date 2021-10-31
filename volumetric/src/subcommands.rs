@@ -7,7 +7,7 @@
 //
 // CREATED:         10/29/2021
 //
-// LAST EDITED:     10/29/2021
+// LAST EDITED:     10/31/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,10 +25,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-mod add;
 mod init;
 
-pub use add::add;
 pub use init::init;
 
 ///////////////////////////////////////////////////////////////////////////////
