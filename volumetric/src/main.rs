@@ -30,49 +30,56 @@ use std::io;
 
 extern crate libvruntime;
 extern crate libvremote;
-use libvremote::{FileRemote, ReadRemote, WriteRemote};
+use libvremote::remote;
+use libvremote::remote::{FileRemote, ReadRemote, RemoteSpec, WriteRemote};
+use libvremote::repository::RepositoryStructure;
 
 mod arguments;
 mod subcommands;
 
-fn dispatch<P, R>(remote: R, matches: clap::ArgMatches) ->
-    Result<(), Box<dyn Error>>
+fn dispatch<P, R>(
+    remote: R, matches: clap::ArgMatches, finder: RepositoryStructure
+) -> Result<(), Box<dyn Error>>
 where
     P: io::Read,
-    R: ReadRemote<R>,
+    R: ReadRemote<P>,
 {
     let (subcommand, arg_matches) = matches.subcommand();
     match subcommand {
         // &"status" => subcommands::status(remote, arg_matches),
         // &"deploy" => subcommands::deploy(remote, arg_matches),
-        &_ => libvruntime::error::VariantError::new(),
+        value => Err(Box::new(libvruntime::error::VariantError::new(value))),
     }
 }
 
-fn dispatch_mut<P, R>(remote: R, matches: clap::ArgMatches) ->
-    Result<(), Box<dyn Error>>
+fn dispatch_mut<P, R>(
+    remote: R, matches: clap::ArgMatches, finder: RepositoryStructure
+) -> Result<(), Box<dyn Error>>
 where
     P: io::Read + io::Write,
-    R: WriteRemote<R>
+    R: WriteRemote<P>
 {
     let (subcommand, arg_matches) = matches.subcommand();
     match subcommand {
-        &"init" => subcommands::init(remote, arg_matches),
+        "init" => subcommands::init::init(remote, arg_matches.expect(
+            "subcommand init requires arguments. See the usage."), finder),
         // &"add" => subcommands::add(remote, arg_matches),
         // &"commit" => subcommands::commit(remote, arg_matches),
         // &"generate" => subcommands::generate(remote, arg_matches),
         // &"config" => subcommands::config(remote, arg_matches),
         // &"external" => subcommands::external(remote, arg_matches),
-        &_ => dispatch(remote, matches),
+        _ => dispatch(remote, matches, finder),
     }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = arguments::get_arguments();
     let uri = matches.value_of("uri").unwrap_or(".");
-    let mut remote = match libvremote::remote_type(uri.to_string()).unwrap() {
-        RemoteSpec::File(e) => dispatch_mut(FileRemote::new(e)?, matches),
-    };
+    let pathfinder = RepositoryStructure::default();
+    match remote::remote_type(uri.to_string()).unwrap() {
+        RemoteSpec::File(e) => dispatch_mut(
+            FileRemote::new(e)?, matches, pathfinder),
+    }?;
 
     Ok(())
 }

@@ -27,11 +27,13 @@
 
 use std::path::{Path, PathBuf};
 
+mod history;
 mod lock;
 mod object_store;
 mod settings;
 mod stage;
 
+pub use history::History;
 pub use lock::Lock;
 pub use object_store::ObjectStore;
 pub use settings::Settings;

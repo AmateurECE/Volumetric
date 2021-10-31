@@ -25,8 +25,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-mod init;
-
-pub use init::init;
+pub mod init;
 
 ///////////////////////////////////////////////////////////////////////////////

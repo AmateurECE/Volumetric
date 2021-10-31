@@ -7,7 +7,7 @@
 //
 // CREATED:         10/28/2021
 //
-// LAST EDITED:     10/28/2021
+// LAST EDITED:     10/31/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -28,27 +28,16 @@
 extern crate clap;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
+use crate::subcommands;
+
 pub fn get_arguments() -> ArgMatches<'static> {
-    App::new("Volumetric")
+    let app = App::new("Volumetric")
         .version("0.1.0")
         .author("Ethan D. Twardy <ethan.twardy@gmail.com>")
         .about("Version control for OCI Volumes")
         .settings(&[AppSettings::SubcommandRequiredElseHelp])
         .arg(Arg::with_name("uri")
              .help("URI of a repository"))
-        .subcommand(SubCommand::with_name("init")
-                    .about("Initialize a repository in the current directory")
-                    .arg(Arg::with_name("uri")
-                         .help("URI of a directory to initialize a repo in."))
-                    .arg(Arg::with_name("oci-runtime")
-                         .takes_value(true)
-                         .long("oci-runtime")
-                         .short("r"))
-                    .arg(Arg::with_name("remote-uri")
-                         .help("Remote URI that the repository is reached at")
-                         .takes_value(true)
-                         .long("remote-uri")
-                         .short("u")))
         .subcommand(SubCommand::with_name("add")
                     .about("Track changes to a volume in the OCI Runtime")
                     .arg(Arg::with_name("volume")
@@ -87,7 +76,9 @@ pub fn get_arguments() -> ArgMatches<'static> {
                                      .required(true))
                                 .arg(Arg::with_name("uri")
                                      .help("URI of the volume")
-                                     .required(true))))
+                                     .required(true))));
+    app
+        .subcommand(subcommands::init::usage())
         .get_matches()
 }
 

@@ -7,7 +7,7 @@
 //
 // CREATED:         10/10/2021
 //
-// LAST EDITED:     10/29/2021
+// LAST EDITED:     10/31/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -26,65 +26,84 @@
 ////
 
 use std::io;
+use std::convert::TryInto;
 use std::error::Error;
-use clap::ArgMatches;
-use libvremote::WriteRemote;
+use std::marker::PhantomData;
 
-pub fn init<P, R>(remote: R, matches: ArgMatches) -> Result<(), Box<dyn Error>>
+use clap::{App, Arg, ArgMatches, SubCommand};
+use libvremote::Persistent;
+use libvremote::remote::WriteRemote;
+use libvremote::repository::{self, RepositoryStructure};
+
+pub fn usage() -> App<'static, 'static> {
+    SubCommand::with_name("init")
+        .about("Initialize a repository in the current directory")
+        .arg(Arg::with_name("uri")
+             .help("URI of a directory to initialize a repo in."))
+        .arg(Arg::with_name("oci-runtime")
+             .takes_value(true)
+             .long("oci-runtime")
+             .short("r"))
+        .arg(Arg::with_name("remote-uri")
+             .help("Remote URI that the repository is reached at")
+             .takes_value(true)
+             .long("remote-uri")
+             .short("u"))
+}
+
+pub fn init<P, R>(
+    remote: R, matches: &ArgMatches, finder: RepositoryStructure
+) -> Result<(), Box<dyn Error>>
 where
     P: io::Read + io::Write,
     R: WriteRemote<P>,
 {
-    let oci_runtime = matches.value_of("oci-runtime").unwrap_or("docker");
-    settings.oci_runtime = oci_runtime.try_into()?;
+    let mut settings = repository::Settings::default();
+    if let Some(oci_runtime) = matches.value_of("oci-runtime") {
+        settings.oci_runtime = oci_runtime.try_into()?;
+    }
+
     if let Some(remote_uri) = matches.value_of("remote-uri") {
         settings.remote_uri = Some(remote_uri.to_string());
     }
-    let mut initializer = Init::new(remote, settings);
-    initializer.init()?;
+
+    let mut initializer = Init::new(remote, finder);
+    initializer.init(settings)
 }
 
-use std::collections::HashMap;
-use std::error::Error;
-use std::path;
-
-use crate::RemoteImpl;
-use crate::volume::Volume;
-use crate::repository::Settings;
-use crate::repository::Lock;
-use crate::command::{
-    DATA_DIR, SETTINGS_FILE, HISTORY_FILE, CHANGES_DIR, STAGING_DIR, TMP_DIR,
-    OBJECTS_DIR, LOCK_FILE,
-};
-
-pub struct Init<R: RemoteImpl> {
-    transport: R,
-    settings: Settings,
+struct Init<P: io::Read + io::Write, R: WriteRemote<P>> {
+    remote: R,
+    pathfinder: RepositoryStructure,
+    phantom: PhantomData<P>,
 }
 
-impl<R: RemoteImpl> Init<R> {
-    pub fn new(transport: R, settings: Settings) -> Init<R> {
-        Init { transport, settings }
+impl<P: io::Read + io::Write, R: WriteRemote<P>> Init<P, R> {
+    pub fn new(remote: R, pathfinder: RepositoryStructure) -> Init<P, R> {
+        Init { remote, pathfinder, phantom: PhantomData }
     }
 
     // Populate all the initial artifacts
-    pub fn init(&mut self) -> Result<(), Box<dyn Error>> {
-        self.transport.create_dir(&DATA_DIR)?;
-        let settings = self.settings.to_string();
-        self.transport.put_file(&SETTINGS_FILE, &settings.as_bytes())?;
-        self.transport.put_file(
-            &LOCK_FILE, &serde_yaml::to_string(
-                &HashMap::<String, Volume>::new())?.as_bytes())?;
-        self.transport.put_file(&HISTORY_FILE, "".as_bytes())?;
+    pub fn init(&mut self, settings: repository::Settings) ->
+        Result<(), Box<dyn Error>>
+    {
+        self.remote.create_dir(self.pathfinder.get_data())?;
+        settings.store(&mut self.remote.upload_file(
+            self.pathfinder.get_settings())?)?;
 
-        self.transport.create_dir(&OBJECTS_DIR)?;
-        self.transport.create_dir(&CHANGES_DIR)?;
-        self.transport.create_dir(&STAGING_DIR)?;
-        self.transport.create_dir(&TMP_DIR)?;
+        let lock = repository::Lock::default();
+        lock.store(&mut self.remote.upload_file(self.pathfinder.get_lock())?)?;
 
-        let staging_objects = path::PathBuf::from(STAGING_DIR).join("objects");
-        self.transport.create_dir(&staging_objects.to_str().unwrap())?;
+        let history = repository::History::default();
+        history.store(&mut self.remote.upload_file(
+            self.pathfinder.get_history())?)?;
 
+        self.remote.create_dir(self.pathfinder.get_objects())?;
+        self.remote.create_dir(self.pathfinder.get_changes())?;
+        let stage = self.pathfinder.get_stage();
+        self.remote.create_dir(stage.get_stage())?;
+        self.remote.create_dir(stage.get_tmp())?;
+        self.remote.create_dir(stage.get_lock())?;
+        self.remote.create_dir(stage.get_objects())?;
         Ok(())
     }
 }

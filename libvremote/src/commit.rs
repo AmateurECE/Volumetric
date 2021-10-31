@@ -1,12 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            lib.rs
+// NAME:            commit.rs
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Libvremote interface. This library is used to interface
-//                  with remote endpoints.
+// DESCRIPTION:     Logic to encapsulate a commit
 //
-// CREATED:         10/01/2021
+// CREATED:         10/31/2021
 //
 // LAST EDITED:     10/31/2021
 //
@@ -26,21 +25,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-mod commit;
-mod compressor;
-mod hash;
-mod persistence;
-mod volume;
+pub struct Commit {}
+impl Commit {}
 
-pub mod remote;
-pub mod repository;
-
-pub use commit::Commit;
-pub use compressor::Compressor;
-pub use persistence::Persistent;
-pub use volume::Volume;
-
-// More or less: Maj.Min.Patch
-pub const REPOSITORY_VERSION: &'static str = "0.1.0";
+impl Default for Commit {
+    fn default() -> Commit { Commit {} }
+}
 
 ///////////////////////////////////////////////////////////////////////////////

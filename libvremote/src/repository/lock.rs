@@ -13,13 +13,15 @@ pub struct Lock {
 }
 
 impl Lock {
-    pub fn new() -> Lock {
-        Lock { volumes: HashMap::new() }
-    }
-
     pub fn add_volume(&mut self, volume: Volume) -> io::Result<()> {
         self.volumes.insert(volume.get_name().to_owned(), volume);
         unimplemented!()
+    }
+}
+
+impl Default for Lock {
+    fn default() -> Lock {
+        Lock { volumes: HashMap::new() }
     }
 }
 
