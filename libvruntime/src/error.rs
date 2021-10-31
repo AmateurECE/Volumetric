@@ -8,7 +8,7 @@
 //
 // CREATED:         10/18/2021
 //
-// LAST EDITED:     10/29/2021
+// LAST EDITED:     10/31/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -26,6 +26,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+use std::error::Error;
 use std::fmt;
 
 #[derive(Debug, Clone)]
@@ -37,6 +38,10 @@ impl VariantError {
     pub fn new(value: &str) -> VariantError {
         VariantError { variant: value.to_owned() }
     }
+}
+
+impl Error for VariantError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> { None }
 }
 
 impl fmt::Display for VariantError {
