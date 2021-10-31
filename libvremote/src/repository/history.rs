@@ -26,10 +26,14 @@
 ////
 
 use std::io;
+use serde::{Serialize, Deserialize};
 
 use crate::persistence::Persistent;
 use crate::commit::Commit;
 
+extern crate serde_history;
+
+#[derive(Serialize, Deserialize)]
 pub struct History {
     commits: Vec<Commit>,
 }
@@ -44,11 +48,15 @@ impl Default for History {
 
 impl Persistent for History {
     fn load(target: &mut dyn io::Read) -> io::Result<History> {
-        unimplemented!()
+        serde_history::from_reader::<&mut dyn io::Read, History>(target)
+            .map_err(|_| io::Error::new(
+                io::ErrorKind::Other, "deserialization error"))
     }
 
     fn store(&self, target: &mut dyn io::Write) -> io::Result<()> {
-        unimplemented!()
+        serde_history::to_writer::<&mut dyn io::Write, History>(target, &self)
+            .map_err(|_| io::Error::new(
+                io::ErrorKind::Other, "serialization error"))
     }
 }
 

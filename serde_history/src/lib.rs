@@ -1,9 +1,9 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            commit.rs
+// NAME:            lib.rs
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Logic to encapsulate a commit
+// DESCRIPTION:     Entrypoint for the library
 //
 // CREATED:         10/31/2021
 //
@@ -25,15 +25,43 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-use serde::{Serialize, Deserialize};
+use std::error;
+use std::fmt;
+use std::io;
+use std::result;
+use serde::{ser, de};
 
-#[derive(Serialize, Deserialize)]
-pub struct Commit {}
+#[derive(Debug, Clone)]
+pub struct Error {
+    message: String,
+}
 
-impl Commit {}
+impl error::Error for crate::Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> { None }
+}
 
-impl Default for Commit {
-    fn default() -> Commit { Commit {} }
+impl fmt::Display for crate::Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "serialization error (serde_history): {}", &self.message)
+    }
+}
+
+pub type Result<T> = result::Result<T, crate::Error>;
+
+pub fn from_reader<R, T>(reader: R) -> crate::Result<T>
+where
+    R: io::Read,
+    T: de::DeserializeOwned,
+{
+    unimplemented!()
+}
+
+pub fn to_writer<W, T: ?Sized>(writer: W, value: &T) -> crate::Result<()>
+where
+    W: io::Write,
+    T: ser::Serialize,
+{
+    unimplemented!()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
