@@ -102,8 +102,10 @@ impl<P: io::Read + io::Write, R: WriteRemote<P>> Init<P, R> {
         let stage = self.pathfinder.get_stage();
         self.remote.create_dir(stage.get_stage())?;
         self.remote.create_dir(stage.get_tmp())?;
-        self.remote.create_dir(stage.get_lock())?;
         self.remote.create_dir(stage.get_objects())?;
+        let lock = repository::Lock::default();
+        lock.store(&mut self.remote.upload_file(stage.get_lock())?)?;
+
         Ok(())
     }
 }

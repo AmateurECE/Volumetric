@@ -26,11 +26,9 @@
 ////
 
 use std::io::{self, BufRead};
-use serde::{Serialize, Deserialize};
 
 use crate::persistence::Persistent;
 
-#[derive(Serialize, Deserialize)]
 pub struct History {
     commits: Vec<String>,
 }
