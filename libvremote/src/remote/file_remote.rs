@@ -7,7 +7,7 @@
 //
 // CREATED:         10/01/2021
 //
-// LAST EDITED:     10/30/2021
+// LAST EDITED:     10/31/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -50,6 +50,7 @@ impl FileRemote {
 }
 
 impl ReadRemote<fs::File> for FileRemote {
+    type Iterator = std::vec::IntoIter<PathBuf>;
     fn get_file<P: AsRef<Path>>(&mut self, name: P) -> io::Result<fs::File> {
         let name = self.get_path(name);
         Ok(fs::File::open(name)?)
@@ -59,15 +60,16 @@ impl ReadRemote<fs::File> for FileRemote {
         self.spec.path.clone().join(path)
     }
 
-    fn read_dir<P: AsRef<Path>>(&mut self, path: P) ->
-        io::Result<Box<dyn Iterator<Item = PathBuf>>>
+    fn read_dir<'a, P: AsRef<Path>>(&'a mut self, path: P) ->
+        io::Result<Self::Iterator>
     {
         let path = self.get_path(path);
         let path_prefix = self.spec.path.to_owned();
         let contents = fs::read_dir(path)?.into_iter()
             .map(move |l| l.unwrap().path()
-                 .strip_prefix(&path_prefix).unwrap().to_path_buf());
-        Ok(Box::new(contents))
+                 .strip_prefix(&path_prefix).unwrap().to_owned())
+            .collect::<Vec<PathBuf>>();
+        Ok(contents.into_iter())
     }
 }
 

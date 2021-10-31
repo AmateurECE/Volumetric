@@ -7,7 +7,7 @@
 //
 // CREATED:         10/29/2021
 //
-// LAST EDITED:     10/30/2021
+// LAST EDITED:     10/31/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -26,18 +26,19 @@
 ////
 
 use std::io;
+use std::iter;
 use std::path::{Path, PathBuf};
 
 mod file_remote;
 pub use file_remote::{FileRemote, FileRemoteSpec};
 
-// These traits guarantees a consistent interface for remote endpoints.
+// These traits guarantee a consistent interface for remote endpoints.
 pub trait ReadRemote<R: io::Read> {
+    type Iterator: iter::Iterator;
     fn get_file<P>(&mut self, name: P) -> io::Result<R>
     where R: Sized, P: AsRef<Path>;
 
-    fn read_dir<P>(&mut self, name: P) ->
-        io::Result<Box<dyn Iterator<Item = PathBuf>>>
+    fn read_dir<'a, P>(&'a mut self, name: P) -> io::Result<Self::Iterator>
     where P: AsRef<Path>;
 
     fn get_path<P>(&self, path: P) -> PathBuf where P: AsRef<Path>;

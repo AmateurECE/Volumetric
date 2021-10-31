@@ -7,7 +7,7 @@
 //
 // CREATED:         10/12/2021
 //
-// LAST EDITED:     10/30/2021
+// LAST EDITED:     10/31/2021
 //
 // Copyright 2021, Ethan D. Twardy
 //
@@ -25,9 +25,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+use std::fmt;
 use std::io;
 use std::string::ToString;
-use serde::{Serialize, Serializer, Deserialize, Deserializer};
+use serde::{ser, de, ser::SerializeMap};
 use libvruntime::OciRuntimeType;
 use libvruntime::error::VariantError;
 
@@ -86,33 +87,57 @@ impl Default for Settings {
     }
 }
 
-impl Serialize for Settings {
+impl ser::Serialize for Settings {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where S: Serializer
-    {
-        // TODO: Implementation
-        unimplemented!()
+    where S: ser::Serializer {
+        let defaults = Settings::default();
+        let filtered = self.iter().filter(
+            |(key, value)| value != &defaults.get(&key).unwrap()
+                || key == "version"
+        ).collect::<Vec<(String, String)>>();
+        let mut map = serializer.serialize_map(Some(filtered.len()))?;
+        for (key, value) in filtered {
+            map.serialize_entry(&key, &value)?;
+        }
+        map.end()
     }
 }
 
-impl<'de> Deserialize<'de> for Settings {
+struct SettingsVisitor;
+impl<'de> de::Visitor<'de> for SettingsVisitor {
+    type Value = Settings;
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a map")
+    }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+    where A: de::MapAccess<'de> {
+        let mut settings = Settings::default();
+        while let Some((key, value)) = map.next_entry::<&str, &str>()? {
+            settings.set(key, Some(value)).unwrap();
+        }
+        Ok(settings)
+    }
+}
+
+impl<'de> de::Deserialize<'de> for Settings {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where D: Deserializer<'de>
-    {
-        // TODO: Implementation
-        unimplemented!()
+    where D: de::Deserializer<'de> {
+        deserializer.deserialize_map(SettingsVisitor)
     }
 }
 
 impl Persistent for Settings {
     fn load(target: &mut dyn io::Read) -> io::Result<Self> {
-        // TODO: Implementation
-        unimplemented!()
+        serde_yaml::from_reader::<&mut dyn io::Read, Settings>(target)
+            .map_err(|_| io::Error::new(
+                io::ErrorKind::Other, "deserialization error"))
     }
 
     fn store(&self, target: &mut dyn io::Write) -> io::Result<()> {
-        // TODO: Implementation
-        unimplemented!()
+        serde_yaml::to_writer::<&mut dyn io::Write, Settings>(target, &self)
+            .map_err(|_| io::Error::new(
+                io::ErrorKind::Other, "serialization error"))
     }
 }
 
