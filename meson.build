@@ -7,7 +7,7 @@
 #
 # CREATED:          12/10/2021
 #
-# LAST EDITED:      12/11/2021
+# LAST EDITED:      12/19/2021
 #
 # Copyright 2021, Ethan D. Twardy
 #
@@ -36,30 +36,28 @@ project(
 )
 add_project_arguments('-frecord-gcc-switches', language: 'c')
 
+config_data = configuration_data({
+  'version': meson.project_version(),
+  'name': meson.project_name(),
+})
+configure_file(input: 'config.h.in', output: 'config.h',
+               configuration: config_data)
+
 libcurl = dependency('libcurl')
+libglib = dependency('glib-2.0')
 libyaml = dependency('yaml-0.1')
 
-libvolumetric_sources = files([
-  'libvolumetric/configuration.c',
+volumetric_sources = files([
+  'volumetric/argparse.c',
+  'volumetric/volumetric.c',
+  'volumetric/add-packaged.c',
+  'volumetric/configuration.c',
 ])
 
-libvolumetric = library(
+volumetric = executable(
   'volumetric',
-  sources: libvolumetric_sources,
-  dependencies: [libyaml],
-  version: meson.project_version(),
-  install: true,
-)
-
-volumetric_remote_sources = files([
-  'volumetric-remote/volumetric-remote.c',
-])
-
-volumetric_remote = executable(
-  'volumetric-remote',
-  sources: volumetric_remote_sources,
-  dependencies: [libcurl],
-  link_with: [libvolumetric],
+  sources: volumetric_sources,
+  dependencies : [libglib],
 )
 
 ###############################################################################
