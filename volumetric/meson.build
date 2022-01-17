@@ -7,7 +7,7 @@
 #
 # CREATED:          01/16/2022
 #
-# LAST EDITED:      01/16/2022
+# LAST EDITED:      01/17/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -29,7 +29,7 @@ project('volumetric', 'c', version: '0.1.0')
 
 config_data = configuration_data({
   'version': meson.project_version(),
-  'volume_dir': get_option('volume_dir'),
+  'configuration_file': get_option('configuration_file'),
 })
 configure_file(input: 'config.h.in', output: 'config.h',
                configuration: config_data)

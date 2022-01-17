@@ -1,9 +1,9 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            config.h.in
+// NAME:            configuration.h
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Configuration for the project.
+// DESCRIPTION:     Logic for deserializing configuration data from YAML.
 //
 // CREATED:         01/16/2022
 //
@@ -25,7 +25,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#define CONFIG_VERSION "@version@"
-#define CONFIG_CONFIGURATION_FILE "@configuration_file@"
+#ifndef VOLUMETRIC_CONFIGURATION_H
+#define VOLUMETRIC_CONFIGURATION_H
+
+typedef struct yaml_deserializer yaml_deserializer;
+
+typedef struct VolumetricConfiguration {
+    char* version;
+    char* volume_directory;
+} VolumetricConfiguration;
+
+int volumetric_configuration_deserialize_yaml(yaml_deserializer* deser,
+    VolumetricConfiguration* config);
+
+#endif // VOLUMETRIC_CONFIGURATION_H
 
 ///////////////////////////////////////////////////////////////////////////////

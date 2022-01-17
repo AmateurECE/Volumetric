@@ -1,4 +1,4 @@
-option('volume_dir',
-       description: 'Location to search for volume configurations',
+option('configuration_file',
+       description: 'Default configuration file to load (unless overridden)',
        type: 'string',
-       value: '/etc/volumetric')
+       value: '/etc/volumetric/volumetric.yaml')

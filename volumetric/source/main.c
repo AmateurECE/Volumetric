@@ -7,7 +7,7 @@
 //
 // CREATED:         01/16/2022
 //
-// LAST EDITED:     01/16/2022
+// LAST EDITED:     01/17/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -25,6 +25,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+#include <argp.h>
 #include <dirent.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -33,7 +34,34 @@
 
 #include <config.h>
 
-static const char* VOLUME_DIRECTORY = CONFIG_VOLUME_DIRECTORY;
+const char* argp_program_version = "volumetric " CONFIG_VERSION;
+const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";
+static char doc[] = "Version control for Docker persistent volumes";
+static struct argp_option options[] = {
+    {"config", 'c', "FILE", 0,
+     "Read configuration file FILE instead of default ("
+     CONFIG_CONFIGURATION_FILE ")"},
+    { 0 },
+};
+static char args_doc[] = "";
+
+struct arguments {
+    const char* configuration_file;
+};
+
+static const char* CONFIGURATION_FILE = CONFIG_CONFIGURATION_FILE;
+
+static error_t parse_opt(int key, char* arg, struct argp_state* state) {
+    struct arguments* arguments = (struct arguments*)state->input;
+    switch (key) {
+    case 'c':
+        arguments->configuration_file = arg;
+    default:
+        return ARGP_ERR_UNKNOWN;
+    }
+
+    return 0;
+}
 
 static void print_error(const char* message, ...) {
     va_list args;
@@ -73,8 +101,15 @@ static int load_configurations(const char* path, int (*load_entry)(FILE*)) {
     return result;
 }
 
+static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
+
 int main(int argc, char** argv) {
-    load_configurations(VOLUME_DIRECTORY, load_entry);
+    struct arguments arguments = {
+        .configuration_file = CONFIGURATION_FILE,
+    };
+
+    argp_parse(&argp, argc, argv, 0, 0, &arguments);
+    printf("Configuration file: %s\n", arguments.configuration_file);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
