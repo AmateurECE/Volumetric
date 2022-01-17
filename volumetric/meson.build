@@ -34,12 +34,17 @@ config_data = configuration_data({
 configure_file(input: 'config.h.in', output: 'config.h',
                configuration: config_data)
 
+libgobiserde = dependency('libgobiserde')
+
 executable(
   'volumetric',
   sources: [
     'source/main.c',
+    'source/configuration.c',
   ],
   c_args: ['-frecord-gcc-switches', '--std=c18'],
+  include_directories: ['source'],
+  dependencies: [libgobiserde],
   install: true,
 )
 

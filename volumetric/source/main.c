@@ -32,7 +32,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <gobiserde/yaml.h>
+
 #include <config.h>
+#include <configuration.h>
 
 const char* argp_program_version = "volumetric " CONFIG_VERSION;
 const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";
@@ -75,7 +78,7 @@ static int load_entry(FILE* input_file) {
     return -ENOSYS;
 }
 
-static int load_configurations(const char* path, int (*load_entry)(FILE*)) {
+static int load_volumes(const char* path, int (*load_entry)(FILE*)) {
     struct dirent* entry = NULL;
     DIR* directory = opendir(path);
     if (NULL == directory) {
@@ -101,6 +104,28 @@ static int load_configurations(const char* path, int (*load_entry)(FILE*)) {
     return result;
 }
 
+static int load_configuration(const char* config_file,
+    VolumetricConfiguration* config)
+{
+    FILE* input_file = fopen(config_file, "rb");
+    if (NULL == input_file) {
+        print_error("Couldn't open configuration file %s", config_file);
+        return errno;
+    }
+
+    yaml_deserializer* deser = gobiserde_yaml_deserializer_new_file(
+        input_file);
+    int result = volumetric_configuration_deserialize_yaml(deser, config);
+    gobiserde_yaml_deserializer_free(&deser);
+    fclose(input_file);
+
+    if (-PARSE_VERSION_MISMATCH == result) {
+        fprintf(stderr, "Configuration file %s: version mismatch, expected %s",
+            config_file, CONFIGURATION_CURRENT_VERSION);
+    }
+    return result;
+}
+
 static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
 
 int main(int argc, char** argv) {
@@ -109,7 +134,9 @@ int main(int argc, char** argv) {
     };
 
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
-    printf("Configuration file: %s\n", arguments.configuration_file);
+    VolumetricConfiguration config = {0};
+    int result = load_configuration(arguments.configuration_file, &config);
+    return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

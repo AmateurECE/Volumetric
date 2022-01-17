@@ -28,6 +28,18 @@
 #ifndef VOLUMETRIC_CONFIGURATION_H
 #define VOLUMETRIC_CONFIGURATION_H
 
+// Keys currently supported in configuration:
+// version:
+//  type: string
+//  required: true
+//  value: 1.0
+//  description: Current version of configuration schema
+//
+// volume-directory:
+//  type: string
+//  required: true
+//  description: Location to search for volume configurations
+
 typedef struct yaml_deserializer yaml_deserializer;
 
 typedef struct VolumetricConfiguration {
@@ -35,7 +47,14 @@ typedef struct VolumetricConfiguration {
     char* volume_directory;
 } VolumetricConfiguration;
 
-int volumetric_configuration_deserialize_yaml(yaml_deserializer* deser,
+typedef enum ParseResult {
+    PARSE_OK,
+    PARSE_VERSION_MISMATCH,
+} ParseResult;
+
+extern const char* CONFIGURATION_CURRENT_VERSION;
+
+ParseResult volumetric_configuration_deserialize_yaml(yaml_deserializer* deser,
     VolumetricConfiguration* config);
 
 #endif // VOLUMETRIC_CONFIGURATION_H
