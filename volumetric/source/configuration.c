@@ -26,6 +26,7 @@
 ////
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <gobiserde/yaml.h>
@@ -33,6 +34,9 @@
 #include <configuration.h>
 
 const char* CONFIGURATION_CURRENT_VERSION = "1.0";
+
+static void volumetric_configuration_defaults(VolumetricConfiguration* config)
+{ config->volume_path = strdup(""); }
 
 static int visit_mapping(yaml_deserializer* deser, void* user_data,
     const char* key)
@@ -56,12 +60,19 @@ static int visit_mapping(yaml_deserializer* deser, void* user_data,
             &config->volume_directory);
     }
 
+    else if (!strcmp("volume-path", key)) {
+        free(config->volume_path);
+        result = gobiserde_yaml_deserialize_string(deser,
+            &config->volume_path);
+    }
+
     return result;
 }
 
 ParseResult volumetric_configuration_deserialize_yaml(yaml_deserializer* deser,
     VolumetricConfiguration* config)
 {
+    volumetric_configuration_defaults(config);
     return gobiserde_yaml_deserialize_map(deser, visit_mapping, config);
 }
 

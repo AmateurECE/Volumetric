@@ -39,12 +39,17 @@
 //  type: string
 //  required: true
 //  description: Location to search for volume configurations
+//
+// volume-path:
+//  type: string
+//  description: Colon-separated list of paths to search for volume images
 
 typedef struct yaml_deserializer yaml_deserializer;
 
 typedef struct VolumetricConfiguration {
     char* version;
     char* volume_directory;
+    char* volume_path;
 } VolumetricConfiguration;
 
 typedef enum ParseResult {

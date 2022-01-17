@@ -42,7 +42,7 @@ executable(
     'source/main.c',
     'source/configuration.c',
   ],
-  c_args: ['-frecord-gcc-switches', '--std=c18'],
+  c_args: ['-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500'],
   include_directories: ['source'],
   dependencies: [libgobiserde],
   install: true,
