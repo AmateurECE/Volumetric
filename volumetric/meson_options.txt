@@ -1,0 +1,4 @@
+option('volume_dir',
+       description: 'Location to search for volume configurations',
+       type: 'string',
+       value: '/etc/volumetric')
