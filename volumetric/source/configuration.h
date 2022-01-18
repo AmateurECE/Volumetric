@@ -62,6 +62,8 @@ extern const char* CONFIGURATION_CURRENT_VERSION;
 ParseResult volumetric_configuration_deserialize_yaml(yaml_deserializer* deser,
     VolumetricConfiguration* config);
 
+void volumetric_configuration_release(VolumetricConfiguration* config);
+
 #endif // VOLUMETRIC_CONFIGURATION_H
 
 ///////////////////////////////////////////////////////////////////////////////

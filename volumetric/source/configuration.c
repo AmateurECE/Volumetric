@@ -76,4 +76,10 @@ ParseResult volumetric_configuration_deserialize_yaml(yaml_deserializer* deser,
     return gobiserde_yaml_deserialize_map(deser, visit_mapping, config);
 }
 
+void volumetric_configuration_release(VolumetricConfiguration* config) {
+    if (NULL != config->version) { free(config->version); }
+    if (NULL != config->volume_directory) { free(config->volume_directory); }
+    if (NULL != config->volume_path) { free(config->volume_path); }
+}
+
 ///////////////////////////////////////////////////////////////////////////////

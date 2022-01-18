@@ -36,6 +36,8 @@
 
 #include <config.h>
 #include <configuration.h>
+#include <versioning.h>
+#include <volume.h>
 
 const char* argp_program_version = "volumetric " CONFIG_VERSION;
 const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";
@@ -71,11 +73,6 @@ static void print_error(const char* message, ...) {
     va_start(args, message);
     vfprintf(stderr, message, args);
     fprintf(stderr, ": %s\n", strerror(errno));
-}
-
-static int load_entry(FILE* input_file) {
-    // TODO
-    return -ENOSYS;
 }
 
 static int load_volumes(const char* path, int (*load_entry)(FILE*)) {
@@ -136,6 +133,12 @@ int main(int argc, char** argv) {
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
     VolumetricConfiguration config = {0};
     int result = load_configuration(arguments.configuration_file, &config);
+    if (0 != result) {
+        return result;
+    }
+
+    result = load_volumes(config.volume_directory, version_volumes_in_file);
+    volumetric_configuration_release(&config);
     return result;
 }
 

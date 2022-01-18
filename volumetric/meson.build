@@ -41,6 +41,8 @@ executable(
   sources: [
     'source/main.c',
     'source/configuration.c',
+    'source/volume.c',
+    'source/versioning.c',
   ],
   c_args: ['-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500'],
   include_directories: ['source'],
