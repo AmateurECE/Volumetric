@@ -28,8 +28,10 @@
 #include <argp.h>
 #include <dirent.h>
 #include <errno.h>
+#include <libgen.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <gobiserde/yaml.h>
@@ -123,6 +125,29 @@ static int load_configuration(const char* config_file,
     return result;
 }
 
+static char* get_volume_directory(const char* configuration_file,
+    const char* volume_directory)
+{
+    // See dirname(3). This string is not free'd.
+    char* owned_configuration_file = strdup(configuration_file);
+    char* conf_directory = dirname(owned_configuration_file);
+    size_t path_size = strlen(conf_directory) + 1 + strlen(volume_directory);
+    char* path = malloc(path_size + 1);
+    if (NULL == path) {
+        return NULL;
+    }
+
+    memset(path, 0, path_size + 1);
+    strcat(path, conf_directory);
+    path[strlen(conf_directory)] = '/';
+    strcat(path, volume_directory);
+    path[path_size] = '\0';
+
+    // Memory cleanup
+    free(owned_configuration_file);
+    return path;
+}
+
 static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
 
 int main(int argc, char** argv) {
@@ -135,6 +160,15 @@ int main(int argc, char** argv) {
     int result = load_configuration(arguments.configuration_file, &config);
     if (0 != result) {
         return result;
+    }
+
+    // Take the path of volume_directory relative to the dirname of
+    // conf_directory, if volume_directory is not an absolute path.
+    if ('/' != config.volume_directory[0]) {
+        char* path = get_volume_directory(arguments.configuration_file,
+            config.volume_directory);
+        free(config.volume_directory);
+        config.volume_directory = path;
     }
 
     result = load_volumes(config.volume_directory, version_volumes_in_file);
