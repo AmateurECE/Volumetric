@@ -28,9 +28,38 @@
 #include <errno.h>
 #include <stdio.h>
 
-#include <versioning.h>
+#include <glib-2.0/glib.h>
+#include <gobiserde/yaml.h>
 
-int version_volumes_in_file(FILE* input_file)
-{ return -ENOSYS; }
+#include <versioning.h>
+#include <volume.h>
+
+static void version_archive_volume(ArchiveVolume* volume)
+{}
+
+static void version_volume(void* key __attribute__((unused)), void* value,
+    void* data __attribute__((unused)))
+{
+    Volume* volume = (Volume*)value;
+    switch (volume->type) {
+    case VOLUME_TYPE_ARCHIVE:
+        version_archive_volume(&volume->archive);
+        break;
+    default: break;
+    }
+}
+
+int version_volumes_in_file(FILE* input)
+{
+    VolumeFile volume_file = {0};
+    yaml_deserializer* yaml = gobiserde_yaml_deserializer_new_file(input);
+    int result = volume_file_deserialize_from_yaml(yaml, &volume_file);
+    gobiserde_yaml_deserializer_free(&yaml);
+    if (0 == result) {
+        g_hash_table_foreach(volume_file.volumes, version_volume, NULL);
+    }
+
+    return result;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
