@@ -35,6 +35,7 @@ configure_file(input: 'config.h.in', output: 'config.h',
                configuration: config_data)
 
 libgobiserde = dependency('libgobiserde')
+libglib = dependency('glib-2.0')
 
 executable(
   'volumetric',
@@ -46,7 +47,7 @@ executable(
   ],
   c_args: ['-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500'],
   include_directories: ['source'],
-  dependencies: [libgobiserde],
+  dependencies: [libgobiserde, libglib],
   install: true,
 )
 

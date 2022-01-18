@@ -50,7 +50,7 @@ typedef struct ArchiveVolume {
 } ArchiveVolume;
 
 typedef enum VolumeType {
-    ARCHIVE,
+    VOLUME_TYPE_ARCHIVE,
 } VolumeType;
 
 typedef struct Volume {
