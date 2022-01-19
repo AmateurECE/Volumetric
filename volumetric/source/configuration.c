@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/17/2022
+// LAST EDITED:     01/18/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -25,6 +25,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -73,7 +74,12 @@ ParseResult volumetric_configuration_deserialize_yaml(yaml_deserializer* deser,
     VolumetricConfiguration* config)
 {
     volumetric_configuration_defaults(config);
-    return gobiserde_yaml_deserialize_map(deser, visit_mapping, config);
+    int result = gobiserde_yaml_deserialize_map(deser, visit_mapping, config);
+    if (0 > result) {
+        return -EINVAL;
+    }
+
+    return 0;
 }
 
 void volumetric_configuration_release(VolumetricConfiguration* config) {

@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/17/2022
+// LAST EDITED:     01/18/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -81,8 +81,15 @@ int volume_file_visit_map(yaml_deserializer* yaml, void* user_data,
     const char* key)
 {
     VolumeFile* volumes = (VolumeFile*)user_data;
-    if (!strcmp(VOLUME_SCHEMA_VERSION, key)) {
-        return gobiserde_yaml_deserialize_string(yaml, &volumes->version);
+    if (!strcmp("version", key)) {
+        int result = gobiserde_yaml_deserialize_string(yaml,
+            &volumes->version);
+        if (0 >= result) {
+            return result;
+        } else if (strcmp(VOLUME_SCHEMA_VERSION, volumes->version)) {
+            return -EINVAL;
+        }
+        return 1;
     } else if (!strcmp("volumes", key)) {
         return gobiserde_yaml_deserialize_map(yaml, volume_visit_map,
             volumes->volumes);
@@ -105,8 +112,13 @@ int volume_file_deserialize_from_yaml(yaml_deserializer* yaml,
     VolumeFile* volumes)
 {
     volume_file_defaults(volumes);
-    return gobiserde_yaml_deserialize_map(yaml, volume_file_visit_map,
+    int result = gobiserde_yaml_deserialize_map(yaml, volume_file_visit_map,
         volumes);
+    if (0 > result) {
+        return -EINVAL;
+    }
+
+    return 0;
 }
 
 // Free memory used internally by the instance

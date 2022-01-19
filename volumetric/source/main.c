@@ -7,7 +7,7 @@
 //
 // CREATED:         01/16/2022
 //
-// LAST EDITED:     01/17/2022
+// LAST EDITED:     01/18/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -86,8 +86,27 @@ static int load_volumes(const char* path, int (*load_entry)(FILE*)) {
     }
 
     int result = 0;
+    size_t path_length = strlen(path);
+    char* whole_path = malloc(path_length + 256);
+    if (NULL == whole_path) {
+        print_error("Cannot allocate memory");
+    }
+
+    memset(whole_path, 0, path_length + 256);
+    strcat(whole_path, path);
+    whole_path[path_length] = '/';
+
     while (NULL != (entry = readdir(directory))) {
-        FILE* input_file = fopen(entry->d_name, "rb");
+        // Ignore '.' and '..'
+        if (!strcmp(".", entry->d_name) || !strcmp("..", entry->d_name)) {
+            continue;
+        }
+
+        size_t entry_length = strlen(entry->d_name);
+        memcpy(whole_path + path_length + 1, entry->d_name, entry_length);
+        whole_path[path_length + 1 + entry_length] = '\0';
+
+        FILE* input_file = fopen(whole_path, "rb");
         if (NULL == input_file) {
             print_error("error opening file %s", entry->d_name);
         }
@@ -99,6 +118,7 @@ static int load_volumes(const char* path, int (*load_entry)(FILE*)) {
         }
     }
 
+    free(whole_path);
     closedir(directory);
     return result;
 }
