@@ -7,7 +7,7 @@
 #
 # CREATED:          01/16/2022
 #
-# LAST EDITED:      01/17/2022
+# LAST EDITED:      01/18/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -36,6 +36,8 @@ configure_file(input: 'config.h.in', output: 'config.h',
 
 libgobiserde = dependency('libgobiserde')
 libglib = dependency('glib-2.0')
+libcurl = dependency('libcurl')
+libjson_c = dependency('json-c')
 
 executable(
   'volumetric',
@@ -44,10 +46,13 @@ executable(
     'source/configuration.c',
     'source/volume.c',
     'source/versioning.c',
+    'source/docker.c',
   ],
-  c_args: ['-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500'],
+  c_args: [
+    '-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500', '-O0', '-g',
+  ],
   include_directories: ['source'],
-  dependencies: [libgobiserde, libglib],
+  dependencies: [libgobiserde, libglib, libcurl, libjson_c],
   install: true,
 )
 
