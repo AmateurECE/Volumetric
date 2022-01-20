@@ -7,7 +7,7 @@
 //
 // CREATED:         01/16/2022
 //
-// LAST EDITED:     01/18/2022
+// LAST EDITED:     01/19/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -47,7 +47,7 @@ static char doc[] = "Version control for Docker persistent volumes";
 static struct argp_option options[] = {
     {"config", 'c', "FILE", 0,
      "Read configuration file FILE instead of default ("
-     CONFIG_CONFIGURATION_FILE ")"},
+     CONFIG_CONFIGURATION_FILE ")", 0},
     { 0 },
 };
 static char args_doc[] = "";
@@ -63,6 +63,7 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
     switch (key) {
     case 'c':
         arguments->configuration_file = arg;
+        break;
     default:
         return ARGP_ERR_UNKNOWN;
     }

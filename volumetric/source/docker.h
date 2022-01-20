@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/18/2022
+// LAST EDITED:     01/19/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -35,8 +35,9 @@ Docker* docker_proxy_new();
 void docker_proxy_free(Docker* proxy);
 
 typedef struct DockerVolume {
-    char* name;
-    char* driver;
+    const char* name;
+    const char* driver;
+    const char* mountpoint;
 } DockerVolume;
 
 enum {
@@ -67,12 +68,12 @@ enum {
 int docker_volume_create(Docker* proxy, const char* name, const char* driver);
 
 // The visitor method should return one of the VISITOR_* constants above.
-int docker_volume_list(Docker* proxy, int (*visitor)(DockerVolume*, void*),
-    void* user_data);
+int docker_volume_list(Docker* proxy,
+    int (*visitor)(const DockerVolume*, void*), void* user_data);
 
 // These two methods don't currently have an implementation.
 int docker_volume_inspect(Docker* proxy, const char* name,
-    void (*visitor)(DockerVolume*));
+    void (*visitor)(const DockerVolume*));
 int docker_volume_remove(Docker* proxy, const char* name);
 
 #endif // VOLUMETRIC_DOCKER_H

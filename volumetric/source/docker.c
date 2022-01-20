@@ -7,7 +7,7 @@
 //
 // CREATED:         01/18/2022
 //
-// LAST EDITED:     01/18/2022
+// LAST EDITED:     01/19/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -42,12 +42,14 @@
 
 typedef struct Docker {
     CURL* curl;
+
+    json_tokener* tokener;
+    json_object* object;
+
     union {
         // Data for the list call.
         struct {
-            json_tokener* tokener;
-            json_object* object;
-            int (*visitor)(DockerVolume*, void*);
+            int (*visitor)(const DockerVolume*, void*);
             void* visitor_data;
         } list;
     };
@@ -55,36 +57,43 @@ typedef struct Docker {
 
 static const char* DOCKER_SOCK_PATH = "/var/run/docker.sock";
 
-static size_t priv_curl_list(void* buffer, size_t size __attribute__((unused)),
-    size_t nmemb, void* user_data)
+static size_t copy_data_from_curl_response(void* buffer,
+    size_t size __attribute__((unused)), size_t nmemb, void* user_data)
 {
     Docker* docker = (Docker*)user_data;
-    docker->list.object = json_tokener_parse_ex(docker->list.tokener, buffer,
-        nmemb);
-    enum json_tokener_error error = json_tokener_get_error(
-        docker->list.tokener);
-    if (NULL == docker->list.object && json_tokener_continue != error) {
+    docker->object = json_tokener_parse_ex(docker->tokener, buffer, nmemb);
+    enum json_tokener_error error = json_tokener_get_error(docker->tokener);
+    if (NULL == docker->object && json_tokener_continue != error) {
         return 0;
     }
 
     return nmemb;
 }
 
-static int priv_visit_list(json_object* object, int flags, json_object* parent,
-    const char* key, size_t* index, void* user_data)
-{
-    /* Docker* docker = (Docker*)user_data; */
-    printf("visit: %d", flags & JSON_C_VISIT_SECOND);
-    if (NULL != key) {
-        printf(",key=%s", key);
+static int invoke_visitor_for_volume(Docker* docker, json_object* object) {
+    struct json_object_iterator iter = json_object_iter_begin(object);
+    struct json_object_iterator end = json_object_iter_end(object);
+
+    DockerVolume volume = {0};
+    while (!json_object_iter_equal(&iter, &end)) {
+        const char* key = json_object_iter_peek_name(&iter);
+        json_object* value = json_object_iter_peek_value(&iter);
+
+        if (!strcmp("Name", key)) {
+            volume.name = json_object_to_json_string_ext(value,
+                JSON_C_TO_STRING_NOSLASHESCAPE);
+        } else if (!strcmp("Driver", key)) {
+            volume.driver = json_object_to_json_string_ext(value,
+                JSON_C_TO_STRING_NOSLASHESCAPE);
+        } else if (!strcmp("Mountpoint", key)) {
+            volume.mountpoint = json_object_to_json_string_ext(value,
+                JSON_C_TO_STRING_NOSLASHESCAPE);
+        }
+
+        json_object_iter_next(&iter);
     }
 
-    if (NULL != index) {
-        printf(",index=%zu", *index);
-    }
-
-    printf("\n");
-    return 0;
+    return docker->list.visitor(&volume, docker->list.visitor_data);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -109,44 +118,71 @@ void docker_proxy_free(Docker* docker) {
 
 int docker_volume_create(Docker* proxy, const char* name, const char* driver);
 
-int docker_volume_list(Docker* docker, int (*visitor)(DockerVolume*, void*),
-    void* user_data)
+int docker_volume_list(Docker* docker,
+    int (*visitor)(const DockerVolume*, void*), void* user_data)
 {
-    docker->list.tokener = json_tokener_new();
+    docker->tokener = json_tokener_new();
     docker->list.visitor = visitor;
     docker->list.visitor_data = user_data;
 
     curl_easy_setopt(docker->curl, CURLOPT_URL, "http://localhost/volumes");
-    curl_easy_setopt(docker->curl, CURLOPT_WRITEFUNCTION, priv_curl_list);
+    curl_easy_setopt(docker->curl, CURLOPT_WRITEFUNCTION,
+        copy_data_from_curl_response);
     curl_easy_setopt(docker->curl, CURLOPT_WRITEDATA, docker);
-    CURLcode response = curl_easy_perform(docker->curl);
+
+    char error_buffer[CURL_ERROR_SIZE] = {0};
+    curl_easy_setopt(docker->curl, CURLOPT_ERRORBUFFER, error_buffer);
+
+    CURLcode response = CURLE_OK;
+    response = curl_easy_perform(docker->curl);
     int result = 0;
+
+    // Check that CURL is happy
     if (CURLE_OK != response) {
-        fprintf(stderr, "Couldn't enumerate docker volumes: %s\n",
-            curl_easy_strerror(response));
+        fprintf(stderr, "%s:%d:Couldn't connect to docker daemon: %s (%s)\n",
+            __FILE__, __LINE__, error_buffer, curl_easy_strerror(response));
         result = -EINVAL;
         goto error;
     }
 
-    if (NULL != docker->list.object) {
+    // Check that the docker daemon returned a valid JSON object
+    if (NULL == docker->object) {
         enum json_tokener_error error = json_tokener_get_error(
-            docker->list.tokener);
-        fprintf(stderr, "Couldn't enumerate docker volumes: %s\n",
-            json_tokener_error_desc(error));
+            docker->tokener);
+        fprintf(stderr, "%s:%d:Couldn't enumerate docker volumes: %s\n",
+            __FILE__, __LINE__, json_tokener_error_desc(error));
         result = -EINVAL;
         goto error;
     }
 
-    json_c_visit(docker->list.object, 0, priv_visit_list, docker);
+    // Check whether the response was an error message
+    json_object* volumes = json_object_object_get(docker->object, "Volumes");
+    if (NULL == volumes) {
+        json_object* message = json_object_object_get(docker->object,
+            "message");
+        fprintf(stderr, "%s:%d:Docker daemon says: %s\n", __FILE__, __LINE__,
+            json_object_get_string(message));
+        result = -EINVAL;
+        goto error;
+    }
+
+    int array_length = json_object_array_length(volumes);
+    for (int i = 0; i < array_length; ++i) {
+        json_object* volume = json_object_array_get_idx(volumes, i);
+        int callback_result = invoke_visitor_for_volume(docker, volume);
+        if (DOCKER_VISITOR_STOP == callback_result) {
+            break;
+        }
+    }
 
  error:
-    json_tokener_free(docker->list.tokener);
+    json_tokener_free(docker->tokener);
     return result;
 }
 
 // Currently no use case for these?
 int docker_volume_inspect(Docker* proxy, const char* name,
-    void (*visitor)(DockerVolume*));
+    void (*visitor)(const DockerVolume*));
 int docker_volume_remove(Docker* proxy, const char* name);
 
 ///////////////////////////////////////////////////////////////////////////////
