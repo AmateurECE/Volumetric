@@ -7,7 +7,7 @@
 //
 // CREATED:         01/18/2022
 //
-// LAST EDITED:     01/19/2022
+// LAST EDITED:     01/20/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -96,36 +96,8 @@ static int invoke_visitor_for_volume(Docker* docker, json_object* object) {
     return docker->list.visitor(&volume, docker->list.visitor_data);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Public API
-////
-
-Docker* docker_proxy_new() {
-    Docker* docker = malloc(sizeof(Docker));
-    if (NULL == docker) {
-        return NULL;
-    }
-
-    memset(docker, 0, sizeof(Docker));
-    docker->curl = curl_easy_init();
-    curl_easy_setopt(docker->curl, CURLOPT_UNIX_SOCKET_PATH, DOCKER_SOCK_PATH);
-    return docker;
-}
-
-void docker_proxy_free(Docker* docker) {
-    free(docker);
-}
-
-int docker_volume_create(Docker* proxy, const char* name, const char* driver);
-
-int docker_volume_list(Docker* docker,
-    int (*visitor)(const DockerVolume*, void*), void* user_data)
-{
-    docker->tokener = json_tokener_new();
-    docker->list.visitor = visitor;
-    docker->list.visitor_data = user_data;
-
-    curl_easy_setopt(docker->curl, CURLOPT_URL, "http://localhost/volumes");
+static int http_get_application_json(Docker* docker, const char* url) {
+    curl_easy_setopt(docker->curl, CURLOPT_URL, url);
     curl_easy_setopt(docker->curl, CURLOPT_WRITEFUNCTION,
         copy_data_from_curl_response);
     curl_easy_setopt(docker->curl, CURLOPT_WRITEDATA, docker);
@@ -151,6 +123,45 @@ int docker_volume_list(Docker* docker,
             docker->tokener);
         fprintf(stderr, "%s:%d:Couldn't enumerate docker volumes: %s\n",
             __FILE__, __LINE__, json_tokener_error_desc(error));
+        result = -EINVAL;
+        goto error;
+    }
+
+ error:
+    return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Public API
+////
+
+Docker* docker_proxy_new() {
+    Docker* docker = malloc(sizeof(Docker));
+    if (NULL == docker) {
+        return NULL;
+    }
+
+    memset(docker, 0, sizeof(Docker));
+    docker->curl = curl_easy_init();
+    curl_easy_setopt(docker->curl, CURLOPT_UNIX_SOCKET_PATH, DOCKER_SOCK_PATH);
+    return docker;
+}
+
+void docker_proxy_free(Docker* docker) {
+    free(docker);
+}
+
+int docker_volume_create(Docker* proxy, const char* name, const char* driver);
+
+int docker_volume_list(Docker* docker,
+    int (*visitor)(const DockerVolume*, void*), void* user_data)
+{
+    int result = 0;
+    docker->tokener = json_tokener_new();
+    docker->list.visitor = visitor;
+    docker->list.visitor_data = user_data;
+    result = http_get_application_json(docker, "http://localhost/volumes");
+    if (0 != result) {
         result = -EINVAL;
         goto error;
     }
