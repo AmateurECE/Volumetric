@@ -57,7 +57,12 @@ static void version_archive_volume(ArchiveVolume* volume, Docker* docker)
     struct VolumeFilter filter = {0};
     filter.name = volume->name;
     docker_volume_list(docker, filter_volume_by_name, &filter);
-    // TODO: The rest of this.
+    if (!filter.found) {
+        // TODO: The rest of this.
+        // Check the hash of the image file
+        // Create the volume
+        // Decompress it to disk.
+    }
 }
 
 static void version_volume(void* key __attribute__((unused)), void* value,

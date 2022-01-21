@@ -7,7 +7,7 @@
 //
 // CREATED:         01/18/2022
 //
-// LAST EDITED:     01/20/2022
+// LAST EDITED:     01/21/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -44,7 +44,9 @@ typedef struct Docker {
     CURL* curl;
 
     json_tokener* tokener;
-    json_object* object;
+    json_object* write_object;
+    const char* read_object;
+    size_t read_object_length;
 
     union {
         // Data for the list call.
@@ -57,13 +59,29 @@ typedef struct Docker {
 
 static const char* DOCKER_SOCK_PATH = "/var/run/docker.sock";
 
+static size_t copy_data_to_curl_request(char* buffer,
+    size_t size __attribute__((unused)), size_t nitems, void* user_data)
+{
+    Docker* docker = (Docker*)user_data;
+    size_t copy_length = docker->read_object_length;
+    if (nitems < copy_length) {
+        copy_length = nitems;
+    }
+
+    memcpy(buffer, docker->read_object, copy_length);
+    docker->read_object += copy_length;
+    docker->read_object_length -= copy_length;
+    return copy_length;
+}
+
 static size_t copy_data_from_curl_response(void* buffer,
     size_t size __attribute__((unused)), size_t nmemb, void* user_data)
 {
     Docker* docker = (Docker*)user_data;
-    docker->object = json_tokener_parse_ex(docker->tokener, buffer, nmemb);
+    docker->write_object = json_tokener_parse_ex(docker->tokener, buffer,
+        nmemb);
     enum json_tokener_error error = json_tokener_get_error(docker->tokener);
-    if (NULL == docker->object && json_tokener_continue != error) {
+    if (NULL == docker->write_object && json_tokener_continue != error) {
         return 0;
     }
 
@@ -118,7 +136,7 @@ static int http_get_application_json(Docker* docker, const char* url) {
     }
 
     // Check that the docker daemon returned a valid JSON object
-    if (NULL == docker->object) {
+    if (NULL == docker->write_object) {
         enum json_tokener_error error = json_tokener_get_error(
             docker->tokener);
         fprintf(stderr, "%s:%d:Couldn't enumerate docker volumes: %s\n",
@@ -129,6 +147,18 @@ static int http_get_application_json(Docker* docker, const char* url) {
 
  error:
     return result;
+}
+
+static int http_post_application_json(Docker* docker, const char* url) {
+    curl_easy_setopt(docker->curl, CURLOPT_POST, 1);
+    curl_easy_setopt(docker->curl, CURLOPT_READFUNCTION,
+        copy_data_to_curl_request);
+    curl_easy_setopt(docker->curl, CURLOPT_READDATA, docker);
+
+    struct curl_slist* headers = NULL;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl_easy_setopt(docker->curl, CURLOPT_HTTPHEADER, headers);
+    return http_get_application_json(docker, url);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -151,7 +181,27 @@ void docker_proxy_free(Docker* docker) {
     free(docker);
 }
 
-int docker_volume_create(Docker* proxy, const char* name, const char* driver);
+int docker_volume_create(Docker* docker, const char* name, const char* driver)
+{
+    // Create json_object for request
+    json_object* request = json_object_new_object();
+    json_object_object_add(request, "Name", json_object_new_string(name));
+    docker->read_object = json_object_get_string(request);
+    docker->read_object_length = strlen(docker->read_object);
+
+    int result = http_post_application_json(docker,
+        "http://localhost/volumes/create");
+    if (0 != result) {
+        result = -EINVAL;
+        goto error;
+    }
+
+    // TODO: Free request json_object
+    // TODO: Read json_object from response?
+
+ error:
+    return result;
+}
 
 int docker_volume_list(Docker* docker,
     int (*visitor)(const DockerVolume*, void*), void* user_data)
@@ -167,9 +217,10 @@ int docker_volume_list(Docker* docker,
     }
 
     // Check whether the response was an error message
-    json_object* volumes = json_object_object_get(docker->object, "Volumes");
+    json_object* volumes = json_object_object_get(docker->write_object,
+        "Volumes");
     if (NULL == volumes) {
-        json_object* message = json_object_object_get(docker->object,
+        json_object* message = json_object_object_get(docker->write_object,
             "message");
         fprintf(stderr, "%s:%d:Docker daemon says: %s\n", __FILE__, __LINE__,
             json_object_get_string(message));
