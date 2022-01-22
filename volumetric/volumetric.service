@@ -1,0 +1,12 @@
+[Unit]
+Description=Versioning System for Docker Volumes
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStart=/usr/bin/volumetric
+Type=oneshot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

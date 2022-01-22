@@ -61,6 +61,7 @@ static void version_archive_volume(ArchiveVolume* config, Docker* docker) {
     docker_volume_list(docker, filter_volume_by_name, &filter);
 
     if (filter.found) {
+        printf("%s: Volume exists, taking no further action.\n", config->name);
         return;
     }
 
