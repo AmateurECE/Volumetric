@@ -43,18 +43,17 @@ libcrypto = dependency('libcrypto')
 executable(
   'volumetric',
   sources: [
-    'source/main.c',
-    'source/configuration.c',
-    'source/volume.c',
-    'source/versioning.c',
-    'source/docker.c',
-    'source/file.c',
-    'source/hash.c',
+    'volumetric/main.c',
+    'volumetric/configuration.c',
+    'volumetric/volume.c',
+    'volumetric/versioning.c',
+    'volumetric/docker.c',
+    'volumetric/file.c',
+    'volumetric/hash.c',
   ],
   c_args: [
     '-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500', '-O0', '-g',
   ],
-  include_directories: ['source'],
   dependencies: [libgobiserde, libglib, libcurl, libjson_c, libcrypto],
   install: true,
 )

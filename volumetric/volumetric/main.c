@@ -7,7 +7,7 @@
 //
 // CREATED:         01/16/2022
 //
-// LAST EDITED:     01/19/2022
+// LAST EDITED:     01/22/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -37,9 +37,9 @@
 #include <gobiserde/yaml.h>
 
 #include <config.h>
-#include <configuration.h>
-#include <versioning.h>
-#include <volume.h>
+#include <volumetric/configuration.h>
+#include <volumetric/versioning.h>
+#include <volumetric/volume.h>
 
 const char* argp_program_version = "volumetric " CONFIG_VERSION;
 const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";

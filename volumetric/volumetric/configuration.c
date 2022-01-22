@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/18/2022
+// LAST EDITED:     01/22/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -32,7 +32,7 @@
 
 #include <gobiserde/yaml.h>
 
-#include <configuration.h>
+#include <volumetric/configuration.h>
 
 const char* CONFIGURATION_CURRENT_VERSION = "1.0";
 

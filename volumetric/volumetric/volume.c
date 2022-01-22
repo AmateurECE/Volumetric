@@ -31,8 +31,8 @@
 #include <glib-2.0/glib.h>
 #include <gobiserde/yaml.h>
 
-#include <hash.h>
-#include <volume.h>
+#include <volumetric/hash.h>
+#include <volumetric/volume.h>
 
 const char* VOLUME_SCHEMA_VERSION = "1.0";
 

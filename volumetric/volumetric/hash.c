@@ -30,7 +30,7 @@
 
 #include <openssl/evp.h>
 
-#include <hash.h>
+#include <volumetric/hash.h>
 
 typedef bool HashCheckerFn(void*, size_t, unsigned char*, size_t);
 

@@ -35,7 +35,7 @@
 #include <json-c/json_tokener.h>
 #include <json-c/json_visit.h>
 
-#include <docker.h>
+#include <volumetric/docker.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Private API

@@ -32,11 +32,11 @@
 #include <glib-2.0/glib.h>
 #include <gobiserde/yaml.h>
 
-#include <docker.h>
-#include <file.h>
-#include <hash.h>
-#include <versioning.h>
-#include <volume.h>
+#include <volumetric/docker.h>
+#include <volumetric/file.h>
+#include <volumetric/hash.h>
+#include <volumetric/versioning.h>
+#include <volumetric/volume.h>
 
 struct VolumeFilter {
     const char* name;
