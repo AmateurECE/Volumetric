@@ -25,6 +25,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -45,8 +46,9 @@ typedef struct Docker {
 
     json_tokener* tokener;
     json_object* write_object;
-    const char* read_object;
+    char* read_object;
     size_t read_object_length;
+    size_t read_object_index;
 
     union {
         // Data for the list call.
@@ -59,18 +61,45 @@ typedef struct Docker {
 
 static const char* DOCKER_SOCK_PATH = "/var/run/docker.sock";
 
+static void docker_volume_free_impl(DockerVolume* volume, bool free_container)
+{
+    if (NULL != volume->name) { free(volume->name); }
+    if (NULL != volume->driver) { free(volume->driver); }
+    if (NULL != volume->mountpoint) { free(volume->mountpoint); }
+    if (free_container) { free(volume); }
+}
+
+static int http_encode(json_object* object, char** string, size_t* length) {
+    const char* string_value = json_object_to_json_string_ext(object,
+        JSON_C_TO_STRING_NOSLASHESCAPE);
+    *length = strlen(string_value) + 2; // For "\r\n"
+    *string = malloc(*length + 1);
+    if (NULL == *string) {
+        fprintf(stderr, "%s:%d: Couldn't allocate memory: %s\n", __FILE__,
+            __LINE__, strerror(errno));
+        return -ENOMEM;
+    }
+
+    memset(*string, 0, *length + 1);
+    strcat(*string, string_value);
+    strcat(*string, "\r\n");
+    (*string)[*length] = '\0';
+    return 0;
+}
+
 static size_t copy_data_to_curl_request(char* buffer,
     size_t size __attribute__((unused)), size_t nitems, void* user_data)
 {
     Docker* docker = (Docker*)user_data;
-    size_t copy_length = docker->read_object_length;
+    size_t copy_length = docker->read_object_length
+        - docker->read_object_index;
     if (nitems < copy_length) {
         copy_length = nitems;
     }
 
-    memcpy(buffer, docker->read_object, copy_length);
-    docker->read_object += copy_length;
-    docker->read_object_length -= copy_length;
+    memcpy(buffer, docker->read_object + docker->read_object_index,
+        copy_length);
+    docker->read_object_index += copy_length;
     return copy_length;
 }
 
@@ -88,37 +117,47 @@ static size_t copy_data_from_curl_response(void* buffer,
     return nmemb;
 }
 
-static int invoke_visitor_for_volume(Docker* docker, json_object* object) {
+static void populate_docker_volume_from_json(DockerVolume* volume,
+    json_object* object)
+{
     struct json_object_iterator iter = json_object_iter_begin(object);
     struct json_object_iterator end = json_object_iter_end(object);
 
-    DockerVolume volume = {0};
     while (!json_object_iter_equal(&iter, &end)) {
         const char* key = json_object_iter_peek_name(&iter);
         json_object* value = json_object_iter_peek_value(&iter);
 
         if (!strcmp("Name", key)) {
-            volume.name = json_object_to_json_string_ext(value,
-                JSON_C_TO_STRING_NOSLASHESCAPE);
+            volume->name = strdup(json_object_to_json_string_ext(value,
+                    JSON_C_TO_STRING_NOSLASHESCAPE));
         } else if (!strcmp("Driver", key)) {
-            volume.driver = json_object_to_json_string_ext(value,
-                JSON_C_TO_STRING_NOSLASHESCAPE);
+            volume->driver = strdup(json_object_to_json_string_ext(value,
+                    JSON_C_TO_STRING_NOSLASHESCAPE));
         } else if (!strcmp("Mountpoint", key)) {
-            volume.mountpoint = json_object_to_json_string_ext(value,
-                JSON_C_TO_STRING_NOSLASHESCAPE);
+            volume->mountpoint = strdup(json_object_to_json_string_ext(value,
+                    JSON_C_TO_STRING_NOSLASHESCAPE));
         }
 
         json_object_iter_next(&iter);
     }
+}
 
-    return docker->list.visitor(&volume, docker->list.visitor_data);
+static int invoke_visitor_for_volume(Docker* docker, json_object* object) {
+    DockerVolume volume = {0};
+    populate_docker_volume_from_json(&volume, object);
+
+    int result = docker->list.visitor(&volume, docker->list.visitor_data);
+    docker_volume_free_impl(&volume, false);
+    return result;
 }
 
 static int http_get_application_json(Docker* docker, const char* url) {
+    docker->tokener = json_tokener_new();
     curl_easy_setopt(docker->curl, CURLOPT_URL, url);
     curl_easy_setopt(docker->curl, CURLOPT_WRITEFUNCTION,
         copy_data_from_curl_response);
     curl_easy_setopt(docker->curl, CURLOPT_WRITEDATA, docker);
+    curl_easy_setopt(docker->curl, CURLOPT_VERBOSE, 1);
 
     char error_buffer[CURL_ERROR_SIZE] = {0};
     curl_easy_setopt(docker->curl, CURLOPT_ERRORBUFFER, error_buffer);
@@ -146,6 +185,7 @@ static int http_get_application_json(Docker* docker, const char* url) {
     }
 
  error:
+    json_tokener_free(docker->tokener);
     return result;
 }
 
@@ -178,36 +218,48 @@ Docker* docker_proxy_new() {
 }
 
 void docker_proxy_free(Docker* docker) {
+    curl_easy_cleanup(docker->curl);
     free(docker);
 }
 
-int docker_volume_create(Docker* docker, const char* name, const char* driver)
-{
+DockerVolume* docker_volume_create(Docker* docker, const char* name) {
     // Create json_object for request
     json_object* request = json_object_new_object();
     json_object_object_add(request, "Name", json_object_new_string(name));
-    docker->read_object = json_object_get_string(request);
-    docker->read_object_length = strlen(docker->read_object);
-
-    int result = http_post_application_json(docker,
-        "http://localhost/volumes/create");
-    if (0 != result) {
-        result = -EINVAL;
+    docker->read_object = NULL;
+    if (0 != http_encode(request, &docker->read_object,
+            &docker->read_object_length)) {
         goto error;
     }
 
-    // TODO: Free request json_object
-    // TODO: Read json_object from response?
+    docker->read_object_index = 0;
+    int result = http_post_application_json(docker,
+        "http://localhost/volumes/create");
+    json_object_put(request);
+    free(docker->read_object);
+    if (0 != result) {
+        goto error;
+    }
 
+
+    // Read json_object from response
+    DockerVolume* volume = malloc(sizeof(DockerVolume));
+    if (NULL == volume) {
+        fprintf(stderr, "%s:%d: Failed to initialize memory for volume: %s\n",
+            __FILE__, __LINE__, strerror(errno));
+        goto error;
+    }
+
+    populate_docker_volume_from_json(volume, docker->write_object);
+    return volume;
  error:
-    return result;
+    return NULL;
 }
 
 int docker_volume_list(Docker* docker,
     int (*visitor)(const DockerVolume*, void*), void* user_data)
 {
     int result = 0;
-    docker->tokener = json_tokener_new();
     docker->list.visitor = visitor;
     docker->list.visitor_data = user_data;
     result = http_get_application_json(docker, "http://localhost/volumes");
@@ -238,9 +290,11 @@ int docker_volume_list(Docker* docker,
     }
 
  error:
-    json_tokener_free(docker->tokener);
     return result;
 }
+
+void docker_volume_free(DockerVolume* volume)
+{ docker_volume_free_impl(volume, true); }
 
 // Currently no use case for these?
 int docker_volume_inspect(Docker* proxy, const char* name,

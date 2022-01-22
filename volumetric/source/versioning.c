@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/19/2022
+// LAST EDITED:     01/21/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -52,16 +52,25 @@ static int filter_volume_by_name(const DockerVolume* volume, void* user_data)
     return DOCKER_VISITOR_CONTINUE;
 }
 
-static void version_archive_volume(ArchiveVolume* volume, Docker* docker)
+static void version_archive_volume(ArchiveVolume* config, Docker* docker)
 {
     struct VolumeFilter filter = {0};
-    filter.name = volume->name;
+    filter.name = config->name;
     docker_volume_list(docker, filter_volume_by_name, &filter);
     if (!filter.found) {
-        // TODO: The rest of this.
-        // Check the hash of the image file
+        // TODO: Check the hash of the image file
+
         // Create the volume
-        // Decompress it to disk.
+        DockerVolume* volume = docker_volume_create(docker, config->name);
+        if (NULL == volume) {
+            return;
+        }
+
+        printf("Mountpoint: %s\n", volume->mountpoint);
+
+        // TODO: Decompress it to disk.
+
+        docker_volume_free(volume);
     }
 }
 
