@@ -25,7 +25,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-project('volumetric', 'c', version: '0.1.0')
+project('volumetric', 'c', version: '0.1.1')
 
 config_data = configuration_data({
   'version': meson.project_version(),
