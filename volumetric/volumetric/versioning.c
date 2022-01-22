@@ -33,6 +33,7 @@
 #include <gobiserde/yaml.h>
 
 #include <volumetric/docker.h>
+#include <volumetric/extract.h>
 #include <volumetric/file.h>
 #include <volumetric/hash.h>
 #include <volumetric/versioning.h>
@@ -54,39 +55,42 @@ static int filter_volume_by_name(const DockerVolume* volume, void* user_data)
     return DOCKER_VISITOR_CONTINUE;
 }
 
-static void version_archive_volume(ArchiveVolume* config, Docker* docker)
-{
+static void version_archive_volume(ArchiveVolume* config, Docker* docker) {
     struct VolumeFilter filter = {0};
     filter.name = config->name;
     docker_volume_list(docker, filter_volume_by_name, &filter);
-    if (!filter.found) {
-        // Download the file to mapped memory
-        FileContents file = {0};
-        file_contents_init(&file, config->url);
 
-        // Hash the contents of the file (in memory) to verify against config
-        printf("Checking hash of file %s\n", config->url);
-        if (!check_hash_of_memory(file.contents, file.size, config->hash))
-        {
-            fprintf(stderr, "Error: Hash mismatch for file %s\n", config->url);
-            return;
-        }
-
-        // Create the volume
-        printf("Initializing Docker volume\n");
-        DockerVolume* volume = docker_volume_create(docker, config->name);
-        if (NULL == volume) {
-            file_contents_release(&file);
-            return;
-        }
-
-        printf("Mountpoint: %s\n", volume->mountpoint);
-
-        // TODO: Decompress it to disk.
-
-        docker_volume_free(volume);
-        file_contents_release(&file);
+    if (filter.found) {
+        return;
     }
+
+    // Download the file to mapped memory
+    FileContents file = {0};
+    file_contents_init(&file, config->url);
+
+    // Hash the contents of the file (in memory) to verify against config
+    printf("%s: Checking hash of file %s\n", config->name, config->url);
+    if (!check_hash_of_memory(file.contents, file.size, config->hash))
+    {
+        fprintf(stderr, "%s: Error: Hash mismatch for file %s\n", config->name,
+            config->url);
+        return;
+    }
+
+    // Create the volume
+    printf("%s: Initializing Docker volume\n", config->name);
+    DockerVolume* volume = docker_volume_create(docker, config->name);
+    if (NULL == volume) {
+        file_contents_release(&file);
+        return;
+    }
+
+    // Decompress it to disk.
+    printf("%s: Extracting volume archive image to disk\n", config->name);
+    extract_archive_to_disk_generic(&file, volume->mountpoint);
+
+    docker_volume_free(volume);
+    file_contents_release(&file);
 }
 
 static void version_volume(void* key __attribute__((unused)), void* value,

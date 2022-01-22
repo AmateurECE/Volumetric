@@ -128,14 +128,11 @@ static void populate_docker_volume_from_json(DockerVolume* volume,
         json_object* value = json_object_iter_peek_value(&iter);
 
         if (!strcmp("Name", key)) {
-            volume->name = strdup(json_object_to_json_string_ext(value,
-                    JSON_C_TO_STRING_NOSLASHESCAPE));
+            volume->name = strdup(json_object_get_string(value));
         } else if (!strcmp("Driver", key)) {
-            volume->driver = strdup(json_object_to_json_string_ext(value,
-                    JSON_C_TO_STRING_NOSLASHESCAPE));
+            volume->driver = strdup(json_object_get_string(value));
         } else if (!strcmp("Mountpoint", key)) {
-            volume->mountpoint = strdup(json_object_to_json_string_ext(value,
-                    JSON_C_TO_STRING_NOSLASHESCAPE));
+            volume->mountpoint = strdup(json_object_get_string(value));
         }
 
         json_object_iter_next(&iter);

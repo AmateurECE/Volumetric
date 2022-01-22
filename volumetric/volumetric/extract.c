@@ -25,91 +25,113 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+#include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <archive.h>
 #include <archive_entry.h>
 
 #include <volumetric/extract.h>
+#include <volumetric/file.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Private API
 ////
 
-static int copy_data(struct archive *ar, struct archive *aw) {
-    int r;
-    const void *buff;
-    size_t size;
-    la_int64_t offset;
+static int copy_data(struct archive* reader, struct archive* writer) {
+    int result = 0;
+    const void *buff = NULL;
+    size_t size = 0;
+    la_int64_t offset = 0;
 
     for (;;) {
-        r = archive_read_data_block(ar, &buff, &size, &offset);
-        if (r == ARCHIVE_EOF)
-            return (ARCHIVE_OK);
-        if (r < ARCHIVE_OK)
-            return (r);
-        r = archive_write_data_block(aw, buff, size, offset);
-        if (r < ARCHIVE_OK) {
-            fprintf(stderr, "%s\n", archive_error_string(aw));
-            return (r);
+        result = archive_read_data_block(reader, &buff, &size, &offset);
+        if (result == ARCHIVE_EOF)
+            return ARCHIVE_OK;
+        if (result < ARCHIVE_OK)
+            return result;
+
+        result = archive_write_data_block(writer, buff, size, offset);
+        if (result < ARCHIVE_OK) {
+            fprintf(stderr, "%s\n", archive_error_string(writer));
+            return result;
         }
     }
+}
+
+static void prepend_directory_path(const char* directory,
+    struct archive_entry* entry)
+{
+    const char* current_path = archive_entry_pathname(entry);
+    size_t directory_length = strlen(directory);
+    size_t path_length = directory_length + 1 + strlen(current_path);
+    char* new_path = malloc(path_length + 1);
+    assert(NULL != new_path);
+
+    memset(new_path, 0, path_length + 1);
+    strcat(new_path, directory);
+    new_path[directory_length] = '/';
+    strcat(new_path, current_path);
+    new_path[path_length] = '\0';
+
+    archive_entry_set_pathname(entry, new_path);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Public API
 ////
 
-void extract_archive_to_disk_generic(const char *filename) {
-    struct archive *a;
-    struct archive *ext;
-    struct archive_entry *entry;
-    int flags;
-    int r;
-
+void extract_archive_to_disk_generic(const FileContents* file,
+    const char* location)
+{
     /* Select which attributes we want to restore. */
-    flags = ARCHIVE_EXTRACT_TIME;
-    flags |= ARCHIVE_EXTRACT_PERM;
-    flags |= ARCHIVE_EXTRACT_ACL;
-    flags |= ARCHIVE_EXTRACT_FFLAGS;
+    int flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM
+        | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
 
-    a = archive_read_new();
-    archive_read_support_format_all(a);
-    archive_read_support_compression_all(a);
-    ext = archive_write_disk_new();
-    archive_write_disk_set_options(ext, flags);
-    archive_write_disk_set_standard_lookup(ext);
-    if ((r = archive_read_open_filename(a, filename, 10240)))
-        exit(1);
+    struct archive* read_archive = archive_read_new();
+    archive_read_support_format_all(read_archive);
+    archive_read_support_filter_all(read_archive);
+    struct archive* extractor = archive_write_disk_new();
+    archive_write_disk_set_options(extractor, flags);
+    archive_write_disk_set_standard_lookup(extractor);
+
+    int result = archive_read_open_memory(read_archive, file->contents,
+        file->size);
+    assert(0 == result);
+
+    struct archive_entry *entry = NULL;
     for (;;) {
-        r = archive_read_next_header(a, &entry);
-        if (r == ARCHIVE_EOF)
+
+        result = archive_read_next_header(read_archive, &entry);
+        if (result == ARCHIVE_EOF)
             break;
-        if (r < ARCHIVE_OK)
-            fprintf(stderr, "%s\n", archive_error_string(a));
-        if (r < ARCHIVE_WARN)
-            exit(1);
-        r = archive_write_header(ext, entry);
-        if (r < ARCHIVE_OK)
-            fprintf(stderr, "%s\n", archive_error_string(ext));
-        else if (archive_entry_size(entry) > 0) {
-            r = copy_data(a, ext);
-            if (r < ARCHIVE_OK)
-                fprintf(stderr, "%s\n", archive_error_string(ext));
-            if (r < ARCHIVE_WARN)
-                exit(1);
+        if (result < ARCHIVE_OK)
+            fprintf(stderr, "%s\n", archive_error_string(read_archive));
+        assert(ARCHIVE_WARN <= result);
+
+        prepend_directory_path(location, entry);
+
+        result = archive_write_header(extractor, entry);
+        if (result < ARCHIVE_OK) {
+            fprintf(stderr, "%s\n", archive_error_string(extractor));
+        } else if (archive_entry_size(entry) > 0) {
+            result = copy_data(read_archive, extractor);
+            if (result < ARCHIVE_OK)
+                fprintf(stderr, "%s\n", archive_error_string(extractor));
+            assert(ARCHIVE_WARN <= result);
         }
-        r = archive_write_finish_entry(ext);
-        if (r < ARCHIVE_OK)
-            fprintf(stderr, "%s\n", archive_error_string(ext));
-        if (r < ARCHIVE_WARN)
-            exit(1);
+
+        result = archive_write_finish_entry(extractor);
+        if (result < ARCHIVE_OK)
+            fprintf(stderr, "%s\n", archive_error_string(extractor));
+        assert(ARCHIVE_WARN <= result);
     }
-    archive_read_close(a);
-    archive_read_free(a);
-    archive_write_close(ext);
-    archive_write_free(ext);
-    exit(0);
+
+    archive_read_close(read_archive);
+    archive_read_free(read_archive);
+    archive_write_close(extractor);
+    archive_write_free(extractor);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

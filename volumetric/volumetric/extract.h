@@ -28,7 +28,10 @@
 #ifndef VOLUMETRIC_EXTRACT_H
 #define VOLUMETRIC_EXTRACT_H
 
-void extract_archive_to_disk_generic(const char* filename);
+typedef struct FileContents FileContents;
+
+void extract_archive_to_disk_generic(const FileContents* file,
+    const char* location);
 
 #endif // VOLUMETRIC_EXTRACT_H
 
