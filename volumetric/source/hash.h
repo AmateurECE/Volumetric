@@ -32,7 +32,19 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-bool check_md5_hash_of_memory(void* buffer, size_t length, const char* hash);
+typedef enum FileHashType {
+    FILE_HASH_TYPE_INVALID,
+    FILE_HASH_TYPE_MD5,
+} FileHashType;
+
+typedef struct FileHash {
+    FileHashType type;
+    char* hash_string;
+} FileHash;
+
+FileHashType string_to_file_hash_type(const char* string);
+
+bool check_hash_of_memory(void* buffer, size_t length, const FileHash* hash);
 
 #endif // VOLUMETRIC_HASH_H
 

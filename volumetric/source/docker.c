@@ -7,7 +7,7 @@
 //
 // CREATED:         01/18/2022
 //
-// LAST EDITED:     01/21/2022
+// LAST EDITED:     01/22/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -157,7 +157,6 @@ static int http_get_application_json(Docker* docker, const char* url) {
     curl_easy_setopt(docker->curl, CURLOPT_WRITEFUNCTION,
         copy_data_from_curl_response);
     curl_easy_setopt(docker->curl, CURLOPT_WRITEDATA, docker);
-    curl_easy_setopt(docker->curl, CURLOPT_VERBOSE, 1);
 
     char error_buffer[CURL_ERROR_SIZE] = {0};
     curl_easy_setopt(docker->curl, CURLOPT_ERRORBUFFER, error_buffer);

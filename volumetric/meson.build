@@ -7,7 +7,7 @@
 #
 # CREATED:          01/16/2022
 #
-# LAST EDITED:      01/21/2022
+# LAST EDITED:      01/22/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -38,6 +38,7 @@ libgobiserde = dependency('libgobiserde')
 libglib = dependency('glib-2.0')
 libcurl = dependency('libcurl')
 libjson_c = dependency('json-c')
+libcrypto = dependency('libcrypto')
 
 executable(
   'volumetric',
@@ -54,7 +55,7 @@ executable(
     '-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500', '-O0', '-g',
   ],
   include_directories: ['source'],
-  dependencies: [libgobiserde, libglib, libcurl, libjson_c],
+  dependencies: [libgobiserde, libglib, libcurl, libjson_c, libcrypto],
   install: true,
 )
 

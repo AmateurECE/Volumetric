@@ -1,0 +1,3 @@
+* Rearrange codebase by concern--put all Archive logic into one file (that is,
+  serialization, versioning, etc.)
+* Totally refactor Docker interface to provide iterators and cleaner operations

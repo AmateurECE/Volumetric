@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/17/2022
+// LAST EDITED:     01/22/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -30,6 +30,7 @@
 
 typedef struct _GHashTable GHashTable;
 typedef struct yaml_deserializer yaml_deserializer;
+typedef struct FileHash FileHash;
 
 // A volume file currently looks like this:
 // version: '1.0'
@@ -46,7 +47,7 @@ typedef struct yaml_deserializer yaml_deserializer;
 typedef struct ArchiveVolume {
     char* name;
     char* url;
-    char* hash;
+    FileHash* hash;
 } ArchiveVolume;
 
 typedef enum VolumeType {

@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/18/2022
+// LAST EDITED:     01/22/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -25,11 +25,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+#include <assert.h>
 #include <errno.h>
 
 #include <glib-2.0/glib.h>
 #include <gobiserde/yaml.h>
 
+#include <hash.h>
 #include <volume.h>
 
 const char* VOLUME_SCHEMA_VERSION = "1.0";
@@ -42,10 +44,16 @@ int archive_volume_visit_map(yaml_deserializer* yaml, void* user_data,
         return gobiserde_yaml_deserialize_string(yaml, &volume->name);
     } else if (!strcmp("url", key)) {
         return gobiserde_yaml_deserialize_string(yaml, &volume->url);
-    } else if (!strcmp("hash", key)) {
-        return gobiserde_yaml_deserialize_string(yaml, &volume->hash);
     } else {
-        return -EINVAL;
+        FileHashType hash_type = string_to_file_hash_type(key);
+        if (FILE_HASH_TYPE_INVALID == hash_type) {
+            return -EINVAL;
+        }
+        volume->hash = malloc(sizeof(FileHash));
+        assert(NULL != volume->hash);
+        volume->hash->type = hash_type;
+        return gobiserde_yaml_deserialize_string(yaml,
+            &volume->hash->hash_string);
     }
 }
 

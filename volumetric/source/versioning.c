@@ -65,12 +65,15 @@ static void version_archive_volume(ArchiveVolume* config, Docker* docker)
         file_contents_init(&file, config->url);
 
         // Hash the contents of the file (in memory) to verify against config
-        if (!check_md5_hash_of_memory(file.contents, file.size, config->hash))
+        printf("Checking hash of file %s\n", config->url);
+        if (!check_hash_of_memory(file.contents, file.size, config->hash))
         {
+            fprintf(stderr, "Error: Hash mismatch for file %s\n", config->url);
             return;
         }
 
         // Create the volume
+        printf("Initializing Docker volume\n");
         DockerVolume* volume = docker_volume_create(docker, config->name);
         if (NULL == volume) {
             file_contents_release(&file);

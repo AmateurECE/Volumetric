@@ -7,7 +7,7 @@
 //
 // CREATED:         01/21/2022
 //
-// LAST EDITED:     01/21/2022
+// LAST EDITED:     01/22/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -30,6 +30,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -109,6 +110,8 @@ static int init_callbacks_for_scheme(FileContents* file, const char* path) {
 // Open the file at <path> and fill the memory buffer with its contents
 int file_contents_init(FileContents* file, const char* path) {
     memset(file, 0, sizeof(FileContents));
+    file->file = malloc(sizeof(MemoryMappedFile));
+    assert(NULL != file->file);
     assert(0 == init_callbacks_for_scheme(file, path));
 
     file->file->open(file, path);
@@ -117,6 +120,6 @@ int file_contents_init(FileContents* file, const char* path) {
 
 // Release memory held by this object.
 void file_contents_release(FileContents* file)
-{ file->file->close(file); }
+{ file->file->close(file); free(file->file); }
 
 ///////////////////////////////////////////////////////////////////////////////
