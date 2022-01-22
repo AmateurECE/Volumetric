@@ -39,6 +39,7 @@ libglib = dependency('glib-2.0')
 libcurl = dependency('libcurl')
 libjson_c = dependency('json-c')
 libcrypto = dependency('libcrypto')
+libarchive = dependency('libarchive')
 
 executable(
   'volumetric',
@@ -50,11 +51,14 @@ executable(
     'volumetric/docker.c',
     'volumetric/file.c',
     'volumetric/hash.c',
+    'volumetric/extract.c',
   ],
   c_args: [
     '-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500', '-O0', '-g',
   ],
-  dependencies: [libgobiserde, libglib, libcurl, libjson_c, libcrypto],
+  dependencies: [
+    libgobiserde, libglib, libcurl, libjson_c, libcrypto, libarchive,
+  ],
   install: true,
 )
 
