@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/21/2022
+// LAST EDITED:     01/22/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -33,6 +33,8 @@
 #include <gobiserde/yaml.h>
 
 #include <docker.h>
+#include <file.h>
+#include <hash.h>
 #include <versioning.h>
 #include <volume.h>
 
@@ -58,11 +60,20 @@ static void version_archive_volume(ArchiveVolume* config, Docker* docker)
     filter.name = config->name;
     docker_volume_list(docker, filter_volume_by_name, &filter);
     if (!filter.found) {
-        // TODO: Check the hash of the image file
+        // Download the file to mapped memory
+        FileContents file = {0};
+        file_contents_init(&file, config->url);
+
+        // Hash the contents of the file (in memory) to verify against config
+        if (!check_md5_hash_of_memory(file.contents, file.size, config->hash))
+        {
+            return;
+        }
 
         // Create the volume
         DockerVolume* volume = docker_volume_create(docker, config->name);
         if (NULL == volume) {
+            file_contents_release(&file);
             return;
         }
 
@@ -71,6 +82,7 @@ static void version_archive_volume(ArchiveVolume* config, Docker* docker)
         // TODO: Decompress it to disk.
 
         docker_volume_free(volume);
+        file_contents_release(&file);
     }
 }
 

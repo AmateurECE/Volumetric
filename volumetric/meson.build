@@ -7,7 +7,7 @@
 #
 # CREATED:          01/16/2022
 #
-# LAST EDITED:      01/18/2022
+# LAST EDITED:      01/21/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -47,6 +47,8 @@ executable(
     'source/volume.c',
     'source/versioning.c',
     'source/docker.c',
+    'source/file.c',
+    'source/hash.c',
   ],
   c_args: [
     '-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500', '-O0', '-g',
