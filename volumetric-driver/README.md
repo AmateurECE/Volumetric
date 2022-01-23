@@ -1,5 +1,0 @@
-# Docker Volume Driver and Status Server
-
-THIS DRIVER IS COMPLETELY EXPERIMENTAL, AND NOT READY FOR PRODUCTION USE
-
-`G_MESSAGES_DEBUG=all ./volumetric-driver`

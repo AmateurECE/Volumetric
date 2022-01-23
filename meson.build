@@ -3,11 +3,11 @@
 #
 # AUTHOR:           Ethan D. Twardy <ethan.twardy@gmail.com>
 #
-# DESCRIPTION:      Build script for the Docker volume driver.
+# DESCRIPTION:      Top-level build script for the project.
 #
-# CREATED:          01/09/2022
+# CREATED:          01/22/2022
 #
-# LAST EDITED:      01/09/2022
+# LAST EDITED:      01/22/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -25,20 +25,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-project('volumetric-driver', 'c', version: '0.1.0')
+project('volumetric', 'c', version: '0.1.1')
 
-libglib = dependency('glib-2.0')
-libsoup3 = dependency('libsoup-3.0')
-
-executable(
-  'volumetric-driver',
-  sources: [
-    'source/main.c',
-  ],
-  c_args: [
-    '--std=c17', '-frecord-gcc-switches',
-  ],
-  dependencies: [libglib, libsoup3],
-)
+subdir('volumetric')
 
 ###############################################################################
