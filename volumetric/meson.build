@@ -61,6 +61,6 @@ executable(
 )
 
 # Install systemd service
-install_data('volumetric.service', install_dir: 'lib/systemd/system')
+install_data('volumetric.service', install_dir: '/lib/systemd/system')
 
 ###############################################################################
