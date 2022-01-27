@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            extract.h
+// NAME:            archive.h
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
@@ -7,7 +7,7 @@
 //
 // CREATED:         01/22/2022
 //
-// LAST EDITED:     01/22/2022
+// LAST EDITED:     01/26/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -25,14 +25,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#ifndef VOLUMETRIC_EXTRACT_H
-#define VOLUMETRIC_EXTRACT_H
+#ifndef VOLUMETRIC_ARCHIVE_H
+#define VOLUMETRIC_ARCHIVE_H
 
 typedef struct FileContents FileContents;
 
-void extract_archive_to_disk_generic(const FileContents* file,
+// Lazy, universal archive extraction routine. Works for all archive files
+// supported by BSD's libarchive.
+void archive_extract_to_disk_universal(const FileContents* file,
     const char* location);
 
-#endif // VOLUMETRIC_EXTRACT_H
+#endif // VOLUMETRIC_ARCHIVE_H
 
 ///////////////////////////////////////////////////////////////////////////////

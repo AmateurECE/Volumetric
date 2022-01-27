@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/22/2022
+// LAST EDITED:     01/26/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -33,7 +33,7 @@
 #include <gobiserde/yaml.h>
 
 #include <volumetric/docker.h>
-#include <volumetric/extract.h>
+#include <volumetric/archive.h>
 #include <volumetric/file.h>
 #include <volumetric/hash.h>
 #include <volumetric/versioning.h>
@@ -88,7 +88,7 @@ static void version_archive_volume(ArchiveVolume* config, Docker* docker) {
 
     // Decompress it to disk.
     printf("%s: Extracting volume archive image to disk\n", config->name);
-    extract_archive_to_disk_generic(&file, volume->mountpoint);
+    archive_extract_to_disk_universal(&file, volume->mountpoint);
 
     docker_volume_free(volume);
     file_contents_release(&file);

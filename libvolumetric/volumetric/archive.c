@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            extract.c
+// NAME:            archive.c
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
@@ -7,7 +7,7 @@
 //
 // CREATED:         01/22/2022
 //
-// LAST EDITED:     01/22/2022
+// LAST EDITED:     01/26/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -32,7 +32,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-#include <volumetric/extract.h>
+#include <volumetric/archive.h>
 #include <volumetric/file.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -82,7 +82,7 @@ static void prepend_directory_path(const char* directory,
 // Public API
 ////
 
-void extract_archive_to_disk_generic(const FileContents* file,
+void archive_extract_to_disk_universal(const FileContents* file,
     const char* location)
 {
     /* Select which attributes we want to restore. */

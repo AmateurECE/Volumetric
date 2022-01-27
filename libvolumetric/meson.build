@@ -43,7 +43,7 @@ libvolumetric = library(
   'volumetric',
   sources: [
     'volumetric/docker.c',
-    'volumetric/extract.c',
+    'volumetric/archive.c',
     'volumetric/file.c',
     'volumetric/hash.c',
     'volumetric/volume.c',
