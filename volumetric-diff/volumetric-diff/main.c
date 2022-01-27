@@ -38,6 +38,7 @@
 
 #include <config.h>
 #include <volumetric/configuration.h>
+#include <volumetric/docker.h>
 #include <volumetric/volume.h>
 
 const char* argp_program_version = "volumetric-diff " CONFIG_VERSION;
@@ -186,9 +187,14 @@ int main(int argc, char** argv) {
         arguments.volume_name, &volume);
     assert(0 == result);
 
-    // TODO: Get volume mountpoint
+    Docker* docker = docker_proxy_new();
+    DockerVolume* live_volume = docker_volume_inspect(docker,
+        volume.archive.name);
+    docker_proxy_free(docker);
+    assert(NULL != live_volume);
 
-    printf("volume.url=%s\n", volume.archive.url);
+    printf("volume.url=%s\nvolume.mountpoint=%s\n", volume.archive.url,
+           live_volume->mountpoint);
 
     volumetric_configuration_release(&config);
     return result;

@@ -7,7 +7,7 @@
 //
 // CREATED:         01/18/2022
 //
-// LAST EDITED:     01/22/2022
+// LAST EDITED:     01/27/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -25,6 +25,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -289,12 +290,42 @@ int docker_volume_list(Docker* docker,
     return result;
 }
 
+DockerVolume* docker_volume_inspect(Docker* docker, const char* name) {
+    static const char* url_base = "http://localhost/volumes/";
+    size_t url_base_length = strlen(url_base);
+    size_t url_length = url_base_length + strlen(name);
+    char* url = malloc(url_length + 1);
+    assert(NULL != url);
+
+    memset(url, 0, url_length + 1);
+    strcat(url, url_base);
+    strcat(url, name);
+
+    int result = http_get_application_json(docker, url);
+    free(url);
+    if (0 != result) {
+        return NULL;
+    }
+
+    // Read json_object from response
+    json_object* message = json_object_object_get(docker->write_object,
+        "message");
+    if (NULL != message) {
+        fprintf(stderr, "%s:%d:Docker daemon says: %s\n", __FILE__, __LINE__,
+            json_object_get_string(message));
+        return NULL;
+    }
+
+    DockerVolume* volume = malloc(sizeof(DockerVolume));
+    assert(NULL != volume);
+    populate_docker_volume_from_json(volume, docker->write_object);
+    return volume;
+}
+
 void docker_volume_free(DockerVolume* volume)
 { docker_volume_free_impl(volume, true); }
 
-// Currently no use case for these?
-int docker_volume_inspect(Docker* proxy, const char* name,
-    void (*visitor)(const DockerVolume*));
+// Currently no use case for this?
 int docker_volume_remove(Docker* proxy, const char* name);
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/21/2022
+// LAST EDITED:     01/27/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -74,9 +74,10 @@ int docker_volume_list(Docker* docker,
 // Release internal memory held by the DockerVolume instance.
 void docker_volume_free(DockerVolume* volume);
 
-// These two methods don't currently have an implementation.
-int docker_volume_inspect(Docker* docker, const char* name,
-    void (*visitor)(const DockerVolume*));
+// Get all the attributes for the Docker volume with the given name.
+DockerVolume* docker_volume_inspect(Docker* docker, const char* name);
+
+// This method currently doesn't have an implementation.
 int docker_volume_remove(Docker* docker, const char* name);
 
 #endif // VOLUMETRIC_DOCKER_H
