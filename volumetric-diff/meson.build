@@ -25,12 +25,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
+libglib = dependency('glib-2.0')
+libgobiserde = dependency('libgobiserde')
+
 executable(
   'volumetric-diff',
   sources: [
     'volumetric-diff/main.c',
   ],
   include_directories: ['../libvolumetric'],
+  dependencies: [libglib, libgobiserde],
   link_with: [libvolumetric],
   install: true,
 )
