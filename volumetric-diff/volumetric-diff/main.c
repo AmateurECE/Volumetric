@@ -7,7 +7,7 @@
 //
 // CREATED:         01/26/2022
 //
-// LAST EDITED:     01/26/2022
+// LAST EDITED:     01/27/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -90,16 +90,18 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
 
 struct VolumeFilter {
     const char* name;
+    Volume* volume;
+    void* key;
     bool found;
 };
 
-static void compare_volume_name(void* key __attribute__((unused)), void* value,
-    void* user_data)
-{
+static void compare_volume_name(void* key, void* value, void* user_data) {
     struct VolumeFilter* filter = (struct VolumeFilter*)user_data;
     Volume* volume = (Volume*)value;
     if (!strcmp(filter->name, volume->archive.name)) {
         filter->found = true;
+        filter->key = key;
+        filter->volume = volume;
     }
 }
 
@@ -114,7 +116,7 @@ static int find_volume_by_name(const char* path, const char* volume_name,
         return errno;
     }
 
-    int result = 0;
+    int result = 1;
     size_t path_length = strlen(path);
     char* whole_path = malloc(path_length + 256);
     if (NULL == whole_path) {
@@ -144,6 +146,8 @@ static int find_volume_by_name(const char* path, const char* volume_name,
         VolumeFile volume_file = {0};
         yaml_deserializer* yaml = gobiserde_yaml_deserializer_new_file(input);
         result = volume_file_deserialize_from_yaml(yaml, &volume_file);
+        gobiserde_yaml_deserializer_free(&yaml);
+        fclose(input);
         if (0 != result) {
             break;
         }
@@ -152,9 +156,12 @@ static int find_volume_by_name(const char* path, const char* volume_name,
         filter.name = volume_name;
         g_hash_table_foreach(volume_file.volumes, compare_volume_name,
             &filter);
-
-        gobiserde_yaml_deserializer_free(&yaml);
-        fclose(input);
+        if (filter.found) {
+            g_hash_table_steal(volume_file.volumes, filter.key);
+            memcpy(volume, filter.volume, sizeof(Volume));
+            result = 0;
+            break;
+        }
     }
 
     free(whole_path);
@@ -172,12 +179,14 @@ int main(int argc, char** argv) {
     VolumetricConfiguration config = {0};
     result = volumetric_configuration_load(arguments.configuration_file,
         &config);
-    assert(result);
+    assert(0 == result);
 
     Volume volume = {0};
     result = find_volume_by_name(config.volume_directory,
         arguments.volume_name, &volume);
-    assert(result);
+    assert(0 == result);
+
+    // TODO: Get volume mountpoint
 
     printf("volume.url=%s\n", volume.archive.url);
 
