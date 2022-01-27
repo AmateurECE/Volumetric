@@ -3,9 +3,9 @@
 #
 # AUTHOR:           Ethan D. Twardy <ethan.twardy@gmail.com>
 #
-# DESCRIPTION:      Project file.
+# DESCRIPTION:      Build script for the volumetric-diff tool
 #
-# CREATED:          01/16/2022
+# CREATED:          01/26/2022
 #
 # LAST EDITED:      01/26/2022
 #
@@ -25,25 +25,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-libglib = dependency('glib-2.0')
-libgobiserde = dependency('libgobiserde')
-
 executable(
-  'volumetric',
+  'volumetric-diff',
   sources: [
-    'volumetric/main.c',
-    'volumetric/versioning.c',
+    'volumetric-diff/main.c',
   ],
-  c_args: [
-    '-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500', '-O0', '-g',
-  ],
-  include_directories: ['../libvolumetric'],
-  dependencies: [libglib, libgobiserde],
-  link_with: [libvolumetric],
   install: true,
 )
-
-# Install systemd service
-install_data('volumetric.service', install_dir: '/lib/systemd/system')
 
 ###############################################################################

@@ -3,9 +3,9 @@
 #
 # AUTHOR:           Ethan D. Twardy <ethan.twardy@gmail.com>
 #
-# DESCRIPTION:      Project file.
+# DESCRIPTION:      Build script for the convenience library.
 #
-# CREATED:          01/16/2022
+# CREATED:          01/26/2022
 #
 # LAST EDITED:      01/26/2022
 #
@@ -25,25 +25,37 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-libglib = dependency('glib-2.0')
-libgobiserde = dependency('libgobiserde')
+config_data = configuration_data({
+  'version': meson.project_version(),
+  'configuration_file': get_option('configuration_file'),
+})
+configure_file(input: 'config.h.in', output: 'config.h',
+               configuration: config_data)
 
-executable(
+libgobiserde = dependency('libgobiserde')
+libglib = dependency('glib-2.0')
+libcurl = dependency('libcurl')
+libjson_c = dependency('json-c')
+libcrypto = dependency('libcrypto')
+libarchive = dependency('libarchive')
+
+libvolumetric = library(
   'volumetric',
   sources: [
-    'volumetric/main.c',
-    'volumetric/versioning.c',
+    'volumetric/docker.c',
+    'volumetric/extract.c',
+    'volumetric/file.c',
+    'volumetric/hash.c',
+    'volumetric/volume.c',
+    'volumetric/configuration.c',
   ],
   c_args: [
     '-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500', '-O0', '-g',
   ],
-  include_directories: ['../libvolumetric'],
-  dependencies: [libglib, libgobiserde],
-  link_with: [libvolumetric],
+  dependencies: [
+    libgobiserde, libglib, libcurl, libjson_c, libcrypto, libarchive,
+  ],
   install: true,
 )
-
-# Install systemd service
-install_data('volumetric.service', install_dir: '/lib/systemd/system')
 
 ###############################################################################
