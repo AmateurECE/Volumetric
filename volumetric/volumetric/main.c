@@ -7,7 +7,7 @@
 //
 // CREATED:         01/16/2022
 //
-// LAST EDITED:     01/22/2022
+// LAST EDITED:     01/26/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -28,13 +28,10 @@
 #include <argp.h>
 #include <dirent.h>
 #include <errno.h>
-#include <libgen.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <gobiserde/yaml.h>
 
 #include <config.h>
 #include <volumetric/configuration.h>
@@ -124,51 +121,6 @@ static int load_volumes(const char* path, int (*load_entry)(FILE*)) {
     return result;
 }
 
-static int load_configuration(const char* config_file,
-    VolumetricConfiguration* config)
-{
-    FILE* input_file = fopen(config_file, "rb");
-    if (NULL == input_file) {
-        print_error("Couldn't open configuration file %s", config_file);
-        return errno;
-    }
-
-    yaml_deserializer* deser = gobiserde_yaml_deserializer_new_file(
-        input_file);
-    int result = volumetric_configuration_deserialize_yaml(deser, config);
-    gobiserde_yaml_deserializer_free(&deser);
-    fclose(input_file);
-
-    if (-PARSE_VERSION_MISMATCH == result) {
-        fprintf(stderr, "Configuration file %s: version mismatch, expected %s",
-            config_file, CONFIGURATION_CURRENT_VERSION);
-    }
-    return result;
-}
-
-static char* get_volume_directory(const char* configuration_file,
-    const char* volume_directory)
-{
-    // See dirname(3). This string is not free'd.
-    char* owned_configuration_file = strdup(configuration_file);
-    char* conf_directory = dirname(owned_configuration_file);
-    size_t path_size = strlen(conf_directory) + 1 + strlen(volume_directory);
-    char* path = malloc(path_size + 1);
-    if (NULL == path) {
-        return NULL;
-    }
-
-    memset(path, 0, path_size + 1);
-    strcat(path, conf_directory);
-    path[strlen(conf_directory)] = '/';
-    strcat(path, volume_directory);
-    path[path_size] = '\0';
-
-    // Memory cleanup
-    free(owned_configuration_file);
-    return path;
-}
-
 static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
 
 int main(int argc, char** argv) {
@@ -178,18 +130,10 @@ int main(int argc, char** argv) {
 
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
     VolumetricConfiguration config = {0};
-    int result = load_configuration(arguments.configuration_file, &config);
+    int result = volumetric_configuration_load(arguments.configuration_file,
+        &config);
     if (0 != result) {
         return result;
-    }
-
-    // Take the path of volume_directory relative to the dirname of
-    // conf_directory, if volume_directory is not an absolute path.
-    if ('/' != config.volume_directory[0]) {
-        char* path = get_volume_directory(arguments.configuration_file,
-            config.volume_directory);
-        free(config.volume_directory);
-        config.volume_directory = path;
     }
 
     result = load_volumes(config.volume_directory, version_volumes_in_file);

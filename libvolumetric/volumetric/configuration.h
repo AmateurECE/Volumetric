@@ -7,7 +7,7 @@
 //
 // CREATED:         01/16/2022
 //
-// LAST EDITED:     01/17/2022
+// LAST EDITED:     01/26/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -59,9 +59,8 @@ typedef enum ParseResult {
 
 extern const char* CONFIGURATION_CURRENT_VERSION;
 
-ParseResult volumetric_configuration_deserialize_yaml(yaml_deserializer* deser,
-    VolumetricConfiguration* config);
-
+ParseResult volumetric_configuration_load(const char* file_path,
+    VolumetricConfiguration* configuration);
 void volumetric_configuration_release(VolumetricConfiguration* config);
 
 #endif // VOLUMETRIC_CONFIGURATION_H

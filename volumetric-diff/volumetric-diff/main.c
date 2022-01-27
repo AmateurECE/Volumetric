@@ -28,17 +28,34 @@
 #include <argp.h>
 #include <config.h>
 
+#include <volumetric/configuration.h>
+
 const char* argp_program_version = "volumetric-diff " CONFIG_VERSION;
 const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";
 static char doc[] = "Check for modifications in live configuration";
 static char args_doc[] = "VOLUME_NAME";
 static const int NUMBER_OF_ARGS = 1;
-static struct argp_option options[] = {{ 0 },};
-struct arguments { const char* volume_name; };
+static struct argp_option options[] = {
+    {"config", 'c', "FILE", 0,
+     "Read configuration file FILE instead of default ("
+     CONFIG_CONFIGURATION_FILE ")", 0},
+    { 0 },
+};
+
+static const char* CONFIGURATION_FILE = CONFIG_CONFIGURATION_FILE;
+
+struct arguments {
+    const char* volume_name;
+    const char* configuration_file;
+};
 
 static error_t parse_opt(int key, char* arg, struct argp_state* state) {
     struct arguments* arguments = state->input;
     switch (key) {
+    case 'c':
+        arguments->configuration_file = arg;
+        break;
+
     case ARGP_KEY_ARG:
         if (state->arg_num >= NUMBER_OF_ARGS) {
             argp_usage(state);
@@ -64,7 +81,18 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
 static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
 int main(int argc, char** argv) {
     struct arguments arguments = {0};
+    arguments.configuration_file = CONFIGURATION_FILE;
+
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
+    VolumetricConfiguration config = {0};
+    int result = volumetric_configuration_load(arguments.configuration_file,
+        &config);
+    if (0 != result) {
+        return result;
+    }
+
+    volumetric_configuration_release(&config);
+    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -31,6 +31,7 @@ executable(
     'volumetric-diff/main.c',
   ],
   include_directories: ['../libvolumetric'],
+  link_with: [libvolumetric],
   install: true,
 )
 
