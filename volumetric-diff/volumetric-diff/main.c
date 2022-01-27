@@ -25,10 +25,46 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
-#include <stdio.h>
+#include <argp.h>
+#include <config.h>
 
-int main() {
-    printf("Hello, volumetric\n");
+const char* argp_program_version = "volumetric-diff " CONFIG_VERSION;
+const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";
+static char doc[] = "Check for modifications in live configuration";
+static char args_doc[] = "VOLUME_NAME";
+static const int NUMBER_OF_ARGS = 1;
+static struct argp_option options[] = {{ 0 },};
+struct arguments { const char* volume_name; };
+
+static error_t parse_opt(int key, char* arg, struct argp_state* state) {
+    struct arguments* arguments = state->input;
+    switch (key) {
+    case ARGP_KEY_ARG:
+        if (state->arg_num >= NUMBER_OF_ARGS) {
+            argp_usage(state);
+        }
+
+        arguments->volume_name = arg;
+        break;
+
+    case ARGP_KEY_END:
+        if (state->arg_num < NUMBER_OF_ARGS) {
+            argp_usage(state);
+        }
+
+        break;
+
+    default:
+        return ARGP_ERR_UNKNOWN;
+    }
+
+    return 0;
+}
+
+static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
+int main(int argc, char** argv) {
+    struct arguments arguments = {0};
+    argp_parse(&argp, argc, argv, 0, 0, &arguments);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
