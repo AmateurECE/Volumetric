@@ -33,12 +33,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <archive.h>
+#include <archive_entry.h>
 #include <glib-2.0/glib.h>
 #include <gobiserde/yaml.h>
 
 #include <config.h>
 #include <volumetric/configuration.h>
 #include <volumetric/docker.h>
+#include <volumetric/file.h>
 #include <volumetric/volume.h>
 
 const char* argp_program_version = "volumetric-diff " CONFIG_VERSION;
@@ -170,6 +173,53 @@ static int find_volume_by_name(const char* path, const char* volume_name,
     return result;
 }
 
+static int diff_file_lists(GPtrArray left, GPtrArray right) {
+    // TODO
+    return 0;
+}
+
+static GPtrArray get_file_list_for_archive(const char* archive_path) {
+    GPtrArray list = {0};
+    struct archive *reader = archive_read_new();
+    struct archive_entry *entry = NULL;
+    archive_read_support_filter_all(reader);
+    archive_read_support_format_all(reader);
+
+    FileContents archive = {0};
+    file_contents_init(&archive, archive_path);
+    archive_read_open_memory(reader, archive.contents, archive.size);
+    while (archive_read_next_header(reader, &entry) == ARCHIVE_OK) {
+        printf("%s\n",archive_entry_pathname(entry));
+    }
+
+    archive_read_free(reader);
+    file_contents_release(&archive);
+    return list;
+}
+
+static GPtrArray get_file_list_for_directory(const char* directory) {
+    GPtrArray list = {0};
+    // TODO
+    return list;
+}
+
+static int diff_volume(const char* volume_directory, const char* volume_name) {
+    Volume volume = {0};
+    int result = find_volume_by_name(volume_directory, volume_name, &volume);
+    assert(0 == result);
+
+    Docker* docker = docker_proxy_new();
+    DockerVolume* live_volume = docker_volume_inspect(docker,
+        volume.archive.name);
+    docker_proxy_free(docker);
+    assert(NULL != live_volume);
+
+    GPtrArray archive = get_file_list_for_archive(volume.archive.url);
+    GPtrArray directory = get_file_list_for_directory(live_volume->mountpoint);
+    result = diff_file_lists(archive, directory);
+    return result;
+}
+
 static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
 int main(int argc, char** argv) {
     struct arguments arguments = {0};
@@ -182,19 +232,8 @@ int main(int argc, char** argv) {
         &config);
     assert(0 == result);
 
-    Volume volume = {0};
-    result = find_volume_by_name(config.volume_directory,
-        arguments.volume_name, &volume);
-    assert(0 == result);
-
-    Docker* docker = docker_proxy_new();
-    DockerVolume* live_volume = docker_volume_inspect(docker,
-        volume.archive.name);
-    docker_proxy_free(docker);
-    assert(NULL != live_volume);
-
-    printf("volume.url=%s\nvolume.mountpoint=%s\n", volume.archive.url,
-           live_volume->mountpoint);
+    // Do diff using volume
+    result = diff_volume(config.volume_directory, arguments.volume_name);
 
     volumetric_configuration_release(&config);
     return result;

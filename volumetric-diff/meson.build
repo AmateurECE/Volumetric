@@ -7,7 +7,7 @@
 #
 # CREATED:          01/26/2022
 #
-# LAST EDITED:      01/26/2022
+# LAST EDITED:      01/27/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -25,6 +25,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
+libarchive = dependency('libarchive')
 libglib = dependency('glib-2.0')
 libgobiserde = dependency('libgobiserde')
 
@@ -34,7 +35,7 @@ executable(
     'volumetric-diff/main.c',
   ],
   include_directories: ['../libvolumetric'],
-  dependencies: [libglib, libgobiserde],
+  dependencies: [libglib, libgobiserde, libarchive],
   link_with: [libvolumetric],
   install: true,
 )
