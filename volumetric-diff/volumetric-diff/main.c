@@ -7,7 +7,7 @@
 //
 // CREATED:         01/26/2022
 //
-// LAST EDITED:     01/27/2022
+// LAST EDITED:     01/28/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -29,6 +29,7 @@
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>
+#include <fts.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -199,7 +200,26 @@ static GPtrArray get_file_list_for_archive(const char* archive_path) {
 
 static GPtrArray get_file_list_for_directory(const char* directory) {
     GPtrArray list = {0};
-    // TODO
+    // TODO: How does this work with symlinks? I'd expect they would break.
+    char* directory_owned = malloc(strlen(directory) + 1);
+    assert(NULL != directory_owned);
+    strcpy(directory_owned, directory);
+    char* const paths[] = {directory_owned, NULL};
+    FTS* tree = fts_open(paths, FTS_NOCHDIR, 0);
+    assert(NULL != tree);
+
+    FTSENT* node = NULL;
+    while ((node = fts_read(tree))) {
+        if (FTS_F == node->fts_info || FTS_D == node->fts_info) {
+            printf("tree: %s\n", node->fts_path);
+        } else if (FTS_ERR == node->fts_info || FTS_DNR == node->fts_info
+            || FTS_NS == node->fts_info) {
+            printf("tree_error: %s\n", strerror(node->fts_errno));
+        }
+    }
+
+    fts_close(tree);
+    free(directory_owned);
     return list;
 }
 
