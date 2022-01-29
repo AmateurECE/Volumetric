@@ -7,7 +7,7 @@
 #
 # CREATED:          01/26/2022
 #
-# LAST EDITED:      01/27/2022
+# LAST EDITED:      01/29/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -33,6 +33,7 @@ executable(
   'volumetric-diff',
   sources: [
     'volumetric-diff/main.c',
+    'volumetric-diff/directory.c',
   ],
   include_directories: ['../libvolumetric'],
   dependencies: [libglib, libgobiserde, libarchive],

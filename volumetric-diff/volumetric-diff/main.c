@@ -27,7 +27,6 @@
 
 #include <argp.h>
 #include <assert.h>
-#include <dirent.h>
 #include <errno.h>
 #include <fts.h>
 #include <stdbool.h>
@@ -44,6 +43,7 @@
 #include <volumetric/docker.h>
 #include <volumetric/file.h>
 #include <volumetric/volume.h>
+#include <volumetric-diff/directory.h>
 
 const char* argp_program_version = "volumetric-diff " CONFIG_VERSION;
 const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";
@@ -67,10 +67,7 @@ struct arguments {
 static error_t parse_opt(int key, char* arg, struct argp_state* state) {
     struct arguments* arguments = state->input;
     switch (key) {
-    case 'c':
-        arguments->configuration_file = arg;
-        break;
-
+    case 'c': arguments->configuration_file = arg; break;
     case ARGP_KEY_ARG:
         if (state->arg_num >= NUMBER_OF_ARGS) {
             argp_usage(state);
@@ -78,14 +75,12 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
 
         arguments->volume_name = arg;
         break;
-
     case ARGP_KEY_END:
         if (state->arg_num < NUMBER_OF_ARGS) {
             argp_usage(state);
         }
 
         break;
-
     default:
         return ARGP_ERR_UNKNOWN;
     }
@@ -93,59 +88,17 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
     return 0;
 }
 
-struct VolumeFilter {
-    const char* name;
-    Volume* volume;
-    void* key;
-    bool found;
-};
-
-static void compare_volume_name(void* key, void* value, void* user_data) {
-    struct VolumeFilter* filter = (struct VolumeFilter*)user_data;
-    Volume* volume = (Volume*)value;
-    if (!strcmp(filter->name, volume->archive.name)) {
-        filter->found = true;
-        filter->key = key;
-        filter->volume = volume;
-    }
-}
-
 static int find_volume_by_name(const char* path, const char* volume_name,
     Volume* volume)
 {
-    struct dirent* entry = NULL;
-    DIR* directory = opendir(path);
-    if (NULL == directory) {
-        fprintf(stderr, "cannot open directory %s: %s\n", path,
-            strerror(errno));
-        return errno;
-    }
-
+    DirectoryIter* iter = directory_iter_new(path);
+    DirectoryEntry* entry = NULL;
     int result = 1;
-    size_t path_length = strlen(path);
-    char* whole_path = malloc(path_length + 256);
-    if (NULL == whole_path) {
-        fprintf(stderr, "Cannot allocate memory: %s\n", strerror(errno));
-    }
-
-    memset(whole_path, 0, path_length + 256);
-    strcat(whole_path, path);
-    whole_path[path_length] = '/';
-
-    while (NULL != (entry = readdir(directory))) {
-        // Ignore '.' and '..'
-        if (!strcmp(".", entry->d_name) || !strcmp("..", entry->d_name)) {
-            continue;
-        }
-
-        size_t entry_length = strlen(entry->d_name);
-        memcpy(whole_path + path_length + 1, entry->d_name, entry_length);
-        whole_path[path_length + 1 + entry_length] = '\0';
-
-        FILE* input = fopen(whole_path, "rb");
+    while (NULL != (entry = directory_iter_next(iter))) {
+        FILE* input = fopen(entry->absolute_path, "rb");
         if (NULL == input) {
-            fprintf(stderr, "error opening file %s: %s\n", entry->d_name,
-                strerror(errno));
+            fprintf(stderr, "error opening file %s: %s\n",
+                entry->entry->d_name, strerror(errno));
         }
 
         VolumeFile volume_file = {0};
@@ -157,31 +110,142 @@ static int find_volume_by_name(const char* path, const char* volume_name,
             break;
         }
 
-        struct VolumeFilter filter = {0};
-        filter.name = volume_name;
-        g_hash_table_foreach(volume_file.volumes, compare_volume_name,
-            &filter);
-        if (filter.found) {
-            g_hash_table_steal(volume_file.volumes, filter.key);
-            memcpy(volume, filter.volume, sizeof(Volume));
+        GHashTableIter hash_iter;
+        gpointer key, value;
+        bool found = false;
+        g_hash_table_iter_init(&hash_iter, volume_file.volumes);
+        while (g_hash_table_iter_next(&hash_iter, &key, &value)) {
+            Volume* current_volume = (Volume*)value;
+            if (!strcmp(volume_name, current_volume->archive.name)) {
+                g_hash_table_steal(volume_file.volumes, key);
+                memcpy(volume, current_volume, sizeof(Volume));
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
             result = 0;
             break;
         }
     }
 
-    free(whole_path);
-    closedir(directory);
+    directory_iter_free(iter);
     return result;
 }
 
-static int diff_file_lists(GPtrArray* left, GPtrArray* right) {
-    for (guint i = 0; i < left->len && NULL != left->pdata[i]; ++i) {
-        printf("left: %s\n", (const char*)left->pdata[i]);
+static bool check_file_for_modifications(const char* left, const char* right,
+    const char* archive_url, const char* directory_base)
+{
+    struct archive *reader = archive_read_new();
+    struct archive_entry *entry = NULL;
+    archive_read_support_filter_all(reader);
+    archive_read_support_format_all(reader);
+
+    FileContents archive_file = {0};
+    file_contents_init(&archive_file, archive_url);
+    archive_read_open_memory(reader, archive_file.contents, archive_file.size);
+
+    // Iterate through the archive to find the entry for this file.
+    while (archive_read_next_header(reader, &entry) == ARCHIVE_OK
+        && strcmp(archive_entry_pathname(entry), left));
+
+    FileContents live_file = {0};
+    size_t directory_base_length = strlen(directory_base);
+    size_t path_url_length = directory_base_length + 1 + strlen(left) + 1;
+    char* path_url = malloc(path_url_length);
+    assert(NULL != path_url);
+    memset(path_url, 0, path_url_length);
+    strcat(path_url, directory_base);
+    path_url[directory_base_length] = '/';
+    strcat(path_url, left);
+    file_contents_init(&live_file, path_url);
+
+    size_t live_file_index = 0;
+    bool different = false;
+    la_ssize_t bytes_read = 0;
+    char buffer[4096];
+    while (!different && 0 < (bytes_read = archive_read_data(reader, buffer,
+                sizeof(buffer))))
+    {
+        if (live_file_index + bytes_read >= live_file.size) {
+            different = true;
+        } else {
+            different = !!strncmp(buffer, live_file.contents + live_file_index,
+                bytes_read);
+            live_file_index += bytes_read;
+        }
     }
 
-    for (guint i = 0; i < right->len && NULL != right->pdata[i]; ++i) {
-        printf("right: %s\n", (const char*)right->pdata[i]);
+    if (live_file_index < live_file.size) {
+        different = true;
     }
+
+    archive_read_free(reader);
+    file_contents_release(&archive_file);
+    file_contents_release(&live_file);
+    return different;
+}
+
+static bool check_list_for_file(const char* file, gpointer* pdata,
+    guint len)
+{
+    for (guint i = 0; i < len; ++i) {
+        if (!strcmp(file, (const char*)pdata[i])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Find what's changed in the directory from the archive
+static int diff_directory_from_archive(GPtrArray* archive,
+    GPtrArray* directory, const char* archive_url, const char* directory_base)
+{
+    guint archive_index, directory_index;
+    for (archive_index = 0, directory_index = 0;
+         archive_index < archive->len && directory_index < directory->len;
+         ++archive_index)
+    {
+        // TODO: Increment directory_index somewhere?
+        const char* archive_file = archive->pdata[archive_index];
+        const char* directory_file = directory->pdata[directory_index];
+        if (!strcmp(archive_file, directory_file) &&
+            check_file_for_modifications(archive_file, directory_file,
+                archive_url, directory_base))
+        {
+            printf("M %s\n", (const char*)archive->pdata[archive_index]);
+        }
+
+        // If there's a file in the archive but not the directory, it's been
+        // deleted
+        else if (!check_list_for_file(archive_file,
+                directory->pdata + directory_index,
+                directory->len - directory_index))
+        {
+            printf("D %s\n", (const char*)archive->pdata[archive_index]);
+        }
+
+        // If there's a file in the directory but not in the archive, it's been
+        // added
+        else if (!check_list_for_file(directory_file,
+                archive->pdata + archive_index,
+                archive->len - archive_index))
+        {
+            printf("A %s\n", (const char*)directory->pdata[directory_index]);
+        }
+    }
+
+    // If there are remaining files in either list, we know what to do.
+    for (guint i = directory_index; i < directory->len; ++i) {
+        printf("A %s\n", (const char*)directory->pdata[i]);
+    }
+
+    for (guint i = archive_index; i < archive->len; ++i) {
+        printf("D %s\n", (const char*)archive->pdata[i]);
+    }
+
     return 0;
 }
 
@@ -294,7 +358,8 @@ static int diff_volume(const char* volume_directory, const char* volume_name) {
     // Sort the lists
     g_ptr_array_sort(archive, (GCompareFunc)g_ascii_strcasecmp);
     g_ptr_array_sort(directory, (GCompareFunc)g_ascii_strcasecmp);
-    result = diff_file_lists(archive, directory);
+    result = diff_directory_from_archive(archive, directory,
+        volume.archive.url, live_volume->mountpoint);
     return result;
 }
 
