@@ -7,7 +7,7 @@
 //
 // CREATED:         01/26/2022
 //
-// LAST EDITED:     01/28/2022
+// LAST EDITED:     01/29/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -291,6 +291,9 @@ static int diff_volume(const char* volume_directory, const char* volume_name) {
         trim_prefix_from_entries(directory, live_volume->mountpoint);
     }
 
+    // Sort the lists
+    g_ptr_array_sort(archive, (GCompareFunc)g_ascii_strcasecmp);
+    g_ptr_array_sort(directory, (GCompareFunc)g_ascii_strcasecmp);
     result = diff_file_lists(archive, directory);
     return result;
 }
