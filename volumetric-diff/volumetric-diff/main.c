@@ -134,8 +134,9 @@ static int find_volume_by_name(const char* path, const char* volume_name,
     return result;
 }
 
-static bool check_file_for_modifications(const char* left, const char* right,
-    const char* archive_url, const char* directory_base)
+static bool check_file_for_modifications(const char* left,
+    const char* archive_url,  const char* archive_base,
+    const char* directory_base)
 {
     struct archive *reader = archive_read_new();
     struct archive_entry *entry = NULL;
@@ -147,8 +148,14 @@ static bool check_file_for_modifications(const char* left, const char* right,
     archive_read_open_memory(reader, archive_file.contents, archive_file.size);
 
     // Iterate through the archive to find the entry for this file.
+    char* archive_path = malloc(strlen(archive_base) + strlen(left) + 1);
+    assert(NULL != archive_path);
+    memset(archive_path, 0, strlen(archive_base) + strlen(left) + 1);
+    strcat(archive_path, archive_base);
+    strcat(archive_path, left);
     while (archive_read_next_header(reader, &entry) == ARCHIVE_OK
-        && strcmp(archive_entry_pathname(entry), left));
+        && strcmp(archive_entry_pathname(entry), archive_path));
+    free(archive_path);
 
     FileContents live_file = {0};
     size_t directory_base_length = strlen(directory_base);
@@ -168,7 +175,7 @@ static bool check_file_for_modifications(const char* left, const char* right,
     while (!different && 0 < (bytes_read = archive_read_data(reader, buffer,
                 sizeof(buffer))))
     {
-        if (live_file_index + bytes_read >= live_file.size) {
+        if (live_file_index + bytes_read > live_file.size) {
             different = true;
         } else {
             different = !!strncmp(buffer, live_file.contents + live_file_index,
@@ -201,19 +208,19 @@ static bool check_list_for_file(const char* file, gpointer* pdata,
 
 // Find what's changed in the directory from the archive
 static int diff_directory_from_archive(GPtrArray* archive,
-    GPtrArray* directory, const char* archive_url, const char* directory_base)
+    GPtrArray* directory, const char* archive_url, const char* archive_base,
+    const char* directory_base)
 {
     guint archive_index, directory_index;
     for (archive_index = 0, directory_index = 0;
          archive_index < archive->len && directory_index < directory->len;
-         ++archive_index)
+         ++archive_index, ++directory_index)
     {
-        // TODO: Increment directory_index somewhere?
         const char* archive_file = archive->pdata[archive_index];
         const char* directory_file = directory->pdata[directory_index];
         if (!strcmp(archive_file, directory_file) &&
-            check_file_for_modifications(archive_file, directory_file,
-                archive_url, directory_base))
+            check_file_for_modifications(archive_file, archive_url,
+                archive_base, directory_base))
         {
             printf("M %s\n", (const char*)archive->pdata[archive_index]);
         }
@@ -225,6 +232,7 @@ static int diff_directory_from_archive(GPtrArray* archive,
                 directory->len - directory_index))
         {
             printf("D %s\n", (const char*)archive->pdata[archive_index]);
+            archive_index += 1;
         }
 
         // If there's a file in the directory but not in the archive, it's been
@@ -338,8 +346,9 @@ static int diff_volume(const char* volume_directory, const char* volume_name) {
         live_volume->mountpoint);
 
     // First, let's remove the top-level entry (either "./" or "/...")
-    remove_matching_entry(archive, "./");
-    trim_prefix_from_entries(archive, "./");
+    static const char* archive_base = "./";
+    remove_matching_entry(archive, archive_base);
+    trim_prefix_from_entries(archive, archive_base);
 
     remove_matching_entry(directory, live_volume->mountpoint);
     size_t mountpoint_length = strlen(live_volume->mountpoint);
@@ -359,7 +368,7 @@ static int diff_volume(const char* volume_directory, const char* volume_name) {
     g_ptr_array_sort(archive, (GCompareFunc)g_ascii_strcasecmp);
     g_ptr_array_sort(directory, (GCompareFunc)g_ascii_strcasecmp);
     result = diff_directory_from_archive(archive, directory,
-        volume.archive.url, live_volume->mountpoint);
+        volume.archive.url, archive_base, live_volume->mountpoint);
     return result;
 }
 
