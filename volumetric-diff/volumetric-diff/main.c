@@ -7,7 +7,7 @@
 //
 // CREATED:         01/26/2022
 //
-// LAST EDITED:     01/29/2022
+// LAST EDITED:     02/02/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -44,6 +44,7 @@
 #include <volumetric/file.h>
 #include <volumetric/volume.h>
 #include <volumetric-diff/directory.h>
+#include <volumetric-diff/string.h>
 
 const char* argp_program_version = "volumetric-diff " CONFIG_VERSION;
 const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";
@@ -148,25 +149,17 @@ static bool check_file_for_modifications(const char* left,
     archive_read_open_memory(reader, archive_file.contents, archive_file.size);
 
     // Iterate through the archive to find the entry for this file.
-    char* archive_path = malloc(strlen(archive_base) + strlen(left) + 1);
+    char* archive_path = string_append_new(string_new(archive_base), left);
     assert(NULL != archive_path);
-    memset(archive_path, 0, strlen(archive_base) + strlen(left) + 1);
-    strcat(archive_path, archive_base);
-    strcat(archive_path, left);
     while (archive_read_next_header(reader, &entry) == ARCHIVE_OK
         && strcmp(archive_entry_pathname(entry), archive_path));
     free(archive_path);
 
+    // Open up the actual file on disk
     FileContents live_file = {0};
-    size_t directory_base_length = strlen(directory_base);
-    size_t path_url_length = directory_base_length + 1 + strlen(left) + 1;
-    char* path_url = malloc(path_url_length);
-    assert(NULL != path_url);
-    memset(path_url, 0, path_url_length);
-    strcat(path_url, directory_base);
-    path_url[directory_base_length] = '/';
-    strcat(path_url, left);
+    char* path_url = string_join_new(string_new(directory_base), '/', left);
     file_contents_init(&live_file, path_url);
+    free(path_url);
 
     size_t live_file_index = 0;
     bool different = false;
@@ -279,9 +272,7 @@ static GPtrArray* get_file_list_for_archive(const char* archive_path) {
 static GPtrArray* get_file_list_for_directory(const char* directory) {
     GPtrArray* list = g_ptr_array_new_with_free_func(free);
 
-    char* directory_owned = malloc(strlen(directory) + 1);
-    assert(NULL != directory_owned);
-    strcpy(directory_owned, directory);
+    char* directory_owned = string_new(directory);
     char* const paths[] = {directory_owned, NULL};
     FTS* tree = fts_open(paths, FTS_NOCHDIR, 0);
     assert(NULL != tree);
@@ -354,10 +345,8 @@ static int diff_volume(const char* volume_directory, const char* volume_name) {
     size_t mountpoint_length = strlen(live_volume->mountpoint);
     if ('/' != live_volume->mountpoint[mountpoint_length - 1]) {
         // Have to add that terminating '/'
-        char* mountpoint = malloc(mountpoint_length + 2);
-        strcpy(mountpoint, live_volume->mountpoint);
-        mountpoint[mountpoint_length] = '/';
-        mountpoint[mountpoint_length + 1] = '\0';
+        char* mountpoint = string_append_new(string_new(
+                live_volume->mountpoint), &(char){'/'});
         trim_prefix_from_entries(directory, mountpoint);
         free(mountpoint);
     } else {

@@ -34,6 +34,7 @@ executable(
   sources: [
     'volumetric-diff/main.c',
     'volumetric-diff/directory.c',
+    'volumetric-diff/string.c',
   ],
   include_directories: ['../libvolumetric'],
   dependencies: [libglib, libgobiserde, libarchive],
