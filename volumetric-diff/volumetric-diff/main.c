@@ -281,7 +281,7 @@ static int diff_volume(const char* volume_directory, const char* volume_name) {
     if ('/' != live_volume->mountpoint[mountpoint_length - 1]) {
         // Have to add that terminating '/'
         mountpoint = string_append_new(string_new(live_volume->mountpoint),
-            &(char){'/'});
+            "/");
     }
     trim_prefix_from_entries(directory, mountpoint);
 
