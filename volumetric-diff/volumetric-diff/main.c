@@ -145,10 +145,12 @@ static bool check_file_for_modifications(struct archive_entry* entry,
 
     const struct stat* archive_stat = archive_entry_stat(entry);
     bool diff = false;
-    if (!S_ISREG(file_stat.st_mode)) {
+    if (S_ISREG(file_stat.st_mode)) {
         diff = diff || file_stat.st_size != archive_stat->st_size;
     }
+
     diff = diff || file_stat.st_mode != archive_stat->st_mode;
+    diff = diff || file_stat.st_mtime != archive_stat->st_mtime;
     return diff;
 }
 
@@ -225,6 +227,7 @@ static GPtrArray* get_file_list_for_directory(const char* directory) {
         } else if (FTS_ERR == node->fts_info || FTS_DNR == node->fts_info
             || FTS_NS == node->fts_info) {
             fprintf(stderr, "fts_read error: %s\n", strerror(node->fts_errno));
+            exit(errno);
         }
     }
 
