@@ -145,7 +145,9 @@ static bool check_file_for_modifications(struct archive_entry* entry,
 
     const struct stat* archive_stat = archive_entry_stat(entry);
     bool diff = false;
-    diff = diff || file_stat.st_size != archive_stat->st_size;
+    if (!S_ISREG(file_stat.st_mode)) {
+        diff = diff || file_stat.st_size != archive_stat->st_size;
+    }
     diff = diff || file_stat.st_mode != archive_stat->st_mode;
     return diff;
 }
