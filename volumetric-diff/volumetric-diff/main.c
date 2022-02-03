@@ -136,113 +136,75 @@ static int find_volume_by_name(const char* path, const char* volume_name,
     return result;
 }
 
-static bool check_file_for_modifications(const char* left,
-    const char* archive_url,  const char* archive_base,
-    const char* directory_base)
+static bool check_file_for_modifications(struct archive_entry* entry,
+    const char* directory_file)
 {
-    // TODO: Don't actually compare the volumes, just their stat data.
-    struct archive *reader = archive_read_new();
-    struct archive_entry *entry = NULL;
-    archive_read_support_filter_all(reader);
-    archive_read_support_format_all(reader);
+    // Check for differences based on stat data
+    struct stat file_stat = {0};
+    assert(0 == stat(directory_file, &file_stat));
 
-    FileContents archive_file = {0};
-    file_contents_init(&archive_file, archive_url);
-    archive_read_open_memory(reader, archive_file.contents, archive_file.size);
-
-    // Iterate through the archive to find the entry for this file.
-    char* archive_path = string_append_new(string_new(archive_base), left);
-    assert(NULL != archive_path);
-    while (archive_read_next_header(reader, &entry) == ARCHIVE_OK
-        && strcmp(archive_entry_pathname(entry), archive_path));
-    free(archive_path);
-
-    // Open up the actual file on disk
-    FileContents live_file = {0};
-    char* path_url = string_join_new(string_new(directory_base), '/', left);
-    file_contents_init(&live_file, path_url);
-    free(path_url);
-
-    size_t live_file_index = 0;
-    bool different = false;
-    la_ssize_t bytes_read = 0;
-    char buffer[4096];
-    while (!different && 0 < (bytes_read = archive_read_data(reader, buffer,
-                sizeof(buffer))))
-    {
-        if (live_file_index + bytes_read > live_file.size) {
-            different = true;
-        } else {
-            different = !!strncmp(buffer, live_file.contents + live_file_index,
-                bytes_read);
-            live_file_index += bytes_read;
-        }
-    }
-
-    if (live_file_index < live_file.size) {
-        different = true;
-    }
-
-    archive_read_free(reader);
-    file_contents_release(&archive_file);
-    file_contents_release(&live_file);
-    return different;
+    const struct stat* archive_stat = archive_entry_stat(entry);
+    bool diff = false;
+    diff = diff || file_stat.st_size != archive_stat->st_size;
+    diff = diff || file_stat.st_mode != archive_stat->st_mode;
+    return diff;
 }
 
 // Find what's changed in the directory from the archive
-static int diff_directory_from_archive(GPtrArray* archive,
-    GPtrArray* directory, const char* archive_url, const char* archive_base,
-    const char* directory_base)
+static int diff_directory_from_archive(GPtrArray* directory,
+    const char* archive_url, const char* directory_base)
 {
-    guint archive_index, directory_index;
-    for (archive_index = 0; archive_index < archive->len; ++archive_index) {
-        const char* archive_file = archive->pdata[archive_index];
-        bool found = false;
-        for (directory_index = 0; directory_index < directory->len;
-             ++directory_index)
-        {
-            const char* directory_file = directory->pdata[directory_index];
-            if (!strcmp(archive_file, directory_file)) {
-                if (check_file_for_modifications(archive_file, archive_url,
-                        archive_base, directory_base)) {
-                    printf("M %s\n",
-                        (const char*)archive->pdata[archive_index]);
-                }
-                g_ptr_array_remove_index_fast(directory, directory_index);
-            }
-            found = true;
-        }
-
-        if (!found) {
-            printf("D %s\n", (const char*)archive->pdata[archive_index]);
-        }
-    }
-
-    for (directory_index = 0; directory_index < directory->len &&
-             NULL != directory->pdata[directory_index]; ++directory_index)
-    {
-        printf("A %s\n", (const char*)directory->pdata[directory_index]);
-    }
-    return 0;
-}
-
-static GPtrArray* get_file_list_for_archive(const char* archive_path) {
-    GPtrArray* list = g_ptr_array_new_with_free_func(free);
     struct archive *reader = archive_read_new();
     struct archive_entry *entry = NULL;
     archive_read_support_filter_all(reader);
     archive_read_support_format_all(reader);
 
     FileContents archive = {0};
-    file_contents_init(&archive, archive_path);
+    file_contents_init(&archive, archive_url);
     archive_read_open_memory(reader, archive.contents, archive.size);
     while (archive_read_next_header(reader, &entry) == ARCHIVE_OK) {
-        g_ptr_array_add(list, (gpointer)strdup(archive_entry_pathname(entry)));
+        static const char* archive_base = "./";
+        const char* entry_path = archive_entry_pathname(entry);
+        if (!strcmp(archive_base, entry_path)) {
+            // Skip "./"
+            continue;
+        }
+
+        char* archive_file = string_new(entry_path + strlen(archive_base));
+        size_t archive_file_length = strlen(archive_file);
+        if ('/' == archive_file[archive_file_length - 1]) {
+            // Truncate trailing '/'
+            archive_file[archive_file_length - 1] = '\0';
+        }
+
+        bool found = false;
+        for (guint i = 0; i < directory->len; ++i) {
+            const char* directory_file = directory->pdata[i];
+            if (!strcmp(archive_file, directory_file)) {
+                found = true;
+                char* full_path = string_append_new(string_new(directory_base),
+                    directory_file);
+                if (check_file_for_modifications(entry, full_path)) {
+                    printf("M %s\n", archive_file);
+                }
+                g_ptr_array_remove_index_fast(directory, i);
+                break;
+            }
+        }
+
+        if (!found) {
+            printf("D %s\n", (const char*)archive_file);
+        }
+        free(archive_file);
+    }
+
+    for (guint i = 0; i < directory->len && NULL != directory->pdata[i]; ++i) {
+        printf("A %s\n", (const char*)directory->pdata[i]);
     }
 
     archive_read_free(reader);
     file_contents_release(&archive);
-    return list;
+    return 0;
 }
 
 static GPtrArray* get_file_list_for_directory(const char* directory) {
@@ -304,38 +266,29 @@ static int diff_volume(const char* volume_directory, const char* volume_name) {
     docker_proxy_free(docker);
     assert(NULL != live_volume);
 
-    GPtrArray* archive = get_file_list_for_archive(volume.archive.url);
     GPtrArray* directory = get_file_list_for_directory(
         live_volume->mountpoint);
 
     // First, let's remove the top-level entry (either "./" or "/...")
-    static const char* archive_base = "./";
-    remove_matching_entry(archive, archive_base);
-    trim_prefix_from_entries(archive, archive_base);
-
     remove_matching_entry(directory, live_volume->mountpoint);
     size_t mountpoint_length = strlen(live_volume->mountpoint);
+    char* mountpoint = strdup(live_volume->mountpoint);
     if ('/' != live_volume->mountpoint[mountpoint_length - 1]) {
         // Have to add that terminating '/'
-        char* mountpoint = string_append_new(string_new(
-                live_volume->mountpoint), &(char){'/'});
-        trim_prefix_from_entries(directory, mountpoint);
-        free(mountpoint);
-    } else {
-        trim_prefix_from_entries(directory, live_volume->mountpoint);
+        mountpoint = string_append_new(string_new(live_volume->mountpoint),
+            &(char){'/'});
     }
+    trim_prefix_from_entries(directory, mountpoint);
 
-    // Sort the lists
-    g_ptr_array_sort(archive, (GCompareFunc)g_ascii_strcasecmp);
-    g_ptr_array_sort(directory, (GCompareFunc)g_ascii_strcasecmp);
     /* for (guint i = 0; i < archive->len && NULL != archive->pdata[i]; ++i) */
     /*     { printf("%s\n", (const char*)archive->pdata[i]); } */
     FILE* output_file = fopen("directory.txt", "wb");
     for (guint i = 0; i < directory->len && NULL != directory->pdata[i]; ++i)
     { fprintf(output_file, "%s\n", (const char*)directory->pdata[i]); }
     fclose(output_file);
-    result = diff_directory_from_archive(archive, directory,
-        volume.archive.url, archive_base, live_volume->mountpoint);
+    result = diff_directory_from_archive(directory, volume.archive.url,
+        mountpoint);
+    free(mountpoint);
     return result;
 }
 
