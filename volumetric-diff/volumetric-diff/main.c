@@ -285,12 +285,6 @@ static int diff_volume(const char* volume_directory, const char* volume_name) {
     }
     trim_prefix_from_entries(directory, mountpoint);
 
-    /* for (guint i = 0; i < archive->len && NULL != archive->pdata[i]; ++i) */
-    /*     { printf("%s\n", (const char*)archive->pdata[i]); } */
-    FILE* output_file = fopen("directory.txt", "wb");
-    for (guint i = 0; i < directory->len && NULL != directory->pdata[i]; ++i)
-    { fprintf(output_file, "%s\n", (const char*)directory->pdata[i]); }
-    fclose(output_file);
     result = diff_directory_from_archive(directory, volume.archive.url,
         mountpoint);
     free(mountpoint);
