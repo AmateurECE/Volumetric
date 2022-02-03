@@ -32,6 +32,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -139,6 +140,7 @@ static bool check_file_for_modifications(const char* left,
     const char* archive_url,  const char* archive_base,
     const char* directory_base)
 {
+    // TODO: Don't actually compare the volumes, just their stat data.
     struct archive *reader = archive_read_new();
     struct archive_entry *entry = NULL;
     archive_read_support_filter_all(reader);
@@ -187,66 +189,40 @@ static bool check_file_for_modifications(const char* left,
     return different;
 }
 
-static bool check_list_for_file(const char* file, gpointer* pdata,
-    guint len)
-{
-    for (guint i = 0; i < len; ++i) {
-        if (!strcmp(file, (const char*)pdata[i])) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 // Find what's changed in the directory from the archive
 static int diff_directory_from_archive(GPtrArray* archive,
     GPtrArray* directory, const char* archive_url, const char* archive_base,
     const char* directory_base)
 {
     guint archive_index, directory_index;
-    for (archive_index = 0, directory_index = 0;
-         archive_index < archive->len && directory_index < directory->len;
-         ++archive_index, ++directory_index)
-    {
+    for (archive_index = 0; archive_index < archive->len; ++archive_index) {
         const char* archive_file = archive->pdata[archive_index];
-        const char* directory_file = directory->pdata[directory_index];
-        if (!strcmp(archive_file, directory_file) &&
-            check_file_for_modifications(archive_file, archive_url,
-                archive_base, directory_base))
+        bool found = false;
+        for (directory_index = 0; directory_index < directory->len;
+             ++directory_index)
         {
-            printf("M %s\n", (const char*)archive->pdata[archive_index]);
+            const char* directory_file = directory->pdata[directory_index];
+            if (!strcmp(archive_file, directory_file)) {
+                if (check_file_for_modifications(archive_file, archive_url,
+                        archive_base, directory_base)) {
+                    printf("M %s\n",
+                        (const char*)archive->pdata[archive_index]);
+                }
+                g_ptr_array_remove_index_fast(directory, directory_index);
+            }
+            found = true;
         }
 
-        // If there's a file in the archive but not the directory, it's been
-        // deleted
-        else if (!check_list_for_file(archive_file,
-                directory->pdata + directory_index,
-                directory->len - directory_index))
-        {
+        if (!found) {
             printf("D %s\n", (const char*)archive->pdata[archive_index]);
-            archive_index += 1;
-        }
-
-        // If there's a file in the directory but not in the archive, it's been
-        // added
-        else if (!check_list_for_file(directory_file,
-                archive->pdata + archive_index,
-                archive->len - archive_index))
-        {
-            printf("A %s\n", (const char*)directory->pdata[directory_index]);
         }
     }
 
-    // If there are remaining files in either list, we know what to do.
-    for (guint i = directory_index; i < directory->len; ++i) {
-        printf("A %s\n", (const char*)directory->pdata[i]);
+    for (directory_index = 0; directory_index < directory->len &&
+             NULL != directory->pdata[directory_index]; ++directory_index)
+    {
+        printf("A %s\n", (const char*)directory->pdata[directory_index]);
     }
-
-    for (guint i = archive_index; i < archive->len; ++i) {
-        printf("D %s\n", (const char*)archive->pdata[i]);
-    }
-
     return 0;
 }
 
@@ -310,11 +286,7 @@ static void trim_prefix_from_entries(GPtrArray* list, const char* prefix) {
     size_t prefix_length = strlen(prefix);
     for (guint i = 0; i < list->len && NULL != list->pdata[i]; ++i) {
         if (!strncmp(prefix, list->pdata[i], prefix_length)) {
-            size_t string_length = strlen(list->pdata[i]);
-            char* string = malloc(string_length - prefix_length + 1);
-            assert(NULL != string);
-            strcpy(string, list->pdata[i] + prefix_length);
-            string[string_length] = '\0';
+            char* string = string_new(list->pdata[i] + prefix_length);
             free(list->pdata[i]);
             list->pdata[i] = string;
         }
@@ -356,6 +328,12 @@ static int diff_volume(const char* volume_directory, const char* volume_name) {
     // Sort the lists
     g_ptr_array_sort(archive, (GCompareFunc)g_ascii_strcasecmp);
     g_ptr_array_sort(directory, (GCompareFunc)g_ascii_strcasecmp);
+    /* for (guint i = 0; i < archive->len && NULL != archive->pdata[i]; ++i) */
+    /*     { printf("%s\n", (const char*)archive->pdata[i]); } */
+    FILE* output_file = fopen("directory.txt", "wb");
+    for (guint i = 0; i < directory->len && NULL != directory->pdata[i]; ++i)
+    { fprintf(output_file, "%s\n", (const char*)directory->pdata[i]); }
+    fclose(output_file);
     result = diff_directory_from_archive(archive, directory,
         volume.archive.url, archive_base, live_volume->mountpoint);
     return result;
