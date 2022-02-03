@@ -7,7 +7,7 @@
 //
 // CREATED:         01/22/2022
 //
-// LAST EDITED:     01/26/2022
+// LAST EDITED:     02/02/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -87,7 +87,7 @@ void archive_extract_to_disk_universal(const FileContents* file,
 {
     /* Select which attributes we want to restore. */
     int flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM
-        | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS;
+        | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS | ARCHIVE_EXTRACT_OWNER;
 
     struct archive* read_archive = archive_read_new();
     archive_read_support_format_all(read_archive);
