@@ -3,9 +3,9 @@
 #
 # AUTHOR:           Ethan D. Twardy <ethan.twardy@gmail.com>
 #
-# DESCRIPTION:      Top-level build script for the project.
+# DESCRIPTION:      Build script for volumetric-commit
 #
-# CREATED:          01/22/2022
+# CREATED:          02/04/2022
 #
 # LAST EDITED:      02/04/2022
 #
@@ -25,11 +25,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-project('volumetric', 'c', version: '0.1.2')
-
-subdir('libvolumetric')
-subdir('volumetric')
-subdir('volumetric-commit')
-subdir('volumetric-diff')
+executable(
+  'volumetric-commit',
+  sources: [
+    'main.c',
+  ],
+  install: true,
+  include_directories: ['../libvolumetric'],
+  link_with: [libvolumetric],
+)
 
 ###############################################################################
