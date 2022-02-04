@@ -7,7 +7,7 @@
 #
 # CREATED:          01/26/2022
 #
-# LAST EDITED:      01/29/2022
+# LAST EDITED:      02/03/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -27,7 +27,7 @@
 
 libarchive = dependency('libarchive')
 libglib = dependency('glib-2.0')
-libgobiserde = dependency('libgobiserde')
+libserdec = dependency('libserdec')
 
 executable(
   'volumetric-diff',
@@ -37,7 +37,7 @@ executable(
     'volumetric-diff/string.c',
   ],
   include_directories: ['../libvolumetric'],
-  dependencies: [libglib, libgobiserde, libarchive],
+  dependencies: [libglib, libserdec, libarchive],
   link_with: [libvolumetric],
   install: true,
 )

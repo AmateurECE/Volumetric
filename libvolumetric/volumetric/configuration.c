@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/26/2022
+// LAST EDITED:     02/03/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <gobiserde/yaml.h>
+#include <serdec/yaml.h>
 
 #include <volumetric/configuration.h>
 
@@ -48,7 +48,7 @@ static int visit_mapping(yaml_deserializer* deser, void* user_data,
     if (!strcmp("version", key)) {
         // Version check. The version affects whether we can fully deserialize
         // the configuration, so we do need to check it here.
-        result = gobiserde_yaml_deserialize_string(deser,
+        result = serdec_yaml_deserialize_string(deser,
             &config->version);
         if (0 >= result) {
             return result;
@@ -58,13 +58,13 @@ static int visit_mapping(yaml_deserializer* deser, void* user_data,
     }
 
     else if (!strcmp("volume-directory", key)) {
-        result = gobiserde_yaml_deserialize_string(deser,
+        result = serdec_yaml_deserialize_string(deser,
             &config->volume_directory);
     }
 
     else if (!strcmp("volume-path", key)) {
         free(config->volume_path);
-        result = gobiserde_yaml_deserialize_string(deser,
+        result = serdec_yaml_deserialize_string(deser,
             &config->volume_path);
     }
 
@@ -75,7 +75,7 @@ static ParseResult volumetric_configuration_deserialize_yaml(
     yaml_deserializer* deser, VolumetricConfiguration* config)
 {
     volumetric_configuration_defaults(config);
-    int result = gobiserde_yaml_deserialize_map(deser, visit_mapping, config);
+    int result = serdec_yaml_deserialize_map(deser, visit_mapping, config);
     if (0 > result) {
         return -EINVAL;
     }
@@ -116,10 +116,10 @@ ParseResult volumetric_configuration_load(const char* config_file,
         return errno;
     }
 
-    yaml_deserializer* deser = gobiserde_yaml_deserializer_new_file(
+    yaml_deserializer* deser = serdec_yaml_deserializer_new_file(
         input_file);
     int result = volumetric_configuration_deserialize_yaml(deser, config);
-    gobiserde_yaml_deserializer_free(&deser);
+    serdec_yaml_deserializer_free(&deser);
     fclose(input_file);
 
     if (-PARSE_VERSION_MISMATCH == result) {

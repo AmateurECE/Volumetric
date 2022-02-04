@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/26/2022
+// LAST EDITED:     02/03/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -30,7 +30,7 @@
 #include <stdio.h>
 
 #include <glib-2.0/glib.h>
-#include <gobiserde/yaml.h>
+#include <serdec/yaml.h>
 
 #include <volumetric/docker.h>
 #include <volumetric/archive.h>
@@ -110,9 +110,9 @@ static void version_volume(void* key __attribute__((unused)), void* value,
 int version_volumes_in_file(FILE* input)
 {
     VolumeFile volume_file = {0};
-    yaml_deserializer* yaml = gobiserde_yaml_deserializer_new_file(input);
+    yaml_deserializer* yaml = serdec_yaml_deserializer_new_file(input);
     int result = volume_file_deserialize_from_yaml(yaml, &volume_file);
-    gobiserde_yaml_deserializer_free(&yaml);
+    serdec_yaml_deserializer_free(&yaml);
 
     if (0 == result) {
         Docker* docker = docker_proxy_new();

@@ -7,7 +7,7 @@
 #
 # CREATED:          01/16/2022
 #
-# LAST EDITED:      01/26/2022
+# LAST EDITED:      02/03/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -26,7 +26,7 @@
 ###
 
 libglib = dependency('glib-2.0')
-libgobiserde = dependency('libgobiserde')
+libserdec = dependency('libserdec')
 
 executable(
   'volumetric',
@@ -38,7 +38,7 @@ executable(
     '-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500', '-O0', '-g',
   ],
   include_directories: ['../libvolumetric'],
-  dependencies: [libglib, libgobiserde],
+  dependencies: [libglib, libserdec],
   link_with: [libvolumetric],
   install: true,
 )

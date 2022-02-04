@@ -7,7 +7,7 @@
 //
 // CREATED:         01/26/2022
 //
-// LAST EDITED:     02/02/2022
+// LAST EDITED:     02/03/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -37,7 +37,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 #include <glib-2.0/glib.h>
-#include <gobiserde/yaml.h>
+#include <serdec/yaml.h>
 
 #include <config.h>
 #include <volumetric/configuration.h>
@@ -104,9 +104,9 @@ static int find_volume_by_name(const char* path, const char* volume_name,
         }
 
         VolumeFile volume_file = {0};
-        yaml_deserializer* yaml = gobiserde_yaml_deserializer_new_file(input);
+        yaml_deserializer* yaml = serdec_yaml_deserializer_new_file(input);
         result = volume_file_deserialize_from_yaml(yaml, &volume_file);
-        gobiserde_yaml_deserializer_free(&yaml);
+        serdec_yaml_deserializer_free(&yaml);
         fclose(input);
         if (0 != result) {
             break;

@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/22/2022
+// LAST EDITED:     02/03/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -29,7 +29,7 @@
 #include <errno.h>
 
 #include <glib-2.0/glib.h>
-#include <gobiserde/yaml.h>
+#include <serdec/yaml.h>
 
 #include <volumetric/hash.h>
 #include <volumetric/volume.h>
@@ -41,9 +41,9 @@ int archive_volume_visit_map(yaml_deserializer* yaml, void* user_data,
 {
     ArchiveVolume* volume = (ArchiveVolume*)user_data;
     if (!strcmp("name", key)) {
-        return gobiserde_yaml_deserialize_string(yaml, &volume->name);
+        return serdec_yaml_deserialize_string(yaml, &volume->name);
     } else if (!strcmp("url", key)) {
-        return gobiserde_yaml_deserialize_string(yaml, &volume->url);
+        return serdec_yaml_deserialize_string(yaml, &volume->url);
     } else {
         FileHashType hash_type = string_to_file_hash_type(key);
         if (FILE_HASH_TYPE_INVALID == hash_type) {
@@ -52,7 +52,7 @@ int archive_volume_visit_map(yaml_deserializer* yaml, void* user_data,
         volume->hash = malloc(sizeof(FileHash));
         assert(NULL != volume->hash);
         volume->hash->type = hash_type;
-        return gobiserde_yaml_deserialize_string(yaml,
+        return serdec_yaml_deserialize_string(yaml,
             &volume->hash->hash_string);
     }
 }
@@ -63,7 +63,7 @@ int volume_type_visit_map(yaml_deserializer* yaml, void* user_data,
     Volume* volume = (Volume*)user_data;
     if (!strcmp("archive", key)) {
         volume->type = VOLUME_TYPE_ARCHIVE;
-        return gobiserde_yaml_deserialize_map(yaml, archive_volume_visit_map,
+        return serdec_yaml_deserialize_map(yaml, archive_volume_visit_map,
             &volume->archive);
     } else {
         return -EINVAL;
@@ -79,7 +79,7 @@ int volume_visit_map(yaml_deserializer* yaml, void* user_data, const char* key)
     }
 
     gchar* owned_name = (gchar*)strdup(key);
-    int result = gobiserde_yaml_deserialize_map(yaml, volume_type_visit_map,
+    int result = serdec_yaml_deserialize_map(yaml, volume_type_visit_map,
         volume);
     g_hash_table_insert(volumes, owned_name, volume);
     return result;
@@ -90,7 +90,7 @@ int volume_file_visit_map(yaml_deserializer* yaml, void* user_data,
 {
     VolumeFile* volumes = (VolumeFile*)user_data;
     if (!strcmp("version", key)) {
-        int result = gobiserde_yaml_deserialize_string(yaml,
+        int result = serdec_yaml_deserialize_string(yaml,
             &volumes->version);
         if (0 >= result) {
             return result;
@@ -99,7 +99,7 @@ int volume_file_visit_map(yaml_deserializer* yaml, void* user_data,
         }
         return 1;
     } else if (!strcmp("volumes", key)) {
-        return gobiserde_yaml_deserialize_map(yaml, volume_visit_map,
+        return serdec_yaml_deserialize_map(yaml, volume_visit_map,
             volumes->volumes);
     } else {
         return -ENOSYS;
@@ -120,7 +120,7 @@ int volume_file_deserialize_from_yaml(yaml_deserializer* yaml,
     VolumeFile* volumes)
 {
     volume_file_defaults(volumes);
-    int result = gobiserde_yaml_deserialize_map(yaml, volume_file_visit_map,
+    int result = serdec_yaml_deserialize_map(yaml, volume_file_visit_map,
         volumes);
     if (0 > result) {
         return -EINVAL;
