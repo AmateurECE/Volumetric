@@ -7,7 +7,7 @@
 //
 // CREATED:         01/26/2022
 //
-// LAST EDITED:     02/03/2022
+// LAST EDITED:     02/04/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -45,7 +45,7 @@
 #include <volumetric/file.h>
 #include <volumetric/volume.h>
 #include <volumetric-diff/directory.h>
-#include <volumetric-diff/string.h>
+#include <volumetric-diff/string-handling.h>
 
 const char* argp_program_version = "volumetric-diff " CONFIG_VERSION;
 const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";

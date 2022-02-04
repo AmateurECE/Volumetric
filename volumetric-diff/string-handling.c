@@ -7,7 +7,7 @@
 //
 // CREATED:         01/29/2022
 //
-// LAST EDITED:     02/02/2022
+// LAST EDITED:     02/04/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <volumetric-diff/string.h>
+#include <volumetric-diff/string-handling.h>
 
 char* string_append_new(char* string, const char* immutable) {
     size_t length = strlen(string) + strlen(immutable) + 1;
