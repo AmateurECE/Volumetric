@@ -7,7 +7,7 @@
 //
 // CREATED:         01/26/2022
 //
-// LAST EDITED:     02/04/2022
+// LAST EDITED:     02/09/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -104,9 +104,10 @@ static int find_volume_by_name(const char* path, const char* volume_name,
         }
 
         VolumeFile volume_file = {0};
-        yaml_deserializer* yaml = serdec_yaml_deserializer_new_file(input);
+        SerdecYamlDeserializer* yaml = serdec_yaml_deserializer_new_file(
+            input);
         result = volume_file_deserialize_from_yaml(yaml, &volume_file);
-        serdec_yaml_deserializer_free(&yaml);
+        serdec_yaml_deserializer_free(yaml);
         fclose(input);
         if (0 != result) {
             break;

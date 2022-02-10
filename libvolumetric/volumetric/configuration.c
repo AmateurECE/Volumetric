@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/03/2022
+// LAST EDITED:     02/09/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -40,16 +40,17 @@ const char* CONFIGURATION_CURRENT_VERSION = "1.0";
 static void volumetric_configuration_defaults(VolumetricConfiguration* config)
 { config->volume_path = strdup(""); }
 
-static int visit_mapping(yaml_deserializer* deser, void* user_data,
+static int visit_mapping(SerdecYamlDeserializer* deser, void* user_data,
     const char* key)
 {
     VolumetricConfiguration* config = (VolumetricConfiguration*)user_data;
     int result = 0;
+    const char* temp = NULL;
     if (!strcmp("version", key)) {
         // Version check. The version affects whether we can fully deserialize
         // the configuration, so we do need to check it here.
-        result = serdec_yaml_deserialize_string(deser,
-            &config->version);
+        result = serdec_yaml_deserialize_string(deser, &temp);
+        config->version = strdup(temp);
         if (0 >= result) {
             return result;
         } else if (strcmp(CONFIGURATION_CURRENT_VERSION, config->version)) {
@@ -58,21 +59,21 @@ static int visit_mapping(yaml_deserializer* deser, void* user_data,
     }
 
     else if (!strcmp("volume-directory", key)) {
-        result = serdec_yaml_deserialize_string(deser,
-            &config->volume_directory);
+        result = serdec_yaml_deserialize_string(deser, &temp);
+        config->volume_directory = strdup(temp);
     }
 
     else if (!strcmp("volume-path", key)) {
+        result = serdec_yaml_deserialize_string(deser, &temp);
         free(config->volume_path);
-        result = serdec_yaml_deserialize_string(deser,
-            &config->volume_path);
+        config->volume_path = strdup(temp);
     }
 
     return result;
 }
 
 static ParseResult volumetric_configuration_deserialize_yaml(
-    yaml_deserializer* deser, VolumetricConfiguration* config)
+    SerdecYamlDeserializer* deser, VolumetricConfiguration* config)
 {
     volumetric_configuration_defaults(config);
     int result = serdec_yaml_deserialize_map(deser, visit_mapping, config);
@@ -116,10 +117,10 @@ ParseResult volumetric_configuration_load(const char* config_file,
         return errno;
     }
 
-    yaml_deserializer* deser = serdec_yaml_deserializer_new_file(
+    SerdecYamlDeserializer* deser = serdec_yaml_deserializer_new_file(
         input_file);
     int result = volumetric_configuration_deserialize_yaml(deser, config);
-    serdec_yaml_deserializer_free(&deser);
+    serdec_yaml_deserializer_free(deser);
     fclose(input_file);
 
     if (-PARSE_VERSION_MISMATCH == result) {

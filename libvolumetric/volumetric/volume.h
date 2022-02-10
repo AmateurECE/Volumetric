@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/22/2022
+// LAST EDITED:     02/09/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -29,7 +29,7 @@
 #define VOLUMETRIC_VOLUME_H
 
 typedef struct _GHashTable GHashTable;
-typedef struct yaml_deserializer yaml_deserializer;
+typedef struct SerdecYamlDeserializer SerdecYamlDeserializer;
 typedef struct FileHash FileHash;
 
 // A volume file currently looks like this:
@@ -73,7 +73,7 @@ typedef struct VolumeFile {
 extern const char* VOLUME_SCHEMA_VERSION; // 1.0
 
 // Deserialize the VolumeFile instance from the deserializer
-int volume_file_deserialize_from_yaml(yaml_deserializer* yaml,
+int volume_file_deserialize_from_yaml(SerdecYamlDeserializer* yaml,
     VolumeFile* volumes);
 
 // Free memory used internally by the instance

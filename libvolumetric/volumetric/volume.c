@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/03/2022
+// LAST EDITED:     02/09/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -36,14 +36,20 @@
 
 const char* VOLUME_SCHEMA_VERSION = "1.0";
 
-int archive_volume_visit_map(yaml_deserializer* yaml, void* user_data,
+int archive_volume_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
     const char* key)
 {
     ArchiveVolume* volume = (ArchiveVolume*)user_data;
     if (!strcmp("name", key)) {
-        return serdec_yaml_deserialize_string(yaml, &volume->name);
+        const char* temp = NULL;
+        int result = serdec_yaml_deserialize_string(yaml, &temp);
+        volume->name = strdup(temp);
+        return result;
     } else if (!strcmp("url", key)) {
-        return serdec_yaml_deserialize_string(yaml, &volume->url);
+        const char* temp = NULL;
+        int result = serdec_yaml_deserialize_string(yaml, &temp);
+        volume->url = strdup(temp);
+        return result;
     } else {
         FileHashType hash_type = string_to_file_hash_type(key);
         if (FILE_HASH_TYPE_INVALID == hash_type) {
@@ -52,12 +58,14 @@ int archive_volume_visit_map(yaml_deserializer* yaml, void* user_data,
         volume->hash = malloc(sizeof(FileHash));
         assert(NULL != volume->hash);
         volume->hash->type = hash_type;
-        return serdec_yaml_deserialize_string(yaml,
-            &volume->hash->hash_string);
+        const char* temp = NULL;
+        int result = serdec_yaml_deserialize_string(yaml, &temp);
+        volume->hash->hash_string = strdup(temp);
+        return result;
     }
 }
 
-int volume_type_visit_map(yaml_deserializer* yaml, void* user_data,
+int volume_type_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
     const char* key)
 {
     Volume* volume = (Volume*)user_data;
@@ -70,7 +78,8 @@ int volume_type_visit_map(yaml_deserializer* yaml, void* user_data,
     }
 }
 
-int volume_visit_map(yaml_deserializer* yaml, void* user_data, const char* key)
+int volume_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
+    const char* key)
 {
     GHashTable* volumes = (GHashTable*)user_data;
     Volume* volume = malloc(sizeof(Volume));
@@ -85,13 +94,14 @@ int volume_visit_map(yaml_deserializer* yaml, void* user_data, const char* key)
     return result;
 }
 
-int volume_file_visit_map(yaml_deserializer* yaml, void* user_data,
+int volume_file_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
     const char* key)
 {
     VolumeFile* volumes = (VolumeFile*)user_data;
     if (!strcmp("version", key)) {
-        int result = serdec_yaml_deserialize_string(yaml,
-            &volumes->version);
+        const char* temp = NULL;
+        int result = serdec_yaml_deserialize_string(yaml, &temp);
+        volumes->version = strdup(temp);
         if (0 >= result) {
             return result;
         } else if (strcmp(VOLUME_SCHEMA_VERSION, volumes->version)) {
@@ -116,7 +126,7 @@ static void volume_file_defaults(VolumeFile* volumes) {
 }
 
 // Deserialize the VolumeFile instance from the deserializer
-int volume_file_deserialize_from_yaml(yaml_deserializer* yaml,
+int volume_file_deserialize_from_yaml(SerdecYamlDeserializer* yaml,
     VolumeFile* volumes)
 {
     volume_file_defaults(volumes);
