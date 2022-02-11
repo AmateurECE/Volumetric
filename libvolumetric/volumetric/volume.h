@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/09/2022
+// LAST EDITED:     02/11/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -28,28 +28,18 @@
 #ifndef VOLUMETRIC_VOLUME_H
 #define VOLUMETRIC_VOLUME_H
 
-typedef struct _GHashTable GHashTable;
-typedef struct SerdecYamlDeserializer SerdecYamlDeserializer;
 typedef struct FileHash FileHash;
+typedef struct SerdecYamlDeserializer SerdecYamlDeserializer;
 
-// A volume file currently looks like this:
-// version: '1.0'
-//
-// volume-path: <colon-separated list of EXTRA paths to search for volumes>
-//
-// volumes:
-//  <name>:
-//   <type, e.g. archive>:
-//    name: <name of the volume>
-//    url: <url to find the volume at. Only file:// scheme is supported>
-//    hash: <hash of the volume file>
-
+// An archive volume--contents are checked against a .tar.gz archive on the
+// filesystem.
 typedef struct ArchiveVolume {
     char* name;
     char* url;
     FileHash* hash;
 } ArchiveVolume;
 
+// Volume-type-generic container
 typedef enum VolumeType {
     VOLUME_TYPE_ARCHIVE,
 } VolumeType;
@@ -61,23 +51,11 @@ typedef struct Volume {
     };
 } Volume;
 
-typedef struct VolumeFile {
-    // Mostly used internally--to check that the schema of this file is what
-    // we expect.
-    char* version;
+// De-serialize a Volume instance from a Yaml Deserializer
+int volume_deserialize_yaml(SerdecYamlDeserializer* yaml, Volume* volume);
 
-    // Hash table of volumes.
-    GHashTable* volumes;
-} VolumeFile;
-
-extern const char* VOLUME_SCHEMA_VERSION; // 1.0
-
-// Deserialize the VolumeFile instance from the deserializer
-int volume_file_deserialize_from_yaml(SerdecYamlDeserializer* yaml,
-    VolumeFile* volumes);
-
-// Free memory used internally by the instance
-void volume_file_release(VolumeFile* volumes);
+// Free memory consumed by a volume
+void volume_free(Volume* volume);
 
 #endif // VOLUMETRIC_VOLUME_H
 

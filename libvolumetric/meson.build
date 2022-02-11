@@ -7,7 +7,7 @@
 #
 # CREATED:          01/26/2022
 #
-# LAST EDITED:      02/03/2022
+# LAST EDITED:      02/10/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -48,6 +48,7 @@ libvolumetric = library(
     'volumetric/hash.c',
     'volumetric/volume.c',
     'volumetric/configuration.c',
+    'volumetric/project-file.c',
   ],
   c_args: [
     '-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500', '-O0', '-g',

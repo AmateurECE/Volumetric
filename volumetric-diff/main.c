@@ -7,7 +7,7 @@
 //
 // CREATED:         01/26/2022
 //
-// LAST EDITED:     02/09/2022
+// LAST EDITED:     02/11/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -43,6 +43,7 @@
 #include <volumetric/configuration.h>
 #include <volumetric/docker.h>
 #include <volumetric/file.h>
+#include <volumetric/project-file.h>
 #include <volumetric/volume.h>
 #include <volumetric-diff/directory.h>
 #include <volumetric-diff/string-handling.h>
@@ -103,10 +104,10 @@ static int find_volume_by_name(const char* path, const char* volume_name,
                 entry->entry->d_name, strerror(errno));
         }
 
-        VolumeFile volume_file = {0};
+        ProjectFile volume_file = {0};
         SerdecYamlDeserializer* yaml = serdec_yaml_deserializer_new_file(
             input);
-        result = volume_file_deserialize_from_yaml(yaml, &volume_file);
+        result = project_file_deserialize_from_yaml(yaml, &volume_file);
         serdec_yaml_deserializer_free(yaml);
         fclose(input);
         if (0 != result) {

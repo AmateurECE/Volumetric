@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/09/2022
+// LAST EDITED:     02/10/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -36,6 +36,7 @@
 #include <volumetric/archive.h>
 #include <volumetric/file.h>
 #include <volumetric/hash.h>
+#include <volumetric/project-file.h>
 #include <volumetric/versioning.h>
 #include <volumetric/volume.h>
 
@@ -109,9 +110,9 @@ static void version_volume(void* key __attribute__((unused)), void* value,
 
 int version_volumes_in_file(FILE* input)
 {
-    VolumeFile volume_file = {0};
+    ProjectFile volume_file = {0};
     SerdecYamlDeserializer* yaml = serdec_yaml_deserializer_new_file(input);
-    int result = volume_file_deserialize_from_yaml(yaml, &volume_file);
+    int result = project_file_deserialize_from_yaml(yaml, &volume_file);
     serdec_yaml_deserializer_free(yaml);
 
     if (0 == result) {

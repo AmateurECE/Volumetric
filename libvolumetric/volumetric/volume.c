@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/09/2022
+// LAST EDITED:     02/11/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -34,19 +34,26 @@
 #include <volumetric/hash.h>
 #include <volumetric/volume.h>
 
-const char* VOLUME_SCHEMA_VERSION = "1.0";
+///////////////////////////////////////////////////////////////////////////////
+// Private API
+////
 
-int archive_volume_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
-    const char* key)
+///////////////////////////////////////////////////////////////////////////////
+// Archive Volume
+////
+
+// TODO: Put this into "volume/archive.c"?
+static int archive_volume_visit_map(SerdecYamlDeserializer* yaml,
+    void* user_data, const char* key)
 {
     ArchiveVolume* volume = (ArchiveVolume*)user_data;
+    const char* temp = NULL;
+
     if (!strcmp("name", key)) {
-        const char* temp = NULL;
         int result = serdec_yaml_deserialize_string(yaml, &temp);
         volume->name = strdup(temp);
         return result;
     } else if (!strcmp("url", key)) {
-        const char* temp = NULL;
         int result = serdec_yaml_deserialize_string(yaml, &temp);
         volume->url = strdup(temp);
         return result;
@@ -58,14 +65,17 @@ int archive_volume_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
         volume->hash = malloc(sizeof(FileHash));
         assert(NULL != volume->hash);
         volume->hash->type = hash_type;
-        const char* temp = NULL;
         int result = serdec_yaml_deserialize_string(yaml, &temp);
         volume->hash->hash_string = strdup(temp);
         return result;
     }
 }
 
-int volume_type_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
+///////////////////////////////////////////////////////////////////////////////
+// Volume-Generic
+////
+
+static int volume_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
     const char* key)
 {
     Volume* volume = (Volume*)user_data;
@@ -78,71 +88,15 @@ int volume_type_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
     }
 }
 
-int volume_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
-    const char* key)
-{
-    GHashTable* volumes = (GHashTable*)user_data;
-    Volume* volume = malloc(sizeof(Volume));
-    if (NULL == volume) {
-        return -ENOMEM;
-    }
+///////////////////////////////////////////////////////////////////////////////
+// Public API
+////
 
-    gchar* owned_name = (gchar*)strdup(key);
-    int result = serdec_yaml_deserialize_map(yaml, volume_type_visit_map,
-        volume);
-    g_hash_table_insert(volumes, owned_name, volume);
-    return result;
-}
+int volume_deserialize_yaml(SerdecYamlDeserializer* yaml, Volume* volume)
+{ return serdec_yaml_deserialize_map(yaml, volume_visit_map, volume); }
 
-int volume_file_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
-    const char* key)
-{
-    VolumeFile* volumes = (VolumeFile*)user_data;
-    if (!strcmp("version", key)) {
-        const char* temp = NULL;
-        int result = serdec_yaml_deserialize_string(yaml, &temp);
-        volumes->version = strdup(temp);
-        if (0 >= result) {
-            return result;
-        } else if (strcmp(VOLUME_SCHEMA_VERSION, volumes->version)) {
-            return -EINVAL;
-        }
-        return 1;
-    } else if (!strcmp("volumes", key)) {
-        return serdec_yaml_deserialize_map(yaml, volume_visit_map,
-            volumes->volumes);
-    } else {
-        return -ENOSYS;
-    }
-}
-
-static void volume_free(void* volume) {
+void volume_free(Volume* volume) {
     // TODO
-}
-
-static void volume_file_defaults(VolumeFile* volumes) {
-    volumes->volumes = g_hash_table_new_full(g_str_hash, g_str_equal, free,
-        volume_free);
-}
-
-// Deserialize the VolumeFile instance from the deserializer
-int volume_file_deserialize_from_yaml(SerdecYamlDeserializer* yaml,
-    VolumeFile* volumes)
-{
-    volume_file_defaults(volumes);
-    int result = serdec_yaml_deserialize_map(yaml, volume_file_visit_map,
-        volumes);
-    if (0 > result) {
-        return -EINVAL;
-    }
-
-    return 0;
-}
-
-// Free memory used internally by the instance
-void volume_file_release(VolumeFile* volumes) {
-    free(volumes->version);
-    g_hash_table_unref(volumes->volumes);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
