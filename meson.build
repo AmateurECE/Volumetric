@@ -25,7 +25,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-project('volumetric', 'c', version: '0.2.3')
+project('volumetric', 'c', version: '0.2.4')
 
 subdir('libvolumetric')
 subdir('volumetric')
