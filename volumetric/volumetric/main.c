@@ -7,7 +7,7 @@
 //
 // CREATED:         01/16/2022
 //
-// LAST EDITED:     01/26/2022
+// LAST EDITED:     02/11/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -26,6 +26,7 @@
 ////
 
 #include <argp.h>
+#include <assert.h>
 #include <dirent.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -33,8 +34,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <glib-2.0/glib.h>
+
 #include <config.h>
 #include <volumetric/configuration.h>
+#include <volumetric/directory.h>
+#include <volumetric/docker.h>
+#include <volumetric/project-file.h>
 #include <volumetric/versioning.h>
 #include <volumetric/volume.h>
 
@@ -68,56 +74,27 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
     return 0;
 }
 
-static void print_error(const char* message, ...) {
-    va_list args;
-    va_start(args, message);
-    vfprintf(stderr, message, args);
-    fprintf(stderr, ": %s\n", strerror(errno));
-}
+static int load_volumes(VolumetricConfiguration* config) {
+    ProjectIter* project_iter = project_iter_new(config);
+    assert(NULL != project_iter);
+    Docker* docker = docker_proxy_new();
+    assert(NULL != docker);
 
-static int load_volumes(const char* path, int (*load_entry)(FILE*)) {
-    struct dirent* entry = NULL;
-    DIR* directory = opendir(path);
-    if (NULL == directory) {
-        print_error("cannot open directory %s", path);
-        return errno;
-    }
-
+    ProjectFile* project = NULL;
     int result = 0;
-    size_t path_length = strlen(path);
-    char* whole_path = malloc(path_length + 256);
-    if (NULL == whole_path) {
-        print_error("Cannot allocate memory");
-    }
+    while (NULL != (project = project_iter_next(project_iter))) {
 
-    memset(whole_path, 0, path_length + 256);
-    strcat(whole_path, path);
-    whole_path[path_length] = '/';
-
-    while (NULL != (entry = readdir(directory))) {
-        // Ignore '.' and '..'
-        if (!strcmp(".", entry->d_name) || !strcmp("..", entry->d_name)) {
-            continue;
-        }
-
-        size_t entry_length = strlen(entry->d_name);
-        memcpy(whole_path + path_length + 1, entry->d_name, entry_length);
-        whole_path[path_length + 1 + entry_length] = '\0';
-
-        FILE* input_file = fopen(whole_path, "rb");
-        if (NULL == input_file) {
-            print_error("error opening file %s", entry->d_name);
-        }
-
-        result = load_entry(input_file);
-        fclose(input_file);
-        if (0 != result) {
-            break;
+        GHashTableIter iter;
+        gpointer key, value;
+        g_hash_table_iter_init(&iter, project->volumes);
+        while (g_hash_table_iter_next(&iter, &key, &value)) {
+            Volume* current_volume = (Volume*)value;
+            // Making sure we always report an error if there's at least one.
+            result += version_volume(current_volume, docker);
         }
     }
 
-    free(whole_path);
-    closedir(directory);
+    docker_proxy_free(docker);
     return result;
 }
 
@@ -136,7 +113,7 @@ int main(int argc, char** argv) {
         return result;
     }
 
-    result = load_volumes(config.volume_directory, version_volumes_in_file);
+    result = load_volumes(&config);
     volumetric_configuration_release(&config);
     return result;
 }

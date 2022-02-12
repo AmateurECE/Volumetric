@@ -7,7 +7,7 @@
 //
 // CREATED:         01/16/2022
 //
-// LAST EDITED:     02/10/2022
+// LAST EDITED:     02/11/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -69,11 +69,11 @@ void volumetric_configuration_release(VolumetricConfiguration* config);
 // Iteration API
 ////
 
-typedef struct VolumeIter VolumeIter;
-typedef struct Volume Volume;
-VolumeIter* volume_iter_new(const char* configuration_file);
-Volume* volume_iter_next(VolumeIter* iter);
-void volume_iter_free(VolumeIter* iter);
+typedef struct ProjectIter ProjectIter;
+typedef struct ProjectFile ProjectFile;
+ProjectIter* project_iter_new(VolumetricConfiguration* configuration);
+ProjectFile* project_iter_next(ProjectIter* iter);
+void project_iter_free(ProjectIter* iter);
 
 #endif // VOLUMETRIC_CONFIGURATION_H
 

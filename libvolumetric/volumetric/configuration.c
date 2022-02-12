@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/09/2022
+// LAST EDITED:     02/11/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -31,11 +31,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <glib-2.0/glib.h>
 #include <serdec/yaml.h>
 
 #include <volumetric/configuration.h>
+#include <volumetric/directory.h>
+#include <volumetric/project-file.h>
+#include <volumetric/volume.h>
 
 const char* CONFIGURATION_CURRENT_VERSION = "1.0";
+
+typedef struct ProjectIter {
+    DirectoryIter* iter;
+    DirectoryEntry* entry;
+    ProjectFile project;
+} ProjectIter;
+
+///////////////////////////////////////////////////////////////////////////////
+// Private Functions
+////
 
 static void volumetric_configuration_defaults(VolumetricConfiguration* config)
 { config->volume_path = strdup(""); }
@@ -107,6 +121,10 @@ static char* get_volume_directory(const char* configuration_file,
     return path;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Public Configuration Deserialization API
+////
+
 ParseResult volumetric_configuration_load(const char* config_file,
     VolumetricConfiguration* config)
 {
@@ -144,6 +162,51 @@ void volumetric_configuration_release(VolumetricConfiguration* config) {
     if (NULL != config->version) { free(config->version); }
     if (NULL != config->volume_directory) { free(config->volume_directory); }
     if (NULL != config->volume_path) { free(config->volume_path); }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Public Volume Iteration API
+////
+
+ProjectIter* project_iter_new(VolumetricConfiguration* configuration) {
+    ProjectIter* iter = malloc(sizeof(ProjectIter));
+    if (NULL == iter) {
+        return NULL;
+    }
+
+    memset(iter, 0, sizeof(*iter));
+    iter->iter = directory_iter_new(configuration->volume_directory);
+    iter->entry = NULL;
+    return iter;
+}
+
+ProjectFile* project_iter_next(ProjectIter* iter) {
+    iter->entry = directory_iter_next(iter->iter);
+    if (NULL == iter->entry) {
+        return NULL;
+    }
+
+    FILE* input = fopen(iter->entry->absolute_path, "rb");
+    if (NULL == input) {
+        fprintf(stderr, "error opening file %s: %s\n",
+            iter->entry->entry->d_name, strerror(errno));
+        return NULL;
+    }
+
+    SerdecYamlDeserializer* yaml = serdec_yaml_deserializer_new_file(input);
+    int result = project_file_deserialize_from_yaml(yaml, &iter->project);
+    serdec_yaml_deserializer_free(yaml);
+    fclose(input);
+    if (0 != result) {
+        return NULL;
+    }
+
+    return &iter->project;
+}
+
+void project_iter_free(ProjectIter* iter) {
+    directory_iter_free(iter->iter);
+    free(iter);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/17/2022
+// LAST EDITED:     02/11/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -28,7 +28,9 @@
 #ifndef VOLUMETRIC_VERSIONING_H
 #define VOLUMETRIC_VERSIONING_H
 
-int version_volumes_in_file(FILE* input_file);
+typedef struct Volume Volume;
+typedef struct Docker Docker;
+int version_volume(Volume* volume, Docker* docker);
 
 #endif // VOLUMETRIC_VERSIONING_H
 

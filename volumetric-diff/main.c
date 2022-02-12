@@ -41,11 +41,11 @@
 
 #include <config.h>
 #include <volumetric/configuration.h>
+#include <volumetric/directory.h>
 #include <volumetric/docker.h>
 #include <volumetric/file.h>
 #include <volumetric/project-file.h>
 #include <volumetric/volume.h>
-#include <volumetric-diff/directory.h>
 #include <volumetric-diff/string-handling.h>
 
 const char* argp_program_version = "volumetric-diff " CONFIG_VERSION;
@@ -91,37 +91,23 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
     return 0;
 }
 
-static int find_volume_by_name(const char* path, const char* volume_name,
-    Volume* volume)
+static bool find_volume_by_name(VolumetricConfiguration* config,
+    const char* volume_name, Volume* volume)
 {
-    DirectoryIter* iter = directory_iter_new(path);
-    DirectoryEntry* entry = NULL;
-    int result = 1;
-    while (NULL != (entry = directory_iter_next(iter))) {
-        FILE* input = fopen(entry->absolute_path, "rb");
-        if (NULL == input) {
-            fprintf(stderr, "error opening file %s: %s\n",
-                entry->entry->d_name, strerror(errno));
-        }
+    ProjectIter* project_iter = project_iter_new(config);
+    assert(NULL != project_iter);
 
-        ProjectFile volume_file = {0};
-        SerdecYamlDeserializer* yaml = serdec_yaml_deserializer_new_file(
-            input);
-        result = project_file_deserialize_from_yaml(yaml, &volume_file);
-        serdec_yaml_deserializer_free(yaml);
-        fclose(input);
-        if (0 != result) {
-            break;
-        }
+    ProjectFile* project_file = NULL;
+    gpointer key, value;
+    bool found = false;
+    while (NULL != (project_file = project_iter_next(project_iter))) {
 
-        GHashTableIter hash_iter;
-        gpointer key, value;
-        bool found = false;
-        g_hash_table_iter_init(&hash_iter, volume_file.volumes);
-        while (g_hash_table_iter_next(&hash_iter, &key, &value)) {
+        GHashTableIter iter;
+        g_hash_table_iter_init(&iter, project_file->volumes);
+        while (g_hash_table_iter_next(&iter, &key, &value)) {
             Volume* current_volume = (Volume*)value;
             if (!strcmp(volume_name, current_volume->archive.name)) {
-                g_hash_table_steal(volume_file.volumes, key);
+                g_hash_table_steal(project_file->volumes, key);
                 memcpy(volume, current_volume, sizeof(Volume));
                 found = true;
                 break;
@@ -129,13 +115,11 @@ static int find_volume_by_name(const char* path, const char* volume_name,
         }
 
         if (found) {
-            result = 0;
-            break;
+            return true;
         }
     }
 
-    directory_iter_free(iter);
-    return result;
+    return false;
 }
 
 static bool check_file_for_modifications(struct archive_entry* entry,
@@ -262,9 +246,11 @@ static void trim_prefix_from_entries(GPtrArray* list, const char* prefix) {
     }
 }
 
-static int diff_volume(const char* volume_directory, const char* volume_name) {
+static int diff_volume(VolumetricConfiguration* configuration,
+    const char* volume_name)
+{
     Volume volume = {0};
-    int result = find_volume_by_name(volume_directory, volume_name, &volume);
+    int result = find_volume_by_name(configuration, volume_name, &volume);
     assert(0 == result);
 
     Docker* docker = docker_proxy_new();
@@ -312,7 +298,7 @@ int main(int argc, char** argv) {
     assert(0 == result);
 
     // Do diff using volume
-    result = diff_volume(config.volume_directory, arguments.volume_name);
+    result = diff_volume(&config, arguments.volume_name);
 
     volumetric_configuration_release(&config);
     return result;

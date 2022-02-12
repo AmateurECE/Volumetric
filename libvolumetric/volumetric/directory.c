@@ -7,7 +7,7 @@
 //
 // CREATED:         01/29/2022
 //
-// LAST EDITED:     01/29/2022
+// LAST EDITED:     02/11/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -27,13 +27,14 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <linux/limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 
-#include <volumetric-diff/directory.h>
+#include <volumetric/directory.h>
 
 typedef struct DirectoryIter {
     char* directory_owned;

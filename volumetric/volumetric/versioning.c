@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/10/2022
+// LAST EDITED:     02/11/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -25,6 +25,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+#include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -36,9 +37,10 @@
 #include <volumetric/archive.h>
 #include <volumetric/file.h>
 #include <volumetric/hash.h>
-#include <volumetric/project-file.h>
-#include <volumetric/versioning.h>
 #include <volumetric/volume.h>
+
+// This project
+#include <volumetric/versioning.h>
 
 struct VolumeFilter {
     const char* name;
@@ -56,14 +58,14 @@ static int filter_volume_by_name(const DockerVolume* volume, void* user_data)
     return DOCKER_VISITOR_CONTINUE;
 }
 
-static void version_archive_volume(ArchiveVolume* config, Docker* docker) {
+static int version_archive_volume(ArchiveVolume* config, Docker* docker) {
     struct VolumeFilter filter = {0};
     filter.name = config->name;
     docker_volume_list(docker, filter_volume_by_name, &filter);
 
     if (filter.found) {
         printf("%s: Volume exists, taking no further action.\n", config->name);
-        return;
+        return 0;
     }
 
     // Download the file to mapped memory
@@ -76,7 +78,8 @@ static void version_archive_volume(ArchiveVolume* config, Docker* docker) {
     {
         fprintf(stderr, "%s: Error: Hash mismatch for file %s\n", config->name,
             config->url);
-        return;
+        file_contents_release(&file);
+        return -EINVAL;
     }
 
     // Create the volume
@@ -84,7 +87,7 @@ static void version_archive_volume(ArchiveVolume* config, Docker* docker) {
     DockerVolume* volume = docker_volume_create(docker, config->name);
     if (NULL == volume) {
         file_contents_release(&file);
-        return;
+        return -1 * errno;
     }
 
     // Decompress it to disk.
@@ -92,36 +95,16 @@ static void version_archive_volume(ArchiveVolume* config, Docker* docker) {
     archive_extract_to_disk_universal(&file, volume->mountpoint);
 
     docker_volume_free(volume);
-    file_contents_release(&file);
+    return 0;
 }
 
-static void version_volume(void* key __attribute__((unused)), void* value,
-    void* user_data)
-{
-    Volume* volume = (Volume*)value;
-    Docker* docker = (Docker*)user_data;
+int version_volume(Volume* volume, Docker* docker) {
     switch (volume->type) {
     case VOLUME_TYPE_ARCHIVE:
-        version_archive_volume(&volume->archive, docker);
-        break;
-    default: break;
+        return version_archive_volume(&volume->archive, docker);
+    default:
+        assert(false);
     }
-}
-
-int version_volumes_in_file(FILE* input)
-{
-    ProjectFile volume_file = {0};
-    SerdecYamlDeserializer* yaml = serdec_yaml_deserializer_new_file(input);
-    int result = project_file_deserialize_from_yaml(yaml, &volume_file);
-    serdec_yaml_deserializer_free(yaml);
-
-    if (0 == result) {
-        Docker* docker = docker_proxy_new();
-        g_hash_table_foreach(volume_file.volumes, version_volume, docker);
-        docker_proxy_free(docker);
-    }
-
-    return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
