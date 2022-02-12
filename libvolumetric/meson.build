@@ -7,7 +7,7 @@
 #
 # CREATED:          01/26/2022
 #
-# LAST EDITED:      02/11/2022
+# LAST EDITED:      02/12/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -57,6 +57,7 @@ libvolumetric = library(
   dependencies: [
     libserdec, libglib, libcurl, libjson_c, libcrypto, libarchive,
   ],
+  soversion: meson.project_version(),
   install: true,
 )
 

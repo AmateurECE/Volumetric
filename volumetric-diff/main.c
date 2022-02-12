@@ -269,16 +269,10 @@ static int diff_volume(VolumetricConfiguration* configuration,
     if ('/' != live_volume->mountpoint[mountpoint_length - 1]) {
         // Have to add that terminating '/'
         mountpoint = string_append_new(string_new(live_volume->mountpoint),
-            &(char){'/'});
+            "/");
     }
     trim_prefix_from_entries(directory, mountpoint);
 
-    /* for (guint i = 0; i < archive->len && NULL != archive->pdata[i]; ++i) */
-    /*     { printf("%s\n", (const char*)archive->pdata[i]); } */
-    FILE* output_file = fopen("directory.txt", "wb");
-    for (guint i = 0; i < directory->len && NULL != directory->pdata[i]; ++i)
-    { fprintf(output_file, "%s\n", (const char*)directory->pdata[i]); }
-    fclose(output_file);
     int result = diff_directory_from_archive(directory, volume.archive.url,
         mountpoint);
     free(mountpoint);
