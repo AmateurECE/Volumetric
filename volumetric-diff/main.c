@@ -7,7 +7,7 @@
 //
 // CREATED:         01/26/2022
 //
-// LAST EDITED:     02/11/2022
+// LAST EDITED:     02/12/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -250,8 +250,8 @@ static int diff_volume(VolumetricConfiguration* configuration,
     const char* volume_name)
 {
     Volume volume = {0};
-    int result = find_volume_by_name(configuration, volume_name, &volume);
-    assert(0 == result);
+    bool found = find_volume_by_name(configuration, volume_name, &volume);
+    assert(true == found);
 
     Docker* docker = docker_proxy_new();
     DockerVolume* live_volume = docker_volume_inspect(docker,
@@ -279,7 +279,7 @@ static int diff_volume(VolumetricConfiguration* configuration,
     for (guint i = 0; i < directory->len && NULL != directory->pdata[i]; ++i)
     { fprintf(output_file, "%s\n", (const char*)directory->pdata[i]); }
     fclose(output_file);
-    result = diff_directory_from_archive(directory, volume.archive.url,
+    int result = diff_directory_from_archive(directory, volume.archive.url,
         mountpoint);
     free(mountpoint);
     return result;
