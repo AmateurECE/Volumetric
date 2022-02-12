@@ -41,8 +41,9 @@
 #include <volumetric/directory.h>
 #include <volumetric/docker.h>
 #include <volumetric/project-file.h>
-#include <volumetric/versioning.h>
 #include <volumetric/volume.h>
+
+#include "versioning.h"
 
 const char* argp_program_version = "volumetric " CONFIG_VERSION;
 const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";

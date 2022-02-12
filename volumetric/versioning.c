@@ -39,8 +39,7 @@
 #include <volumetric/hash.h>
 #include <volumetric/volume.h>
 
-// This project
-#include <volumetric/versioning.h>
+#include "versioning.h"
 
 struct VolumeFilter {
     const char* name;
