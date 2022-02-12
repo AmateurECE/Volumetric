@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/27/2022
+// LAST EDITED:     02/11/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -29,7 +29,7 @@
 #define VOLUMETRIC_DOCKER_H
 
 typedef struct Docker Docker;
-typedef struct DockerListIterator DockerListIterator;
+typedef struct DockerVolumeListIter DockerVolumeListIter;
 
 Docker* docker_proxy_new();
 void docker_proxy_free(Docker* docker);
@@ -39,11 +39,6 @@ typedef struct DockerVolume {
     char* driver;
     char* mountpoint;
 } DockerVolume;
-
-enum {
-    DOCKER_VISITOR_CONTINUE=0,
-    DOCKER_VISITOR_STOP=1,
-};
 
 // TODO: I hate this interface. It would be nice to somehow separate the logic
 // of volume operations from the proxy interface. Like some kind of a:
@@ -67,9 +62,10 @@ enum {
 // Create the volume
 DockerVolume* docker_volume_create(Docker* docker, const char* name);
 
-// The visitor method should return one of the VISITOR_* constants above.
-int docker_volume_list(Docker* docker,
-    int (*visitor)(const DockerVolume*, void*), void* user_data);
+// Iteration API for the /volumes endpoint
+DockerVolumeListIter* docker_volume_list(Docker* docker);
+const DockerVolume* docker_volume_list_iter_next(DockerVolumeListIter* iter);
+void docker_volume_list_iter_free(DockerVolumeListIter* iter);
 
 // Release internal memory held by the DockerVolume instance.
 void docker_volume_free(DockerVolume* volume);

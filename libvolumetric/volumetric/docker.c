@@ -7,7 +7,7 @@
 //
 // CREATED:         01/18/2022
 //
-// LAST EDITED:     01/27/2022
+// LAST EDITED:     02/12/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -37,6 +37,11 @@
 #include <json-c/json_visit.h>
 
 #include <volumetric/docker.h>
+
+typedef struct DockerVolumeListIter {
+    GArray* array;
+    guint index;
+} DockerVolumeListIter;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Private API
@@ -140,15 +145,6 @@ static void populate_docker_volume_from_json(DockerVolume* volume,
     }
 }
 
-static int invoke_visitor_for_volume(Docker* docker, json_object* object) {
-    DockerVolume volume = {0};
-    populate_docker_volume_from_json(&volume, object);
-
-    int result = docker->list.visitor(&volume, docker->list.visitor_data);
-    docker_volume_free_impl(&volume, false);
-    return result;
-}
-
 static int http_get_application_json(Docker* docker, const char* url) {
     docker->tokener = json_tokener_new();
     curl_easy_setopt(docker->curl, CURLOPT_URL, url);
@@ -167,8 +163,8 @@ static int http_get_application_json(Docker* docker, const char* url) {
     if (CURLE_OK != response) {
         fprintf(stderr, "%s:%d:Couldn't connect to docker daemon: %s (%s)\n",
             __FILE__, __LINE__, error_buffer, curl_easy_strerror(response));
-        result = -EINVAL;
-        goto error;
+        json_tokener_free(docker->tokener);
+        return -EINVAL;
     }
 
     // Check that the docker daemon returned a valid JSON object
@@ -177,11 +173,10 @@ static int http_get_application_json(Docker* docker, const char* url) {
             docker->tokener);
         fprintf(stderr, "%s:%d:Couldn't enumerate docker volumes: %s\n",
             __FILE__, __LINE__, json_tokener_error_desc(error));
-        result = -EINVAL;
-        goto error;
+        json_tokener_free(docker->tokener);
+        return -EINVAL;
     }
 
- error:
     json_tokener_free(docker->tokener);
     return result;
 }
@@ -253,16 +248,18 @@ DockerVolume* docker_volume_create(Docker* docker, const char* name) {
     return NULL;
 }
 
-int docker_volume_list(Docker* docker,
-    int (*visitor)(const DockerVolume*, void*), void* user_data)
-{
-    int result = 0;
-    docker->list.visitor = visitor;
-    docker->list.visitor_data = user_data;
-    result = http_get_application_json(docker, "http://localhost/volumes");
+DockerVolumeListIter* docker_volume_list(Docker* docker) {
+    DockerVolumeListIter* iter = malloc(sizeof(DockerVolumeListIter));
+    if (NULL == iter) {
+        fprintf(stderr, "%s:%d:%s\n", __FUNCTION__, __LINE__, strerror(errno));
+        return NULL;
+    }
+    memset(iter, 0, sizeof(*iter));
+
+    int result = http_get_application_json(docker, "http://localhost/volumes");
     if (0 != result) {
-        result = -EINVAL;
-        goto error;
+        free(iter);
+        return NULL;
     }
 
     // Check whether the response was an error message
@@ -273,21 +270,39 @@ int docker_volume_list(Docker* docker,
             "message");
         fprintf(stderr, "%s:%d:Docker daemon says: %s\n", __FILE__, __LINE__,
             json_object_get_string(message));
-        result = -EINVAL;
-        goto error;
+        free(iter);
+        json_object_put(docker->write_object);
+        return NULL;
     }
 
     int array_length = json_object_array_length(volumes);
+    iter->array = g_array_sized_new(FALSE, TRUE, sizeof(DockerVolume),
+        array_length);
+    DockerVolume* array = (DockerVolume*)iter->array->data;
     for (int i = 0; i < array_length; ++i) {
-        json_object* volume = json_object_array_get_idx(volumes, i);
-        int callback_result = invoke_visitor_for_volume(docker, volume);
-        if (DOCKER_VISITOR_STOP == callback_result) {
-            break;
-        }
+        json_object* object = json_object_array_get_idx(volumes, i);
+        populate_docker_volume_from_json(&array[i], object);
     }
 
- error:
-    return result;
+    return iter;
+}
+
+const DockerVolume* docker_volume_list_iter_next(DockerVolumeListIter* iter) {
+    if (iter->index > iter->array->len) {
+        return NULL;
+    }
+
+    DockerVolume* array = (DockerVolume*)iter->array->data;
+    return &array[iter->index++];
+}
+
+void docker_volume_list_iter_free(DockerVolumeListIter* iter) {
+    DockerVolume* array = (DockerVolume*)iter->array->data;
+    for (guint i = 0; i < iter->array->len; ++i) {
+        docker_volume_free_impl(&array[i], false);
+    }
+    g_array_free(iter->array, TRUE);
+    free(iter);
 }
 
 DockerVolume* docker_volume_inspect(Docker* docker, const char* name) {

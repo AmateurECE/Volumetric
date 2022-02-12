@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/11/2022
+// LAST EDITED:     02/12/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -41,33 +41,20 @@
 
 #include "versioning.h"
 
-struct VolumeFilter {
-    const char* name;
-    bool found;
-};
-
-static int filter_volume_by_name(const DockerVolume* volume, void* user_data)
-{
-    struct VolumeFilter* filter = (struct VolumeFilter*)user_data;
-    if (!strcmp(filter->name, volume->name)) {
-        filter->found = true;
-        return DOCKER_VISITOR_STOP;
-    }
-
-    return DOCKER_VISITOR_CONTINUE;
-}
-
 static int version_archive_volume(ArchiveVolume* config, Docker* docker) {
-    struct VolumeFilter filter = {0};
-    filter.name = config->name;
-    docker_volume_list(docker, filter_volume_by_name, &filter);
-
-    if (filter.found) {
-        printf("%s: Volume exists, taking no further action.\n", config->name);
-        return 0;
+    // First, check to make sure the volume doesn't already exist
+    DockerVolumeListIter* iter = docker_volume_list(docker);
+    const DockerVolume* list_entry = NULL;
+    while (NULL != (list_entry = docker_volume_list_iter_next(iter))) {
+        if (!strcmp(config->name, list_entry->name)) {
+            printf("%s: Volume exists, taking no further action.\n",
+                config->name);
+            return 0;
+        }
     }
+    docker_volume_list_iter_free(iter);
 
-    // Download the file to mapped memory
+    // Map the file to memory
     FileContents file = {0};
     file_contents_init(&file, config->url);
 
