@@ -39,7 +39,7 @@
 #include <volumetric/docker.h>
 
 typedef struct DockerVolumeListIter {
-    GArray* array;
+    GPtrArray* array;
     guint index;
 } DockerVolumeListIter;
 
@@ -275,13 +275,15 @@ DockerVolumeListIter* docker_volume_list(Docker* docker) {
         return NULL;
     }
 
+    iter->array = g_ptr_array_new_with_free_func(
+        (GDestroyNotify)docker_volume_free);
     int array_length = json_object_array_length(volumes);
-    iter->array = g_array_sized_new(FALSE, TRUE, sizeof(DockerVolume),
-        array_length);
-    DockerVolume* array = (DockerVolume*)iter->array->data;
     for (int i = 0; i < array_length; ++i) {
         json_object* object = json_object_array_get_idx(volumes, i);
-        populate_docker_volume_from_json(&array[i], object);
+        DockerVolume* volume = malloc(sizeof(DockerVolume));
+        assert(NULL != volume);
+        populate_docker_volume_from_json(volume, object);
+        g_ptr_array_add(iter->array, volume);
     }
 
     return iter;
@@ -292,16 +294,11 @@ const DockerVolume* docker_volume_list_iter_next(DockerVolumeListIter* iter) {
         return NULL;
     }
 
-    DockerVolume* array = (DockerVolume*)iter->array->data;
-    return &array[iter->index++];
+    return iter->array->pdata[iter->index++];
 }
 
 void docker_volume_list_iter_free(DockerVolumeListIter* iter) {
-    DockerVolume* array = (DockerVolume*)iter->array->data;
-    for (guint i = 0; i < iter->array->len; ++i) {
-        docker_volume_free_impl(&array[i], false);
-    }
-    g_array_free(iter->array, TRUE);
+    g_ptr_array_unref(iter->array);
     free(iter);
 }
 
