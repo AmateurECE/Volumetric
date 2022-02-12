@@ -2,3 +2,7 @@ option('configuration_file',
        description: 'Default configuration file to load (unless overridden)',
        type: 'string',
        value: '/etc/volumetric/volumetric.yaml')
+option('systemd_unitdir',
+       description: 'Location to install systemd unit file',
+       type: 'string',
+       value: '/lib/systemd/system')

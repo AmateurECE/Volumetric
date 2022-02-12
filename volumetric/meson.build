@@ -7,7 +7,7 @@
 #
 # CREATED:          01/16/2022
 #
-# LAST EDITED:      02/11/2022
+# LAST EDITED:      02/12/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -44,6 +44,6 @@ executable(
 )
 
 # Install systemd service
-install_data('volumetric.service', install_dir: '/lib/systemd/system')
+install_data('volumetric.service', install_dir: get_option('systemd_unitdir'))
 
 ###############################################################################
