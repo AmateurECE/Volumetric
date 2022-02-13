@@ -28,6 +28,8 @@
 #ifndef VOLUMETRIC_VOLUME_H
 #define VOLUMETRIC_VOLUME_H
 
+#include <stdbool.h>
+
 #include <volumetric/volume/archive.h>
 
 typedef struct Docker Docker;
@@ -57,6 +59,9 @@ int volume_checkout(Volume* volume, Docker* docker);
 
 // Check for differences between the volume source and live
 int volume_diff(Volume* volume, Docker* docker);
+
+// Commit a dirty volume to the source
+int volume_commit(Volume* volume, Docker* docker, bool dry_run);
 
 #endif // VOLUMETRIC_VOLUME_H
 

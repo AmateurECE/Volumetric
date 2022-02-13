@@ -7,7 +7,7 @@
 //
 // CREATED:         01/18/2022
 //
-// LAST EDITED:     02/12/2022
+// LAST EDITED:     02/13/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -339,5 +339,25 @@ void docker_volume_free(DockerVolume* volume)
 
 // Currently no use case for this?
 int docker_volume_remove(Docker* proxy, const char* name);
+
+///////////////////////////////////////////////////////////////////////////////
+// Container API
+////
+
+// List the containers the engine is managing
+DockerContainerIter* docker_container_list(Docker* docker)
+{ return NULL; }
+
+// Mutate the iterator
+const DockerContainer* docker_container_iter_next(DockerContainerIter* iter)
+{ return NULL; }
+
+void docker_container_iter_free(DockerContainerIter* iter) {}
+
+// Iterate through mounts
+const DockerMount* docker_mount_iter_next(DockerMountIter* iter)
+{ return NULL; }
+
+void docker_mount_iter_free(DockerMountIter* iter) {}
 
 ///////////////////////////////////////////////////////////////////////////////

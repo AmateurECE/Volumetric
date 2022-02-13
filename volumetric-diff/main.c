@@ -27,18 +27,11 @@
 
 #include <argp.h>
 #include <assert.h>
-#include <errno.h>
 #include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <glib-2.0/glib.h>
-#include <serdec/yaml.h>
 
 #include <config.h>
 #include <volumetric/configuration.h>
 #include <volumetric/docker.h>
-#include <volumetric/project-file.h>
 #include <volumetric/volume.h>
 
 const char* argp_program_version = "volumetric-diff " CONFIG_VERSION;

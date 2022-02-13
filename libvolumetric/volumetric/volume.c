@@ -81,4 +81,14 @@ int volume_diff(Volume* volume, Docker* docker) {
     }
 }
 
+// Check for differences between the volume source and live
+int volume_commit(Volume* volume, Docker* docker, bool dry_run) {
+    switch (volume->type) {
+    case VOLUME_TYPE_ARCHIVE:
+        return archive_volume_commit(&volume->archive, docker, dry_run);
+    default:
+        assert(false);
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////

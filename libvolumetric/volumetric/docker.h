@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/11/2022
+// LAST EDITED:     02/13/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -30,9 +30,20 @@
 
 typedef struct Docker Docker;
 typedef struct DockerVolumeListIter DockerVolumeListIter;
+typedef struct DockerMountIter DockerMountIter;
+typedef struct DockerContainerIter DockerContainerIter;
 
 Docker* docker_proxy_new();
 void docker_proxy_free(Docker* docker);
+
+typedef struct DockerMount {
+    char* source;
+} DockerMount;
+
+typedef struct DockerContainer {
+    char* name;
+    DockerMountIter* mounts;
+} DockerContainer;
 
 typedef struct DockerVolume {
     char* name;
@@ -59,6 +70,10 @@ typedef struct DockerVolume {
 // Docker daemon is not the same information needed to export a useful data
 // interface.
 
+///////////////////////////////////////////////////////////////////////////////
+// Docker Volume API
+////
+
 // Create the volume
 DockerVolume* docker_volume_create(Docker* docker, const char* name);
 
@@ -75,6 +90,21 @@ DockerVolume* docker_volume_inspect(Docker* docker, const char* name);
 
 // This method currently doesn't have an implementation.
 int docker_volume_remove(Docker* docker, const char* name);
+
+///////////////////////////////////////////////////////////////////////////////
+// Docker Container API
+////
+
+// List the containers the engine is managing
+DockerContainerIter* docker_container_list(Docker* docker);
+
+// Mutate the iterator
+const DockerContainer* docker_container_iter_next(DockerContainerIter* iter);
+void docker_container_iter_free(DockerContainerIter* iter);
+
+// Iterate through mounts
+const DockerMount* docker_mount_iter_next(DockerMountIter* iter);
+void docker_mount_iter_free(DockerMountIter* iter);
 
 #endif // VOLUMETRIC_DOCKER_H
 

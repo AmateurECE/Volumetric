@@ -29,6 +29,8 @@
 #ifndef VOLUMETRIC_VOLUME_ARCHIVE_H
 #define VOLUMETRIC_VOLUME_ARCHIVE_H
 
+#include <stdbool.h>
+
 typedef struct FileHash FileHash;
 typedef struct Docker Docker;
 typedef struct SerdecYamlDeserializer SerdecYamlDeserializer;
@@ -45,6 +47,7 @@ int archive_volume_deserialize_yaml(SerdecYamlDeserializer* yaml,
     ArchiveVolume* volume);
 int archive_volume_checkout(ArchiveVolume* config, Docker* docker);
 int archive_volume_diff(ArchiveVolume* volume, Docker* docker);
+int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run);
 
 #endif // VOLUMETRIC_VOLUME_ARCHIVE_H
 

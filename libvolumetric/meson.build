@@ -52,6 +52,7 @@ libvolumetric = library(
     'volumetric/directory.c',
     'volumetric/string-handling.c',
 
+    'volumetric/volume/archive/commit.c',
     'volumetric/volume/archive/deser.c',
     'volumetric/volume/archive/status.c',
     'volumetric/volume/archive/versioning.c',
