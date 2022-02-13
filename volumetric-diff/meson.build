@@ -7,7 +7,7 @@
 #
 # CREATED:          01/26/2022
 #
-# LAST EDITED:      02/11/2022
+# LAST EDITED:      02/12/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -31,10 +31,7 @@ libserdec = dependency('libserdec')
 
 executable(
   'volumetric-diff',
-  sources: [
-    'main.c',
-    'string-handling.c',
-  ],
+  'main.c',
   include_directories: ['../libvolumetric', '..'],
   dependencies: [libglib, libserdec, libarchive],
   link_with: [libvolumetric],

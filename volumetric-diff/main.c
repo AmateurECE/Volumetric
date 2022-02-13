@@ -46,7 +46,7 @@
 #include <volumetric/file.h>
 #include <volumetric/project-file.h>
 #include <volumetric/volume.h>
-#include <volumetric-diff/string-handling.h>
+#include <volumetric/string-handling.h>
 
 const char* argp_program_version = "volumetric-diff " CONFIG_VERSION;
 const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";
