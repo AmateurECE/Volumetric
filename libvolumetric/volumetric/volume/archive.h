@@ -30,6 +30,7 @@
 #define VOLUMETRIC_VOLUME_ARCHIVE_H
 
 typedef struct FileHash FileHash;
+typedef struct Docker Docker;
 
 // An archive volume--contents are checked against a .tar.gz archive on the
 // filesystem.
@@ -41,6 +42,7 @@ typedef struct ArchiveVolume {
 
 int archive_volume_deserialize_yaml(SerdecYamlDeserializer* yaml,
     ArchiveVolume* volume);
+int archive_volume_checkout(ArchiveVolume* config, Docker* docker);
 
 #endif // VOLUMETRIC_VOLUME_ARCHIVE_H
 

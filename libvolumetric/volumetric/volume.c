@@ -25,6 +25,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////
 
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 
@@ -59,6 +60,15 @@ int volume_deserialize_yaml(SerdecYamlDeserializer* yaml, Volume* volume)
 
 void volume_free(Volume* volume) {
     // TODO
+}
+
+int volume_checkout(Volume* volume, Docker* docker) {
+    switch (volume->type) {
+    case VOLUME_TYPE_ARCHIVE:
+        return archive_volume_checkout(&volume->archive, docker);
+    default:
+        assert(false);
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

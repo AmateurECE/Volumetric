@@ -3,11 +3,11 @@
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Logic to version the files according to user spec.
+// DESCRIPTION:     Logic to version archive volumes according to user spec.
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/12/2022
+// LAST EDITED:     02/13/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -33,15 +33,13 @@
 #include <glib-2.0/glib.h>
 #include <serdec/yaml.h>
 
-#include <volumetric/docker.h>
 #include <volumetric/archive.h>
+#include <volumetric/docker.h>
 #include <volumetric/file.h>
 #include <volumetric/hash.h>
-#include <volumetric/volume.h>
+#include <volumetric/volume/archive.h>
 
-#include "versioning.h"
-
-static int version_archive_volume(ArchiveVolume* config, Docker* docker) {
+int archive_volume_checkout(ArchiveVolume* config, Docker* docker) {
     // First, check to make sure the volume doesn't already exist
     DockerVolumeListIter* iter = docker_volume_list(docker);
     const DockerVolume* list_entry = NULL;
@@ -82,15 +80,6 @@ static int version_archive_volume(ArchiveVolume* config, Docker* docker) {
 
     docker_volume_free(volume);
     return 0;
-}
-
-int version_volume(Volume* volume, Docker* docker) {
-    switch (volume->type) {
-    case VOLUME_TYPE_ARCHIVE:
-        return version_archive_volume(&volume->archive, docker);
-    default:
-        assert(false);
-    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

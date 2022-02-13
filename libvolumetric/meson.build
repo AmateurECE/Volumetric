@@ -53,6 +53,7 @@ libvolumetric = library(
     'volumetric/string-handling.c',
 
     'volumetric/volume/archive/deser.c',
+    'volumetric/volume/archive/versioning.c',
   ],
   c_args: [
     '-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500', '-O0', '-g',

@@ -7,7 +7,7 @@
 //
 // CREATED:         01/16/2022
 //
-// LAST EDITED:     02/11/2022
+// LAST EDITED:     02/13/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -42,8 +42,6 @@
 #include <volumetric/docker.h>
 #include <volumetric/project-file.h>
 #include <volumetric/volume.h>
-
-#include "versioning.h"
 
 const char* argp_program_version = "volumetric " CONFIG_VERSION;
 const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";
@@ -91,7 +89,7 @@ static int load_volumes(VolumetricConfiguration* config) {
         while (g_hash_table_iter_next(&iter, &key, &value)) {
             Volume* current_volume = (Volume*)value;
             // Making sure we always report an error if there's at least one.
-            result += version_volume(current_volume, docker);
+            result += volume_checkout(current_volume, docker);
         }
     }
 

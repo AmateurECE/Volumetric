@@ -30,6 +30,7 @@
 
 #include <volumetric/volume/archive.h>
 
+typedef struct Docker Docker;
 typedef struct SerdecYamlDeserializer SerdecYamlDeserializer;
 
 // TODO: Make these types opaque?
@@ -50,6 +51,9 @@ int volume_deserialize_yaml(SerdecYamlDeserializer* yaml, Volume* volume);
 
 // Free memory consumed by a volume
 void volume_free(Volume* volume);
+
+// "Version" the volume from its source
+int volume_checkout(Volume* volume, Docker* docker);
 
 #endif // VOLUMETRIC_VOLUME_H
 

@@ -7,7 +7,7 @@
 #
 # CREATED:          01/16/2022
 #
-# LAST EDITED:      02/12/2022
+# LAST EDITED:      02/13/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -30,10 +30,7 @@ libserdec = dependency('libserdec')
 
 executable(
   'volumetric',
-  sources: [
-    'main.c',
-    'versioning.c',
-  ],
+  'main.c',
   c_args: [
     '-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500', '-O0', '-g',
   ],
