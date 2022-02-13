@@ -29,7 +29,7 @@ libglib = dependency('glib-2.0')
 libserdec = dependency('libserdec')
 
 executable(
-  'volumetric',
+  'volumetric-checkout',
   'main.c',
   c_args: [
     '-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500', '-O0', '-g',

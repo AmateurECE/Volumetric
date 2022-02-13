@@ -7,7 +7,7 @@
 #
 # CREATED:          01/22/2022
 #
-# LAST EDITED:      02/12/2022
+# LAST EDITED:      02/13/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -28,7 +28,7 @@
 project('volumetric', 'c', version: '0.2.4')
 
 subdir('libvolumetric')
-subdir('volumetric')
+subdir('volumetric-checkout')
 subdir('volumetric-commit')
 subdir('volumetric-diff')
 
