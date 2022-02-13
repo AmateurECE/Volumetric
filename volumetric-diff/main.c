@@ -84,38 +84,6 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
     return 0;
 }
 
-// TODO: This should probably go into the library once I begin -commit.
-static bool find_volume_by_name(VolumetricConfiguration* config,
-    const char* volume_name, Volume* volume)
-{
-    ProjectIter* project_iter = project_iter_new(config);
-    assert(NULL != project_iter);
-
-    ProjectFile* project_file = NULL;
-    gpointer key, value;
-    bool found = false;
-    while (NULL != (project_file = project_iter_next(project_iter))) {
-
-        GHashTableIter iter;
-        g_hash_table_iter_init(&iter, project_file->volumes);
-        while (g_hash_table_iter_next(&iter, &key, &value)) {
-            Volume* current_volume = (Volume*)value;
-            if (!strcmp(volume_name, current_volume->archive.name)) {
-                g_hash_table_steal(project_file->volumes, key);
-                memcpy(volume, current_volume, sizeof(Volume));
-                found = true;
-                break;
-            }
-        }
-
-        if (found) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
 int main(int argc, char** argv) {
     struct arguments arguments = {0};
@@ -129,7 +97,8 @@ int main(int argc, char** argv) {
 
     // Get the volume from the configuration
     Volume volume = {0};
-    bool found = find_volume_by_name(&config, arguments.volume_name, &volume);
+    bool found = volumetric_configuration_find_volume_by_name(&config,
+        arguments.volume_name, &volume);
     assert(true == found);
 
     // Do diff using volume

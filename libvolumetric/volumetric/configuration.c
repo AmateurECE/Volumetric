@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/11/2022
+// LAST EDITED:     02/13/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -207,6 +207,43 @@ ProjectFile* project_iter_next(ProjectIter* iter) {
 void project_iter_free(ProjectIter* iter) {
     directory_iter_free(iter->iter);
     free(iter);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Search API
+////
+
+bool volumetric_configuration_find_volume_by_name(
+    VolumetricConfiguration* config, const char* volume_name, Volume* volume)
+{
+    ProjectIter* project_iter = project_iter_new(config);
+    if (NULL == project_iter) {
+        return false;
+    }
+
+    ProjectFile* project_file = NULL;
+    gpointer key, value;
+    bool found = false;
+    while (NULL != (project_file = project_iter_next(project_iter))) {
+
+        GHashTableIter iter;
+        g_hash_table_iter_init(&iter, project_file->volumes);
+        while (g_hash_table_iter_next(&iter, &key, &value)) {
+            Volume* current_volume = (Volume*)value;
+            if (!strcmp(volume_name, current_volume->archive.name)) {
+                g_hash_table_steal(project_file->volumes, key);
+                memcpy(volume, current_volume, sizeof(Volume));
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

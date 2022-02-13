@@ -7,7 +7,7 @@
 //
 // CREATED:         01/16/2022
 //
-// LAST EDITED:     02/11/2022
+// LAST EDITED:     02/13/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -27,6 +27,8 @@
 
 #ifndef VOLUMETRIC_CONFIGURATION_H
 #define VOLUMETRIC_CONFIGURATION_H
+
+#include <stdbool.h>
 
 // Keys currently supported in configuration:
 // version:
@@ -74,6 +76,14 @@ typedef struct ProjectFile ProjectFile;
 ProjectIter* project_iter_new(VolumetricConfiguration* configuration);
 ProjectFile* project_iter_next(ProjectIter* iter);
 void project_iter_free(ProjectIter* iter);
+
+///////////////////////////////////////////////////////////////////////////////
+// Search API
+////
+
+typedef struct Volume Volume;
+bool volumetric_configuration_find_volume_by_name(
+    VolumetricConfiguration* config, const char* volume_name, Volume* volume);
 
 #endif // VOLUMETRIC_CONFIGURATION_H
 
