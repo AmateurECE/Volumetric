@@ -106,6 +106,10 @@ void docker_container_iter_free(DockerContainerIter* iter);
 const DockerMount* docker_mount_iter_next(DockerMountIter* iter);
 void docker_mount_iter_free(DockerMountIter* iter);
 
+// Pause/Un-pause a container
+int docker_container_pause(Docker* docker, const char* container_name);
+int docker_container_unpause(Docker* docker, const char* container_name);
+
 #endif // VOLUMETRIC_DOCKER_H
 
 ///////////////////////////////////////////////////////////////////////////////

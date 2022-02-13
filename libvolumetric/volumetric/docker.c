@@ -360,4 +360,10 @@ const DockerMount* docker_mount_iter_next(DockerMountIter* iter)
 
 void docker_mount_iter_free(DockerMountIter* iter) {}
 
+int docker_container_pause(Docker* docker, const char* container_name)
+{ return 0; }
+
+int docker_container_unpause(Docker* docker, const char* container_name)
+{ return 0; }
+
 ///////////////////////////////////////////////////////////////////////////////

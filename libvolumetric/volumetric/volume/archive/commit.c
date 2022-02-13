@@ -107,6 +107,11 @@ static GPtrArray* get_consumers_of_volume(Docker* docker,
     return consumers;
 }
 
+static int commit_changes(const char* mountpoint, const char* filename)
+{
+    return 0;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Public API
 ////
@@ -119,11 +124,11 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
     free(current_time);
 
     printf("%s: Renaming %s to %s\n", volume->name, volume->url, new_filename);
-    int result = 0;
     if (!dry_run) {
-        rename(volume->url, new_filename);
+        return 0; // Basically nothing else we can do if we're dry-running.
     }
 
+    int result = rename(volume->url, new_filename);
     free(new_filename);
     if (0 != result) {
         perror("couldn't rename source");
@@ -132,12 +137,32 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
 
     // Get the list of containers that have this volume mounted
     GPtrArray* containers = get_consumers_of_volume(docker, volume->name);
+
+    // Pause any running containers that have the volume mounted
+    for (guint i = 0; i < containers->len; ++i) {
+        result = docker_container_pause(docker,
+            (const char*)containers->pdata[i]);
+        if (0 != result) {
+            g_ptr_array_unref(containers);
+            return result;
+        }
+    }
+
+    // Commit changes to disk
+    DockerVolume* live_volume = docker_volume_inspect(docker, volume->name);
+    result = commit_changes(live_volume->mountpoint, volume->url);
+
+    // Un-pause all the containers that have the volume mounted
+    for (guint i = 0; i < containers->len; ++i) {
+        result = docker_container_unpause(docker,
+            (const char*)containers->pdata[i]);
+        if (0 != result) {
+            g_ptr_array_unref(containers);
+            return result;
+        }
+    }
+
     g_ptr_array_unref(containers);
-
-    // 4. Pause any running containers that have the volume mounted
-    // 5. Copy the libarchive example to commit changes to disk
-    // 6. Un-pause all the containers that have the volume mounted
-
     return -ENOSYS;
 }
 
