@@ -101,6 +101,7 @@ int main(int argc, char** argv) {
     // Do diff using volume
     Docker* docker = docker_proxy_new();
     result = volume_commit(&volume, docker, arguments.dry_run);
+    docker_proxy_free(docker);
 
     volumetric_configuration_release(&config);
     return result;

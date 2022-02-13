@@ -39,13 +39,73 @@
 #include <volumetric/volume/archive.h>
 
 ///////////////////////////////////////////////////////////////////////////////
-// Private API
+// Filename Stuff
+////
+
+static char* get_dirname_owned(const char* filename) {
+    char* filename_owned = strdup(filename);
+    char* dirname_owned = strdup(dirname(filename_owned));
+    free(filename_owned);
+    return dirname_owned;
+}
+
+static char* get_basename_owned(const char* filename) {
+    char* filename_owned = strdup(filename);
+    char* basename_owned = strdup(basename(filename_owned));
+    free(filename_owned);
+    return basename_owned;
+}
+
+static char* get_extension_owned(const char* filename) {
+    char* basename_owned = get_basename_owned(filename);
+    char* extension_start = strchr(basename_owned, '.');
+    if (extension_start == NULL) {
+        free(basename_owned);
+        return strdup("");
+    }
+
+    char* extension_owned = strdup(extension_start);
+    free(basename_owned);
+    return extension_owned;
+}
+
+static char* get_basename_without_extension_owned(const char* filename) {
+    char* basename_owned = get_basename_owned(filename);
+    char* extension_start = strchr(basename_owned, '.');
+    if (NULL == extension_start) {
+        return basename_owned;
+    }
+
+    *extension_start = '\0';
+    char* basename_without_extension_owned = strdup(basename_owned);
+    free(basename_owned);
+    return basename_without_extension_owned;
+}
+
+static char* get_new_filename(const char* current_url, const char* suffix) {
+    char* dirname_owned = get_dirname_owned(current_url);
+    char* basename_without_extension_owned =
+        get_basename_without_extension_owned(current_url);
+    char* extension_owned = get_extension_owned(current_url);
+
+    char* new_filename = string_join_new(dirname_owned, '/',
+        basename_without_extension_owned);
+    free(basename_without_extension_owned);
+    new_filename = string_join_new(new_filename, '-', suffix);
+    new_filename = string_append_new(new_filename, extension_owned);
+    free(extension_owned);
+
+    return new_filename;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Other Private Functions
 ////
 
 static char* get_date_string_owned() {
     struct timespec current_time = {0};
     // Get the clock time for the monotonic clock
-    int result = clock_gettime(CLOCK_MONOTONIC, &current_time);
+    int result = clock_gettime(CLOCK_REALTIME_COARSE, &current_time);
     if (0 != result) {
         perror("couldn't get system time");
         return NULL;
@@ -73,20 +133,6 @@ static char* get_date_string_owned() {
     }
 
     return string;
-}
-
-static char* get_new_filename(const char* current_url, const char* suffix) {
-    char* current_url_owned = strdup(current_url);
-    char* filename = strdup(basename(current_url_owned));
-    char* extension_start = strchr(filename, '.');
-    char* extension = strdup(extension_start);
-    *extension_start = '\0'; // NUL-terminate to get filename w/o extension
-
-    char* new_filename = string_append_new(
-        string_join_new(filename, '-', suffix), extension);
-    free(extension);
-    free(current_url_owned);
-    return new_filename;
 }
 
 static GPtrArray* get_consumers_of_volume(Docker* docker,
@@ -124,7 +170,7 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
     free(current_time);
 
     printf("%s: Renaming %s to %s\n", volume->name, volume->url, new_filename);
-    if (!dry_run) {
+    if (dry_run) {
         return 0; // Basically nothing else we can do if we're dry-running.
     }
 

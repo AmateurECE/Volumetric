@@ -239,11 +239,12 @@ bool volumetric_configuration_find_volume_by_name(
         }
 
         if (found) {
-            return true;
+            break;
         }
     }
+    project_iter_free(project_iter);
 
-    return false;
+    return found;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
