@@ -55,6 +55,9 @@ void volume_free(Volume* volume);
 // "Version" the volume from its source
 int volume_checkout(Volume* volume, Docker* docker);
 
+// Check for differences between the volume source and live
+int volume_diff(Volume* volume, Docker* docker);
+
 #endif // VOLUMETRIC_VOLUME_H
 
 ///////////////////////////////////////////////////////////////////////////////

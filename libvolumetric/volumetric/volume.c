@@ -71,4 +71,14 @@ int volume_checkout(Volume* volume, Docker* docker) {
     }
 }
 
+// Check for differences between the volume source and live
+int volume_diff(Volume* volume, Docker* docker) {
+    switch (volume->type) {
+    case VOLUME_TYPE_ARCHIVE:
+        return archive_volume_diff(&volume->archive, docker);
+    default:
+        assert(false);
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
