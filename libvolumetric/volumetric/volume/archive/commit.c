@@ -185,7 +185,9 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
     GPtrArray* containers = get_consumers_of_volume(docker, volume->name);
 
     // Pause any running containers that have the volume mounted
+    printf("Pausing any containers that have this volume mounted...\n");
     for (guint i = 0; i < containers->len; ++i) {
+        printf("Pausing %s\n", (const char*)containers->pdata[i]);
         result = docker_container_pause(docker,
             (const char*)containers->pdata[i]);
         if (0 != result) {
@@ -200,6 +202,7 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
 
     // Un-pause all the containers that have the volume mounted
     for (guint i = 0; i < containers->len; ++i) {
+        printf("Un-pausing %s\n", (const char*)containers->pdata[i]);
         result = docker_container_unpause(docker,
             (const char*)containers->pdata[i]);
         if (0 != result) {
