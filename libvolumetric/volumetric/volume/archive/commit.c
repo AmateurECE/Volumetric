@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -199,9 +200,6 @@ static int commit_changes(const char* archive_name, GPtrArray* files,
         char* archive_path = get_archive_path_for_file(filename, mountpoint);
         archive_entry_set_pathname(entry, archive_path);
         free(archive_path);
-        /* archive_entry_set_size(entry, file_stat.st_size); */
-        /* archive_entry_set_filetype(entry, AE_IFREG); */
-        /* archive_entry_set_perm(entry, 0644); */
         archive_entry_copy_stat(entry, &file_stat);
         archive_write_header(writer, entry);
 
@@ -274,6 +272,10 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
     GPtrArray* files = get_file_list_for_directory(live_volume->mountpoint);
     if (!dry_run) {
         result = commit_changes(volume->url, files, live_volume->mountpoint);
+        if (0 == result) {
+            // Make the volume read-only
+            chmod(volume->url, 0444);
+        }
     }
     g_ptr_array_unref(files);
     docker_volume_free(live_volume);
