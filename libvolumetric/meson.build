@@ -42,7 +42,6 @@ libarchive = dependency('libarchive')
 libvolumetric = library(
   'volumetric',
   sources: [
-    'volumetric/docker.c',
     'volumetric/archive.c',
     'volumetric/file.c',
     'volumetric/hash.c',
@@ -51,6 +50,9 @@ libvolumetric = library(
     'volumetric/project-file.c',
     'volumetric/directory.c',
     'volumetric/string-handling.c',
+
+    'volumetric/docker/volume.c',
+    'volumetric/docker/container.c',
 
     'volumetric/volume/archive/commit.c',
     'volumetric/volume/archive/deser.c',

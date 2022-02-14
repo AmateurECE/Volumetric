@@ -341,29 +341,3 @@ void docker_volume_free(DockerVolume* volume)
 int docker_volume_remove(Docker* proxy, const char* name);
 
 ///////////////////////////////////////////////////////////////////////////////
-// Container API
-////
-
-// List the containers the engine is managing
-DockerContainerIter* docker_container_list(Docker* docker)
-{ return NULL; }
-
-// Mutate the iterator
-const DockerContainer* docker_container_iter_next(DockerContainerIter* iter)
-{ return NULL; }
-
-void docker_container_iter_free(DockerContainerIter* iter) {}
-
-// Iterate through mounts
-const DockerMount* docker_mount_iter_next(DockerMountIter* iter)
-{ return NULL; }
-
-void docker_mount_iter_free(DockerMountIter* iter) {}
-
-int docker_container_pause(Docker* docker, const char* container_name)
-{ return 0; }
-
-int docker_container_unpause(Docker* docker, const char* container_name)
-{ return 0; }
-
-///////////////////////////////////////////////////////////////////////////////
