@@ -188,6 +188,7 @@ static int commit_changes(const char* archive_name, GPtrArray* files,
     struct stat file_stat;
     char buffer[4096];
     for (guint i = 0; i < files->len; ++i) {
+        printf("\rArchiving entry %d of %d", i + 1, files->len);
         const char* filename = files->pdata[i];
         if (!strcmp(filename, mountpoint)) {
             continue;
@@ -222,6 +223,7 @@ static int commit_changes(const char* archive_name, GPtrArray* files,
         archive_entry_free(entry);
     }
 
+    printf("\n");
     archive_write_close(writer);
     archive_write_free(writer);
     return 0;
@@ -281,6 +283,7 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
     docker_volume_free(live_volume);
 
     // Un-pause all the containers that have the volume mounted
+    printf("Unpausing containers\n");
     for (guint i = 0; i < containers->len; ++i) {
         printf("Un-pausing %s\n", (const char*)containers->pdata[i]);
         if (!dry_run) {
