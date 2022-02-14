@@ -26,14 +26,19 @@
 ////
 
 #include <errno.h>
+#include <fcntl.h>
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
+#include <archive.h>
+#include <archive_entry.h>
 #include <glib-2.0/glib.h>
 
+#include <volumetric/directory.h>
 #include <volumetric/docker.h>
 #include <volumetric/string-handling.h>
 #include <volumetric/volume/archive.h>
@@ -146,15 +151,81 @@ static GPtrArray* get_consumers_of_volume(Docker* docker,
         const DockerMount* mount = NULL;
         while (NULL != (mount = docker_mount_iter_next(container->mounts))) {
             if (!strcmp(mount->source, volume_name)) {
-                g_ptr_array_add(consumers, strdup(container->name));
+                g_ptr_array_add(consumers, strdup(container->id));
             }
         }
     }
     return consumers;
 }
 
-static int commit_changes(const char* mountpoint, const char* filename)
+static char* get_archive_path_for_file(const char* filename,
+    const char* directory)
 {
+    size_t directory_length = strlen(directory);
+    if (!strncmp(filename, directory, directory_length)) {
+        return string_append_new(strdup("."), filename + directory_length);
+    }
+
+    return strdup(filename);
+}
+
+static int commit_changes(const char* archive_name, GPtrArray* files,
+    const char* mountpoint)
+{
+    struct archive* writer = archive_write_new();
+    archive_write_add_filter_gzip(writer);
+    archive_write_set_format_pax_restricted(writer);
+    int result = archive_write_open_filename(writer, archive_name);
+    if (ARCHIVE_OK != result) {
+        fprintf(stderr, "%s:%d: Couldn't open file for writing: %s\n",
+            __FUNCTION__, __LINE__, archive_error_string(writer));
+        archive_write_free(writer);
+        return result;
+    }
+
+    struct archive_entry *entry = NULL;
+    struct stat file_stat;
+    char buffer[4096];
+    for (guint i = 0; i < files->len; ++i) {
+        const char* filename = files->pdata[i];
+        if (!strcmp(filename, mountpoint)) {
+            continue;
+        }
+
+        memset(&file_stat, 0, sizeof(file_stat));
+        stat(filename, &file_stat);
+
+        entry = archive_entry_new();
+        char* archive_path = get_archive_path_for_file(filename, mountpoint);
+        archive_entry_set_pathname(entry, archive_path);
+        free(archive_path);
+        /* archive_entry_set_size(entry, file_stat.st_size); */
+        /* archive_entry_set_filetype(entry, AE_IFREG); */
+        /* archive_entry_set_perm(entry, 0644); */
+        archive_entry_copy_stat(entry, &file_stat);
+        archive_write_header(writer, entry);
+
+        int fd = open(filename, O_RDONLY);
+        if (0 > fd) {
+            fprintf(stderr, "%s:%d: Couldn't open %s for reading: %s\n",
+                __FUNCTION__, __LINE__, filename, strerror(errno));
+            archive_write_close(writer);
+            archive_write_free(writer);
+            return -1 * errno;
+        }
+
+        int bytes_read = read(fd, buffer, sizeof(buffer));
+        while ( bytes_read > 0 ) {
+            archive_write_data(writer, buffer, bytes_read);
+            bytes_read = read(fd, buffer, sizeof(buffer));
+        }
+
+        close(fd);
+        archive_entry_free(entry);
+    }
+
+    archive_write_close(writer);
+    archive_write_free(writer);
     return 0;
 }
 
@@ -170,11 +241,11 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
     free(current_time);
 
     printf("%s: Renaming %s to %s\n", volume->name, volume->url, new_filename);
-    if (dry_run) {
-        return 0; // Basically nothing else we can do if we're dry-running.
+    int result = 0;
+    if (!dry_run) {
+        result = rename(volume->url, new_filename);
     }
 
-    int result = rename(volume->url, new_filename);
     free(new_filename);
     if (0 != result) {
         perror("couldn't rename source");
@@ -188,8 +259,10 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
     printf("Pausing any containers that have this volume mounted...\n");
     for (guint i = 0; i < containers->len; ++i) {
         printf("Pausing %s\n", (const char*)containers->pdata[i]);
-        result = docker_container_pause(docker,
-            (const char*)containers->pdata[i]);
+        if (!dry_run) {
+            result = docker_container_pause(docker,
+                (const char*)containers->pdata[i]);
+        }
         if (0 != result) {
             g_ptr_array_unref(containers);
             return result;
@@ -198,13 +271,21 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
 
     // Commit changes to disk
     DockerVolume* live_volume = docker_volume_inspect(docker, volume->name);
-    result = commit_changes(live_volume->mountpoint, volume->url);
+    GPtrArray* files = get_file_list_for_directory(live_volume->mountpoint);
+    if (!dry_run) {
+        result = commit_changes(volume->url, files, live_volume->mountpoint);
+    }
+    g_ptr_array_unref(files);
+    docker_volume_free(live_volume);
 
     // Un-pause all the containers that have the volume mounted
     for (guint i = 0; i < containers->len; ++i) {
         printf("Un-pausing %s\n", (const char*)containers->pdata[i]);
-        result = docker_container_unpause(docker,
-            (const char*)containers->pdata[i]);
+        if (!dry_run) {
+            // Don't reset the error code to zero if commit failed
+            result += docker_container_unpause(docker,
+                (const char*)containers->pdata[i]);
+        }
         if (0 != result) {
             g_ptr_array_unref(containers);
             return result;
@@ -212,7 +293,7 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
     }
 
     g_ptr_array_unref(containers);
-    return -ENOSYS;
+    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

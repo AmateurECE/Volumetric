@@ -7,7 +7,7 @@
 //
 // CREATED:         01/29/2022
 //
-// LAST EDITED:     02/11/2022
+// LAST EDITED:     02/13/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fts.h>
 #include <linux/limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -34,7 +35,10 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include <glib-2.0/glib.h>
+
 #include <volumetric/directory.h>
+#include <volumetric/string-handling.h>
 
 typedef struct DirectoryIter {
     char* directory_owned;
@@ -94,6 +98,31 @@ DirectoryEntry* directory_iter_next(DirectoryIter* iter) {
         entry->d_name);
     iter->entry.absolute_path = iter->path_buffer;
     return &iter->entry;
+}
+
+GPtrArray* get_file_list_for_directory(const char* directory) {
+    GPtrArray* list = g_ptr_array_new_with_free_func(free);
+
+    char* directory_owned = string_new(directory);
+    char* const paths[] = {directory_owned, NULL};
+    FTS* tree = fts_open(paths, FTS_NOCHDIR, 0);
+    assert(NULL != tree);
+
+    // TODO: How does this work with symlinks? I'd expect they would break.
+    FTSENT* node = NULL;
+    while ((node = fts_read(tree))) {
+        if (FTS_F == node->fts_info || FTS_D == node->fts_info) {
+            g_ptr_array_add(list, strdup(node->fts_path));
+        } else if (FTS_ERR == node->fts_info || FTS_DNR == node->fts_info
+            || FTS_NS == node->fts_info) {
+            fprintf(stderr, "fts_read error: %s\n", strerror(node->fts_errno));
+            exit(errno);
+        }
+    }
+
+    fts_close(tree);
+    free(directory_owned);
+    return list;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

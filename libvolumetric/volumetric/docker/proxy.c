@@ -36,10 +36,44 @@
 #include <volumetric/docker/internal.h>
 
 ///////////////////////////////////////////////////////////////////////////////
-// Internal API
+// Private API
 ////
 
 static const char* DOCKER_SOCK_PATH = "/var/run/docker.sock";
+
+static size_t copy_data_to_curl_request(char* buffer,
+    size_t size __attribute__((unused)), size_t nitems, void* user_data)
+{
+    Docker* docker = (Docker*)user_data;
+    size_t copy_length = docker->read_object_length
+        - docker->read_object_index;
+    if (nitems < copy_length) {
+        copy_length = nitems;
+    }
+
+    memcpy(buffer, docker->read_object + docker->read_object_index,
+        copy_length);
+    docker->read_object_index += copy_length;
+    return copy_length;
+}
+
+static size_t copy_data_from_curl_response(void* buffer,
+    size_t size __attribute__((unused)), size_t nmemb, void* user_data)
+{
+    Docker* docker = (Docker*)user_data;
+    docker->write_object = json_tokener_parse_ex(docker->tokener, buffer,
+        nmemb);
+    enum json_tokener_error error = json_tokener_get_error(docker->tokener);
+    if (NULL == docker->write_object && json_tokener_continue != error) {
+        return 0;
+    }
+
+    return nmemb;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Internal API
+////
 
 int http_encode(json_object* object, char** string, size_t* length) {
     const char* string_value = json_object_to_json_string_ext(object,
@@ -57,36 +91,6 @@ int http_encode(json_object* object, char** string, size_t* length) {
     strcat(*string, "\r\n");
     (*string)[*length] = '\0';
     return 0;
-}
-
-size_t copy_data_to_curl_request(char* buffer,
-    size_t size __attribute__((unused)), size_t nitems, void* user_data)
-{
-    Docker* docker = (Docker*)user_data;
-    size_t copy_length = docker->read_object_length
-        - docker->read_object_index;
-    if (nitems < copy_length) {
-        copy_length = nitems;
-    }
-
-    memcpy(buffer, docker->read_object + docker->read_object_index,
-        copy_length);
-    docker->read_object_index += copy_length;
-    return copy_length;
-}
-
-size_t copy_data_from_curl_response(void* buffer,
-    size_t size __attribute__((unused)), size_t nmemb, void* user_data)
-{
-    Docker* docker = (Docker*)user_data;
-    docker->write_object = json_tokener_parse_ex(docker->tokener, buffer,
-        nmemb);
-    enum json_tokener_error error = json_tokener_get_error(docker->tokener);
-    if (NULL == docker->write_object && json_tokener_continue != error) {
-        return 0;
-    }
-
-    return nmemb;
 }
 
 int http_get_application_json(Docker* docker, const char* url) {
@@ -126,7 +130,6 @@ int http_get_application_json(Docker* docker, const char* url) {
 }
 
 int http_post_application_json(Docker* docker, const char* url) {
-    curl_easy_setopt(docker->curl, CURLOPT_POST, 1);
     curl_easy_setopt(docker->curl, CURLOPT_READFUNCTION,
         copy_data_to_curl_request);
     curl_easy_setopt(docker->curl, CURLOPT_READDATA, docker);
@@ -134,6 +137,11 @@ int http_post_application_json(Docker* docker, const char* url) {
     struct curl_slist* headers = NULL;
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(docker->curl, CURLOPT_HTTPHEADER, headers);
+    return http_post(docker, url);
+}
+
+int http_post(Docker* docker, const char* url) {
+    curl_easy_setopt(docker->curl, CURLOPT_POST, 1);
     return http_get_application_json(docker, url);
 }
 

@@ -92,7 +92,7 @@ typedef struct DockerMount {
 } DockerMount;
 
 typedef struct DockerContainer {
-    char* name;
+    char* id;
     DockerMountIter* mounts;
 } DockerContainer;
 
@@ -108,8 +108,12 @@ const DockerMount* docker_mount_iter_next(DockerMountIter* iter);
 void docker_mount_iter_free(DockerMountIter* iter);
 
 // Pause/Un-pause a container
-int docker_container_pause(Docker* docker, const char* container_name);
-int docker_container_unpause(Docker* docker, const char* container_name);
+int docker_container_pause(Docker* docker, const char* container_id);
+int docker_container_unpause(Docker* docker, const char* container_id);
+
+// Free memory
+void docker_container_free(DockerContainer* container);
+void docker_mount_free(DockerMount* mount);
 
 #endif // VOLUMETRIC_DOCKER_H
 

@@ -27,7 +27,6 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <fts.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -120,31 +119,6 @@ static int diff_directory_from_archive(GPtrArray* directory,
     archive_read_free(reader);
     file_contents_release(&archive);
     return 0;
-}
-
-static GPtrArray* get_file_list_for_directory(const char* directory) {
-    GPtrArray* list = g_ptr_array_new_with_free_func(free);
-
-    char* directory_owned = string_new(directory);
-    char* const paths[] = {directory_owned, NULL};
-    FTS* tree = fts_open(paths, FTS_NOCHDIR, 0);
-    assert(NULL != tree);
-
-    // TODO: How does this work with symlinks? I'd expect they would break.
-    FTSENT* node = NULL;
-    while ((node = fts_read(tree))) {
-        if (FTS_F == node->fts_info || FTS_D == node->fts_info) {
-            g_ptr_array_add(list, strdup(node->fts_path));
-        } else if (FTS_ERR == node->fts_info || FTS_DNR == node->fts_info
-            || FTS_NS == node->fts_info) {
-            fprintf(stderr, "fts_read error: %s\n", strerror(node->fts_errno));
-            exit(errno);
-        }
-    }
-
-    fts_close(tree);
-    free(directory_owned);
-    return list;
 }
 
 static void remove_matching_entry(GPtrArray* list, const char* match) {

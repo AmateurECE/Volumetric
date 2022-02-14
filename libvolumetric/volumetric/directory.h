@@ -7,7 +7,7 @@
 //
 // CREATED:         01/29/2022
 //
-// LAST EDITED:     01/29/2022
+// LAST EDITED:     02/13/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -40,6 +40,9 @@ typedef struct DirectoryEntry {
 DirectoryIter* directory_iter_new(const char* directory);
 void directory_iter_free(DirectoryIter* iter);
 DirectoryEntry* directory_iter_next(DirectoryIter* iter);
+
+// TODO: Obviously this one is not like the others.
+GPtrArray* get_file_list_for_directory(const char* directory);
 
 #endif // VOLUMETRIC_DIRECTORY_H
 

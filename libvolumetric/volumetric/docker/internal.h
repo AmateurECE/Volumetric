@@ -33,13 +33,17 @@
 // NOTE: THESE METHODS ARE INTERNAL TO THE DOCKER PROXY API AND SHOULD NOT
 // BE USED EXCEPT BY FILES IN THIS DIRECTORY
 
+// Perform chunked transfer encoding on a JSON object
 int http_encode(json_object* object, char** string, size_t* length);
-size_t copy_data_to_curl_request(char* buffer,
-    size_t size __attribute__((unused)), size_t nitems, void* user_data);
-size_t copy_data_from_curl_response(void* buffer,
-    size_t size __attribute__((unused)), size_t nmemb, void* user_data);
+
+// GET an application/json object
 int http_get_application_json(Docker* docker, const char* url);
+
+// POST with an application/json request object
 int http_post_application_json(Docker* docker, const char* url);
+
+// POST without a request object
+int http_post(Docker* docker, const char* url);
 
 #endif // VOLUMETRIC_DOCKER_INTERNAL_H
 

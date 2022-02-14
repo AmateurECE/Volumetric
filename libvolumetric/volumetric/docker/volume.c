@@ -149,7 +149,7 @@ DockerVolumeListIter* docker_volume_list(Docker* docker) {
 }
 
 const DockerVolume* docker_volume_list_iter_next(DockerVolumeListIter* iter) {
-    if (iter->index > iter->array->len) {
+    if (iter->index >= iter->array->len) {
         return NULL;
     }
 

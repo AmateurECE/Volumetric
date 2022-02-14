@@ -1,2 +1,5 @@
-* Refactor to put all "archive" logic into one place--status checking,
-  versioning, etc.
+* Check Docker Engine API version string when creating a new proxy
+* Check consistency of iterator names (e.g. DockerVolumeListIter vs.
+  DockerContainerIter)
+* Function get_file_list_for_directory() in directory.h does not have an
+  interface consistent with the rest of the API in that header.
