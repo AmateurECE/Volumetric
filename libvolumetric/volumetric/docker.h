@@ -28,51 +28,43 @@
 #ifndef VOLUMETRIC_DOCKER_H
 #define VOLUMETRIC_DOCKER_H
 
-typedef struct Docker Docker;
+#include <stddef.h>
+
+typedef void CURL;
+typedef struct json_tokener json_tokener;
+typedef struct json_object json_object;
+
 typedef struct DockerVolumeListIter DockerVolumeListIter;
 typedef struct DockerMountIter DockerMountIter;
 typedef struct DockerContainerIter DockerContainerIter;
 
+///////////////////////////////////////////////////////////////////////////////
+// Docker Proxy General API
+////
+
+typedef struct Docker {
+    CURL* curl;
+
+    json_tokener* tokener;
+    json_object* write_object;
+    char* read_object;
+    size_t read_object_length;
+    size_t read_object_index;
+
+} Docker;
+
 Docker* docker_proxy_new();
 void docker_proxy_free(Docker* docker);
 
-typedef struct DockerMount {
-    char* source;
-} DockerMount;
-
-typedef struct DockerContainer {
-    char* name;
-    DockerMountIter* mounts;
-} DockerContainer;
+///////////////////////////////////////////////////////////////////////////////
+// Docker Volume API
+////
 
 typedef struct DockerVolume {
     char* name;
     char* driver;
     char* mountpoint;
 } DockerVolume;
-
-// TODO: I hate this interface. It would be nice to somehow separate the logic
-// of volume operations from the proxy interface. Like some kind of a:
-//
-//  DockerVolumeResult result = docker_volume_new(name);
-//  docker_volume_defaults(&volume);
-//  volume.member = foo;
-//  ...
-//  DockerOperation* operation = docker_operation_volume_create(proxy, volume);
-//  docker_operation_complete(operation);
-//
-// Perhaps, then:
-//
-//  DockerOperation* op = docker_operation_volume_list(proxy, visitorfn, data);
-//  docker_operation_complete(op);
-//
-// The issue is just that the information needed to complete operations on the
-// Docker daemon is not the same information needed to export a useful data
-// interface.
-
-///////////////////////////////////////////////////////////////////////////////
-// Docker Volume API
-////
 
 // Create the volume
 DockerVolume* docker_volume_create(Docker* docker, const char* name);
@@ -94,6 +86,15 @@ int docker_volume_remove(Docker* docker, const char* name);
 ///////////////////////////////////////////////////////////////////////////////
 // Docker Container API
 ////
+
+typedef struct DockerMount {
+    char* source;
+} DockerMount;
+
+typedef struct DockerContainer {
+    char* name;
+    DockerMountIter* mounts;
+} DockerContainer;
 
 // List the containers the engine is managing
 DockerContainerIter* docker_container_list(Docker* docker);

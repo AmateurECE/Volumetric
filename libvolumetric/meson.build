@@ -51,6 +51,7 @@ libvolumetric = library(
     'volumetric/directory.c',
     'volumetric/string-handling.c',
 
+    'volumetric/docker/proxy.c',
     'volumetric/docker/volume.c',
     'volumetric/docker/container.c',
 
