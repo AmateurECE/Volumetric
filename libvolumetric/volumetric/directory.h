@@ -7,7 +7,7 @@
 //
 // CREATED:         01/29/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/15/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -31,6 +31,7 @@
 #include <dirent.h>
 
 typedef struct DirectoryIter DirectoryIter;
+typedef struct _GPtrArray GPtrArray;
 
 typedef struct DirectoryEntry {
     struct dirent* entry;

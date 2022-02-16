@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     02/14/2022
+// LAST EDITED:     02/15/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -79,7 +79,7 @@ static DockerMountIter* docker_mount_iter_new(json_object* array) {
     int array_length = json_object_array_length(array);
     for (int i = 0; i < array_length; ++i) {
         json_object* object = json_object_array_get_idx(array, i);
-        DockerMount* mount = malloc(sizeof(DockerContainer));
+        DockerMount* mount = malloc(sizeof(DockerMount));
         assert(NULL != mount);
         populate_docker_mount_from_json(mount, object);
         g_ptr_array_add(iter->array, mount);
