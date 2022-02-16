@@ -7,7 +7,7 @@
 //
 // CREATED:         02/04/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/14/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -102,6 +102,7 @@ int main(int argc, char** argv) {
     Docker* docker = docker_proxy_new();
     result = volume_commit(&volume, docker, arguments.dry_run);
     docker_proxy_free(docker);
+    volume_release(&volume);
 
     volumetric_configuration_release(&config);
     return result;

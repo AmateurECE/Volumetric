@@ -7,7 +7,7 @@
 //
 // CREATED:         01/26/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/15/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -98,6 +98,7 @@ int main(int argc, char** argv) {
     Docker* docker = docker_proxy_new();
     result = volume_diff(&volume, docker);
 
+    volume_release(&volume);
     volumetric_configuration_release(&config);
     return result;
 }

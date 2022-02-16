@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/15/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -101,6 +101,7 @@ static int diff_directory_from_archive(GPtrArray* directory,
                 if (check_file_for_modifications(entry, full_path)) {
                     printf("M %s\n", archive_file);
                 }
+                free(full_path);
                 g_ptr_array_remove_index_fast(directory, i);
                 break;
             }
@@ -163,6 +164,7 @@ int archive_volume_diff(ArchiveVolume* volume, Docker* docker) {
     char* mountpoint = strdup(live_volume->mountpoint);
     if ('/' != live_volume->mountpoint[mountpoint_length - 1]) {
         // Have to add that terminating '/'
+        free(mountpoint);
         mountpoint = string_append_new(string_new(live_volume->mountpoint),
             "/");
     }
@@ -170,7 +172,10 @@ int archive_volume_diff(ArchiveVolume* volume, Docker* docker) {
 
     int result = diff_directory_from_archive(directory, volume->url,
         mountpoint);
+
     free(mountpoint);
+    g_ptr_array_unref(directory);
+    docker_volume_free(live_volume);
     return result;
 }
 

@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/14/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <serdec/yaml.h>
@@ -59,7 +60,18 @@ int volume_deserialize_yaml(SerdecYamlDeserializer* yaml, Volume* volume)
 { return serdec_yaml_deserialize_map(yaml, volume_visit_map, volume); }
 
 void volume_free(Volume* volume) {
-    // TODO
+    volume_release(volume);
+    free(volume);
+}
+
+void volume_release(Volume* volume) {
+    switch (volume->type) {
+    case VOLUME_TYPE_ARCHIVE:
+        archive_volume_release(&volume->archive);
+        break;
+    default:
+        assert(false);
+    }
 }
 
 int volume_checkout(Volume* volume, Docker* docker) {

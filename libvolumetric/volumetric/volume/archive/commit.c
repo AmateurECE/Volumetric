@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/14/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -156,6 +156,8 @@ static GPtrArray* get_consumers_of_volume(Docker* docker,
             }
         }
     }
+
+    docker_container_iter_free(containers);
     return consumers;
 }
 

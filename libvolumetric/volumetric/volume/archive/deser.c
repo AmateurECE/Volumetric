@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/14/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -70,5 +70,12 @@ static int archive_volume_visit_map(SerdecYamlDeserializer* yaml,
 int archive_volume_deserialize_yaml(SerdecYamlDeserializer* yaml,
     ArchiveVolume* volume)
 { return serdec_yaml_deserialize_map(yaml, archive_volume_visit_map, volume); }
+
+void archive_volume_release(ArchiveVolume* volume) {
+    free(volume->name);
+    free(volume->url);
+    free(volume->hash->hash_string);
+    free(volume->hash);
+}
 
 ///////////////////////////////////////////////////////////////////////////////

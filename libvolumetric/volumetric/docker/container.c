@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/14/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -151,6 +151,7 @@ DockerContainerIter* docker_container_list(Docker* docker)
         g_ptr_array_add(iter->array, container);
     }
 
+    json_object_put(docker->write_object);
     return iter;
 }
 

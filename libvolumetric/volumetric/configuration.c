@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/14/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -181,6 +181,10 @@ ProjectIter* project_iter_new(VolumetricConfiguration* configuration) {
 }
 
 ProjectFile* project_iter_next(ProjectIter* iter) {
+    if (NULL != iter->project.volumes) {
+        project_file_release(&iter->project);
+    }
+
     iter->entry = directory_iter_next(iter->iter);
     if (NULL == iter->entry) {
         return NULL;
@@ -205,6 +209,10 @@ ProjectFile* project_iter_next(ProjectIter* iter) {
 }
 
 void project_iter_free(ProjectIter* iter) {
+    if (NULL != iter->project.volumes) {
+        project_file_release(&iter->project);
+    }
+
     directory_iter_free(iter->iter);
     free(iter);
 }
@@ -231,8 +239,12 @@ bool volumetric_configuration_find_volume_by_name(
         while (g_hash_table_iter_next(&iter, &key, &value)) {
             Volume* current_volume = (Volume*)value;
             if (!strcmp(volume_name, current_volume->archive.name)) {
+                // TODO: This should be a volume_copy method or similar
+                // Have to steal the volume from the container, then free it
                 g_hash_table_steal(project_file->volumes, key);
                 memcpy(volume, current_volume, sizeof(Volume));
+                free(current_volume);
+                free(key);
                 found = true;
                 break;
             }

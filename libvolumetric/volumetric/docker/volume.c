@@ -7,7 +7,7 @@
 //
 // CREATED:         01/18/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/15/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -145,6 +145,7 @@ DockerVolumeListIter* docker_volume_list(Docker* docker) {
         g_ptr_array_add(iter->array, volume);
     }
 
+    json_object_put(docker->write_object);
     return iter;
 }
 
@@ -190,6 +191,7 @@ DockerVolume* docker_volume_inspect(Docker* docker, const char* name) {
     DockerVolume* volume = malloc(sizeof(DockerVolume));
     assert(NULL != volume);
     populate_docker_volume_from_json(volume, docker->write_object);
+    json_object_put(docker->write_object);
     return volume;
 }
 

@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/14/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -52,7 +52,8 @@ typedef struct Volume {
 int volume_deserialize_yaml(SerdecYamlDeserializer* yaml, Volume* volume);
 
 // Free memory consumed by a volume
-void volume_free(Volume* volume);
+void volume_free(Volume* volume);    // Free <volume>
+void volume_release(Volume* volume); // Don't free <volume>
 
 // "Version" the volume from its source
 int volume_checkout(Volume* volume, Docker* docker);

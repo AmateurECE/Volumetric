@@ -7,7 +7,7 @@
 //
 // CREATED:         02/09/2022
 //
-// LAST EDITED:     02/11/2022
+// LAST EDITED:     02/14/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -65,16 +65,13 @@ static int project_file_visit_map(SerdecYamlDeserializer* yaml,
         }
         return 1;
     } else if (!strcmp("volumes", key)) {
+        volumes->volumes = g_hash_table_new_full(g_str_hash, g_str_equal, free,
+            (GDestroyNotify)volume_free);
         return serdec_yaml_deserialize_map(yaml, volume_visit_map,
             volumes->volumes);
     } else {
         return -ENOSYS;
     }
-}
-
-static void project_file_defaults(ProjectFile* volumes) {
-    volumes->volumes = g_hash_table_new_full(g_str_hash, g_str_equal, free,
-        (GDestroyNotify)volume_free);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -85,10 +82,9 @@ static void project_file_defaults(ProjectFile* volumes) {
 int project_file_deserialize_from_yaml(SerdecYamlDeserializer* yaml,
     ProjectFile* volumes)
 {
-    project_file_defaults(volumes);
     int result = serdec_yaml_deserialize_map(yaml, project_file_visit_map,
         volumes);
-    if (0 > result) {
+    if (0 != result) {
         return -EINVAL;
     }
 
