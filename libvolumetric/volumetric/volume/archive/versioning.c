@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/15/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -43,14 +43,19 @@ int archive_volume_checkout(ArchiveVolume* config, Docker* docker) {
     // First, check to make sure the volume doesn't already exist
     DockerVolumeListIter* iter = docker_volume_list(docker);
     const DockerVolume* list_entry = NULL;
+    bool action_necessary = true;
     while (NULL != (list_entry = docker_volume_list_iter_next(iter))) {
         if (!strcmp(config->name, list_entry->name)) {
             printf("%s: Volume exists, taking no further action.\n",
                 config->name);
-            return 0;
+            action_necessary = false;
+            break;
         }
     }
     docker_volume_list_iter_free(iter);
+    if (!action_necessary) {
+        return 0;
+    }
 
     // Map the file to memory
     FileContents file = {0};

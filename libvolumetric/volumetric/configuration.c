@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/14/2022
+// LAST EDITED:     02/15/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -180,14 +180,14 @@ ProjectIter* project_iter_new(VolumetricConfiguration* configuration) {
     return iter;
 }
 
-ProjectFile* project_iter_next(ProjectIter* iter) {
-    if (NULL != iter->project.volumes) {
-        project_file_release(&iter->project);
-    }
-
+const ProjectFile* project_iter_next(ProjectIter* iter) {
     iter->entry = directory_iter_next(iter->iter);
     if (NULL == iter->entry) {
         return NULL;
+    }
+
+    if (NULL != iter->project.volumes) {
+        project_file_release(&iter->project);
     }
 
     FILE* input = fopen(iter->entry->absolute_path, "rb");
@@ -229,7 +229,7 @@ bool volumetric_configuration_find_volume_by_name(
         return false;
     }
 
-    ProjectFile* project_file = NULL;
+    const ProjectFile* project_file = NULL;
     gpointer key, value;
     bool found = false;
     while (NULL != (project_file = project_iter_next(project_iter))) {

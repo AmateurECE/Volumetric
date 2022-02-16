@@ -7,7 +7,7 @@
 //
 // CREATED:         01/16/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/15/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -74,7 +74,7 @@ void volumetric_configuration_release(VolumetricConfiguration* config);
 typedef struct ProjectIter ProjectIter;
 typedef struct ProjectFile ProjectFile;
 ProjectIter* project_iter_new(VolumetricConfiguration* configuration);
-ProjectFile* project_iter_next(ProjectIter* iter);
+const ProjectFile* project_iter_next(ProjectIter* iter);
 void project_iter_free(ProjectIter* iter);
 
 ///////////////////////////////////////////////////////////////////////////////

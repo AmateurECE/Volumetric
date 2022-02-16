@@ -7,7 +7,7 @@
 //
 // CREATED:         01/16/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     02/15/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -79,7 +79,7 @@ static int load_volumes(VolumetricConfiguration* config) {
     Docker* docker = docker_proxy_new();
     assert(NULL != docker);
 
-    ProjectFile* project = NULL;
+    const ProjectFile* project = NULL;
     int result = 0;
     while (NULL != (project = project_iter_next(project_iter))) {
 
@@ -94,6 +94,7 @@ static int load_volumes(VolumetricConfiguration* config) {
     }
 
     docker_proxy_free(docker);
+    project_iter_free(project_iter);
     return result;
 }
 
