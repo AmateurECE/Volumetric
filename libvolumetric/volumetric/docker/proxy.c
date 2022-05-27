@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     05/26/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -156,8 +156,27 @@ Docker* docker_proxy_new() {
     }
 
     memset(docker, 0, sizeof(Docker));
-    docker->curl = curl_easy_init();
-    curl_easy_setopt(docker->curl, CURLOPT_UNIX_SOCKET_PATH, DOCKER_SOCK_PATH);
+
+    // Convention allows the user to override the path to the docker socket
+    // with the DOCKER_HOST environment variable.
+    char* docker_host = getenv("DOCKER_HOST");
+    if (NULL != docker_host) {
+        const char* unix = "unix";
+        if (strncmp(docker_host, unix, strlen(unix))) {
+            fprintf(stderr, "Unknown url scheme in DOCKER_HOST '%s'",
+                docker_host);
+            return NULL;
+        }
+
+        docker_host += strlen(unix) + strlen(":/");
+        docker->curl = curl_easy_init();
+        curl_easy_setopt(docker->curl, CURLOPT_UNIX_SOCKET_PATH, docker_host);
+    } else {
+        docker->curl = curl_easy_init();
+        curl_easy_setopt(docker->curl, CURLOPT_UNIX_SOCKET_PATH,
+            DOCKER_SOCK_PATH);
+    }
+
     return docker;
 }
 
