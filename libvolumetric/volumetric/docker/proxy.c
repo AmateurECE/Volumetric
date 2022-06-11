@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     05/26/2022
+// LAST EDITED:     06/11/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -71,29 +71,7 @@ static size_t copy_data_from_curl_response(void* buffer,
     return nmemb;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Internal API
-////
-
-int http_encode(json_object* object, char** string, size_t* length) {
-    const char* string_value = json_object_to_json_string_ext(object,
-        JSON_C_TO_STRING_NOSLASHESCAPE);
-    *length = strlen(string_value) + 2; // For "\r\n"
-    *string = malloc(*length + 1);
-    if (NULL == *string) {
-        fprintf(stderr, "%s:%d: Couldn't allocate memory: %s\n", __FILE__,
-            __LINE__, strerror(errno));
-        return -ENOMEM;
-    }
-
-    memset(*string, 0, *length + 1);
-    strcat(*string, string_value);
-    strcat(*string, "\r\n");
-    (*string)[*length] = '\0';
-    return 0;
-}
-
-int http_get_application_json(Docker* docker, const char* url) {
+static int http_read_application_json(Docker* docker, const char* url) {
     docker->tokener = json_tokener_new();
     curl_easy_setopt(docker->curl, CURLOPT_URL, url);
     curl_easy_setopt(docker->curl, CURLOPT_WRITEFUNCTION,
@@ -129,6 +107,33 @@ int http_get_application_json(Docker* docker, const char* url) {
     return result;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Internal API
+////
+
+int http_encode(json_object* object, char** string, size_t* length) {
+    const char* string_value = json_object_to_json_string_ext(object,
+        JSON_C_TO_STRING_NOSLASHESCAPE);
+    *length = strlen(string_value) + 2; // For "\r\n"
+    *string = malloc(*length + 1);
+    if (NULL == *string) {
+        fprintf(stderr, "%s:%d: Couldn't allocate memory: %s\n", __FILE__,
+            __LINE__, strerror(errno));
+        return -ENOMEM;
+    }
+
+    memset(*string, 0, *length + 1);
+    strcat(*string, string_value);
+    strcat(*string, "\r\n");
+    (*string)[*length] = '\0';
+    return 0;
+}
+
+int http_get_application_json(Docker* docker, const char* url) {
+    curl_easy_setopt(docker->curl, CURLOPT_HTTPGET, 1);
+    return http_read_application_json(docker, url);
+}
+
 int http_post_application_json(Docker* docker, const char* url) {
     curl_easy_setopt(docker->curl, CURLOPT_READFUNCTION,
         copy_data_to_curl_request);
@@ -142,7 +147,7 @@ int http_post_application_json(Docker* docker, const char* url) {
 
 int http_post(Docker* docker, const char* url) {
     curl_easy_setopt(docker->curl, CURLOPT_POST, 1);
-    return http_get_application_json(docker, url);
+    return http_read_application_json(docker, url);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
