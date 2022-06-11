@@ -7,7 +7,7 @@
 #
 # CREATED:          01/22/2022
 #
-# LAST EDITED:      05/26/2022
+# LAST EDITED:      06/11/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -25,7 +25,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-project('volumetric', 'c', version: '0.3.1')
+project('volumetric', 'c', version: '0.3.2')
 
 subdir('libvolumetric')
 subdir('volumetric-checkout')
