@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/15/2022
+// LAST EDITED:     06/11/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -42,6 +42,11 @@
 int archive_volume_checkout(ArchiveVolume* config, Docker* docker) {
     // First, check to make sure the volume doesn't already exist
     DockerVolumeListIter* iter = docker_volume_list(docker);
+    if (NULL == iter) {
+        // We couldn't connect to the server for some reason.
+        return -ENOTCONN;
+    }
+
     const DockerVolume* list_entry = NULL;
     bool action_necessary = true;
     while (NULL != (list_entry = docker_volume_list_iter_next(iter))) {
