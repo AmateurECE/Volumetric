@@ -7,7 +7,7 @@
 //
 // CREATED:         01/26/2022
 //
-// LAST EDITED:     02/15/2022
+// LAST EDITED:     06/22/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -92,7 +92,11 @@ int main(int argc, char** argv) {
     Volume volume = {0};
     bool found = volumetric_configuration_find_volume_by_name(&config,
         arguments.volume_name, &volume);
-    assert(true == found);
+    if (true != found) {
+        fprintf(stderr, "No volume named \"%s\" in the configuration\n",
+            arguments.volume_name);
+        return ENOENT;
+    }
 
     // Do diff using volume
     Docker* docker = docker_proxy_new();
