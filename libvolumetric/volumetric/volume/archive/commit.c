@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     02/14/2022
+// LAST EDITED:     06/22/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -149,6 +149,10 @@ static GPtrArray* get_consumers_of_volume(Docker* docker,
     DockerContainerIter* containers = docker_container_list(docker);
     const DockerContainer* container = NULL;
     while (NULL != (container = docker_container_iter_next(containers))) {
+        if (NULL == container->mounts) {
+            continue;
+        }
+
         const DockerMount* mount = NULL;
         while (NULL != (mount = docker_mount_iter_next(container->mounts))) {
             if (!strcmp(mount->source, volume_name)) {

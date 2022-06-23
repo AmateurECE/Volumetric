@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     02/15/2022
+// LAST EDITED:     06/22/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -99,7 +99,7 @@ static void populate_docker_container_from_json(DockerContainer* container,
 
         if (!strcmp("Id", key)) {
             container->id = strdup(json_object_get_string(value));
-        } else if (!strcmp("Mounts", key)) {
+        } else if (!strcmp("Mounts", key) && NULL != value) {
             container->mounts = docker_mount_iter_new(value);
         }
 
