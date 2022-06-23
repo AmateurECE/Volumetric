@@ -41,6 +41,8 @@
 
 #include <volumetric/directory.h>
 #include <volumetric/docker.h>
+#include <volumetric/file.h>
+#include <volumetric/hash.h>
 #include <volumetric/string-handling.h>
 #include <volumetric/volume/archive.h>
 
@@ -253,9 +255,12 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
     }
 
     free(new_filename);
-    if (0 != result) {
+    if (0 != result && errno ^ ENOENT) {
         perror("couldn't rename source");
         return -1 * errno;
+    } else if (errno & ENOENT) {
+        printf("Volume file %s doesn't appear to exist. Assuming this is an"
+            " initial commit.\n", volume->url);
     }
 
     // Get the list of containers that have this volume mounted
@@ -281,6 +286,19 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
     if (!dry_run) {
         result = commit_changes(volume->url, files, live_volume->mountpoint);
         if (0 == result) {
+            // Print the hash of the new volume.
+            FileContents file = {0};
+            file_contents_init(&file, volume->url);
+            FileHash* file_hash = file_hash_of_buffer(volume->hash->hash_type,
+                file.contents, file.size);
+            char* hash_string = file_hash_to_string(file_hash);
+            printf("%s: %s\n",
+                file_hash_type_to_string(file_hash->hash_type),
+                hash_string);
+            free(hash_string);
+            file_hash_free(file_hash);
+            file_contents_release(&file);
+
             // Make the volume read-only
             chmod(volume->url, 0444);
         }
