@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     06/11/2022
+// LAST EDITED:     06/22/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -68,13 +68,29 @@ int archive_volume_checkout(ArchiveVolume* config, Docker* docker) {
 
     // Hash the contents of the file (in memory) to verify against config
     printf("%s: Checking hash of file %s\n", config->name, config->url);
-    if (!check_hash_of_memory(file.contents, file.size, config->hash))
+    FileHash* file_hash = file_hash_of_buffer(config->hash->hash_type,
+        file.contents, file.size);
+    if (!file_hash_equal(config->hash, file_hash))
     {
-        fprintf(stderr, "%s: Error: Hash mismatch for file %s\n", config->name,
-            config->url);
+        char* expected = file_hash_to_string(config->hash);
+        char* got = file_hash_to_string(file_hash);
+        file_hash_free(file_hash);
+        file_hash = NULL;
+        const char* hash_type = file_hash_type_to_string(
+            config->hash->hash_type);
+        fprintf(stderr, "%s: Error: %s hash mismatch for file %s.\n"
+            "Expected:\n"
+            "    %s\n"
+            "Got:\n"
+            "    %s\n",
+            config->name, hash_type, config->url, expected, got);
         file_contents_release(&file);
+        free(expected);
+        free(got);
         return -EINVAL;
     }
+    file_hash_free(file_hash);
+    file_hash = NULL;
 
     // Create the volume
     printf("%s: Initializing Docker volume\n", config->name);
@@ -87,6 +103,7 @@ int archive_volume_checkout(ArchiveVolume* config, Docker* docker) {
     // Decompress it to disk.
     printf("%s: Extracting volume archive image to disk\n", config->name);
     archive_extract_to_disk_universal(&file, volume->mountpoint);
+    file_contents_release(&file);
 
     docker_volume_free(volume);
     return 0;

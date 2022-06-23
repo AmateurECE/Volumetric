@@ -7,7 +7,7 @@
 //
 // CREATED:         01/22/2022
 //
-// LAST EDITED:     01/22/2022
+// LAST EDITED:     06/22/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -26,13 +26,12 @@
 ////
 
 #include <assert.h>
+#include <errno.h>
 #include <string.h>
 
 #include <openssl/evp.h>
 
 #include <volumetric/hash.h>
-
-typedef bool HashCheckerFn(void*, size_t, unsigned char*, size_t);
 
 static void convert_hex_string_to_bytes(const char* string,
     unsigned char** byte_array, size_t* length)
@@ -42,17 +41,18 @@ static void convert_hex_string_to_bytes(const char* string,
     assert(NULL != result);
 
     const char* index = string;
-    for (size_t i = 0; i < *length; index += 2, ++i) {
+    for (size_t i = 0; i < byte_array_length; index += 2, ++i) {
         sscanf(index, "%2hhx", &result[i]);
     }
 
     *length = byte_array_length;
-    *byte_array = malloc(*length);
+    *byte_array = result;
 }
 
-static bool check_md5_hash(void* buffer, size_t length, unsigned char* hash,
-    size_t hash_length)
+static void get_md5_hash(void* buffer, size_t length, unsigned char* hash_out,
+    unsigned int* hash_length)
 {
+    assert(EVP_MAX_MD_SIZE <= *hash_length);
     const EVP_MD* digest= EVP_get_digestbyname("MD5");
     assert(NULL != digest);
 
@@ -60,27 +60,18 @@ static bool check_md5_hash(void* buffer, size_t length, unsigned char* hash,
     EVP_DigestInit_ex(context, digest, NULL);
     EVP_DigestUpdate(context, buffer, length);
 
-    unsigned char md_value[EVP_MAX_MD_SIZE] = {0};
-    unsigned int md_length = 0;
-    EVP_DigestFinal_ex(context, md_value, &md_length);
+    EVP_DigestFinal_ex(context, hash_out, hash_length);
     EVP_MD_CTX_free(context);
-
-    size_t comparison_length = hash_length;
-    if (md_length < comparison_length) {
-        comparison_length = md_length;
-    }
-
-    bool result = !!strncmp((const char*)hash, (const char*)md_value,
-        comparison_length);
-    return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Public API
 ////
 
-FileHashType string_to_file_hash_type(const char* string) {
-    if (!strcmp("md5", string)) {
+FileHashType file_hash_type_from_string(const char* string) {
+    // TODO: As we support more hash types, it would be better to convert this
+    // to lowercase instead of comparing both versions.
+    if (!strcmp("md5", string) || !strcmp("MD5", string)) {
         return FILE_HASH_TYPE_MD5;
     } else {
         fprintf(stderr, "Unknown hash type: %s\n", string);
@@ -88,20 +79,96 @@ FileHashType string_to_file_hash_type(const char* string) {
     }
 }
 
-bool check_hash_of_memory(void* buffer, size_t length, const FileHash* hash) {
-    HashCheckerFn* hash_checker = NULL;
-    switch (hash->type) {
-    case FILE_HASH_TYPE_MD5: hash_checker = check_md5_hash; break;
-    default:
-        assert(0); // Programmer's error.
+const char* file_hash_type_to_string(FileHashType hash_type) {
+    switch (hash_type) {
+    case FILE_HASH_TYPE_MD5: return "md5";
+    case FILE_HASH_TYPE_INVALID: return "invalid";
+    default: assert(0); // Programmer's error
+    }
+}
+
+FileHash* file_hash_of_buffer(FileHashType hash_type, void* buffer,
+    size_t length)
+{
+    FileHash* file_hash = malloc(sizeof(FileHash));
+    if (NULL == file_hash) {
+        return NULL;
+    }
+    memset(file_hash, 0, sizeof(FileHash));
+
+    if (FILE_HASH_TYPE_MD5 == hash_type) {
+        file_hash->hash_type = hash_type;
+        unsigned int hash_length = EVP_MAX_MD_SIZE;
+        file_hash->hash_string = malloc(hash_length);
+        if (NULL == file_hash->hash_string) {
+            free(file_hash);
+            return NULL;
+        }
+        memset(file_hash->hash_string, 0, hash_length);
+
+        get_md5_hash(buffer, length, (unsigned char*)file_hash->hash_string,
+            &hash_length);
+        file_hash->hash_length = (size_t)hash_length;
+    } else {
+        fprintf(stderr, "%s:%d: Unknown FileHashType", __FILE__, __LINE__);
+        free(file_hash);
+        return NULL;
     }
 
-    unsigned char* hash_bytes = NULL;
-    size_t hash_length = 0;
-    convert_hex_string_to_bytes(hash->hash_string, &hash_bytes, &hash_length);
-    bool result = hash_checker(buffer, length, hash_bytes, hash_length);
-    free(hash_bytes);
-    return result;
+    return file_hash;
+}
+
+FileHash* file_hash_from_string(const char* type, const char* hex_string) {
+    FileHashType hash_type = file_hash_type_from_string(type);
+    if (FILE_HASH_TYPE_INVALID == hash_type) {
+        return NULL;
+    }
+
+    FileHash* file_hash = malloc(sizeof(FileHash));
+    if (NULL == file_hash) {
+        return NULL;
+    }
+    memset(file_hash, 0, sizeof(FileHash));
+
+    file_hash->hash_type = hash_type;
+    convert_hex_string_to_bytes(hex_string,
+        (unsigned char**)&file_hash->hash_string,
+        &file_hash->hash_length);
+    return file_hash;
+}
+
+char* file_hash_to_string(const FileHash* hash) {
+    size_t string_length = (hash->hash_length * 2) + 1;
+    char* string = malloc(string_length);
+    if (NULL == string) {
+        return NULL;
+    }
+
+    int result = 0;
+    for (size_t i = 0; i < hash->hash_length; ++i) {
+        result = snprintf(&string[i * 2], 3, "%02hhx", hash->hash_string[i]);
+        assert(2 == result); // Or else something has gone horribly wrong.
+    }
+
+    return string;
+}
+
+void file_hash_free(FileHash* hash) {
+    free(hash->hash_string);
+    free(hash);
+}
+
+bool file_hash_equal(const FileHash* first, const FileHash* second) {
+    if (first->hash_type != second->hash_type) {
+        return false;
+    }
+
+    if (first->hash_length != second->hash_length) {
+        return false;
+    }
+
+    return !memcmp(first->hash_string, second->hash_string,
+        first->hash_length);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     02/14/2022
+// LAST EDITED:     06/22/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -50,15 +50,11 @@ static int archive_volume_visit_map(SerdecYamlDeserializer* yaml,
         volume->url = strdup(temp);
         return result;
     } else {
-        FileHashType hash_type = string_to_file_hash_type(key);
-        if (FILE_HASH_TYPE_INVALID == hash_type) {
+        int result = serdec_yaml_deserialize_string(yaml, &temp);
+        volume->hash = file_hash_from_string(key, temp);
+        if (NULL == volume->hash) {
             return -EINVAL;
         }
-        volume->hash = malloc(sizeof(FileHash));
-        assert(NULL != volume->hash);
-        volume->hash->type = hash_type;
-        int result = serdec_yaml_deserialize_string(yaml, &temp);
-        volume->hash->hash_string = strdup(temp);
         return result;
     }
 }
@@ -74,8 +70,7 @@ int archive_volume_deserialize_yaml(SerdecYamlDeserializer* yaml,
 void archive_volume_release(ArchiveVolume* volume) {
     free(volume->name);
     free(volume->url);
-    free(volume->hash->hash_string);
-    free(volume->hash);
+    file_hash_free(volume->hash);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
