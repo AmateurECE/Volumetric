@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     06/22/2022
+// LAST EDITED:     09/18/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -147,6 +147,7 @@ DockerContainerIter* docker_container_list(Docker* docker)
             i);
         DockerContainer* container = malloc(sizeof(DockerContainer));
         assert(NULL != container);
+        memset(container, 0, sizeof(*container));
         populate_docker_container_from_json(container, object);
         g_ptr_array_add(iter->array, container);
     }

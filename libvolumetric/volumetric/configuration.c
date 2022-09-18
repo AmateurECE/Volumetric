@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/15/2022
+// LAST EDITED:     06/23/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -107,6 +107,7 @@ static char* get_volume_directory(const char* configuration_file,
     size_t path_size = strlen(conf_directory) + 1 + strlen(volume_directory);
     char* path = malloc(path_size + 1);
     if (NULL == path) {
+        free(owned_configuration_file);
         return NULL;
     }
 

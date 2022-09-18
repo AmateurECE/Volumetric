@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     06/11/2022
+// LAST EDITED:     06/23/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -170,6 +170,7 @@ Docker* docker_proxy_new() {
         if (strncmp(docker_host, unix, strlen(unix))) {
             fprintf(stderr, "Unknown url scheme in DOCKER_HOST '%s'",
                 docker_host);
+            free(docker);
             return NULL;
         }
 
