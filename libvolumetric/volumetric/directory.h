@@ -35,7 +35,7 @@ typedef struct _GPtrArray GPtrArray;
 
 typedef struct DirectoryEntry {
     struct dirent* entry;
-    const char *absolute_path;
+    const char* absolute_path;
 } DirectoryEntry;
 
 DirectoryIter* directory_iter_new(const char* directory);

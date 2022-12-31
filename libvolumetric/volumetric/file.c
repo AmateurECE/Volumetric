@@ -51,8 +51,7 @@ typedef struct MemoryMappedFile {
 // File Scheme
 ////
 
-static int file_open(FileContents* file, const char* path)
-{
+static int file_open(FileContents* file, const char* path) {
     MemoryMappedFile* map = (MemoryMappedFile*)file->file;
     map->local.fd = open(path, O_RDONLY);
     assert(-1 != map->local.fd);
@@ -61,14 +60,15 @@ static int file_open(FileContents* file, const char* path)
     assert(0 == fstat(map->local.fd, &file_stats));
 
     file->contents = mmap(NULL, file_stats.st_size, PROT_READ, MAP_SHARED,
-        map->local.fd, 0);
+                          map->local.fd, 0);
     assert(MAP_FAILED != file->contents);
     file->size = file_stats.st_size;
     return 0;
 }
 
-static void file_close(FileContents* file)
-{ munmap(file->contents, file->size); }
+static void file_close(FileContents* file) {
+    munmap(file->contents, file->size);
+}
 
 static bool is_file_schema(const char* path) {
     static const char* file_scheme = "file://";
@@ -83,8 +83,10 @@ static bool is_file_schema(const char* path) {
 }
 
 static void init_callbacks_for_file_scheme(FileContents* file,
-    const char* path)
-{ file->file->open = file_open; file->file->close = file_close; }
+                                           const char* path) {
+    file->file->open = file_open;
+    file->file->close = file_close;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Private Functions
@@ -96,7 +98,7 @@ static int init_callbacks_for_scheme(FileContents* file, const char* path) {
         init_callbacks_for_file_scheme(file, path);
     } else {
         fprintf(stderr, "%s:%d: Unknown schema for path: %s\n", __FILE__,
-            __LINE__, path);
+                __LINE__, path);
         return -EINVAL;
     }
 
@@ -119,7 +121,9 @@ int file_contents_init(FileContents* file, const char* path) {
 }
 
 // Release memory held by this object.
-void file_contents_release(FileContents* file)
-{ file->file->close(file); free(file->file); }
+void file_contents_release(FileContents* file) {
+    file->file->close(file);
+    free(file->file);
+}
 
 ///////////////////////////////////////////////////////////////////////////////

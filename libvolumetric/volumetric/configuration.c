@@ -51,12 +51,13 @@ typedef struct ProjectIter {
 // Private Functions
 ////
 
-static void volumetric_configuration_defaults(VolumetricConfiguration* config)
-{ config->volume_path = strdup(""); }
+static void
+volumetric_configuration_defaults(VolumetricConfiguration* config) {
+    config->volume_path = strdup("");
+}
 
 static int visit_mapping(SerdecYamlDeserializer* deser, void* user_data,
-    const char* key)
-{
+                         const char* key) {
     VolumetricConfiguration* config = (VolumetricConfiguration*)user_data;
     int result = 0;
     const char* temp = NULL;
@@ -86,9 +87,9 @@ static int visit_mapping(SerdecYamlDeserializer* deser, void* user_data,
     return result;
 }
 
-static ParseResult volumetric_configuration_deserialize_yaml(
-    SerdecYamlDeserializer* deser, VolumetricConfiguration* config)
-{
+static ParseResult
+volumetric_configuration_deserialize_yaml(SerdecYamlDeserializer* deser,
+                                          VolumetricConfiguration* config) {
     volumetric_configuration_defaults(config);
     int result = serdec_yaml_deserialize_map(deser, visit_mapping, config);
     if (0 > result) {
@@ -99,8 +100,7 @@ static ParseResult volumetric_configuration_deserialize_yaml(
 }
 
 static char* get_volume_directory(const char* configuration_file,
-    const char* volume_directory)
-{
+                                  const char* volume_directory) {
     // See dirname(3). This string is not free'd.
     char* owned_configuration_file = strdup(configuration_file);
     char* conf_directory = dirname(owned_configuration_file);
@@ -127,31 +127,30 @@ static char* get_volume_directory(const char* configuration_file,
 ////
 
 ParseResult volumetric_configuration_load(const char* config_file,
-    VolumetricConfiguration* config)
-{
+                                          VolumetricConfiguration* config) {
     FILE* input_file = fopen(config_file, "rb");
     if (NULL == input_file) {
         fprintf(stderr, "Couldn't open configuration file %s: %s\n",
-            config_file, strerror(errno));
+                config_file, strerror(errno));
         return errno;
     }
 
-    SerdecYamlDeserializer* deser = serdec_yaml_deserializer_new_file(
-        input_file);
+    SerdecYamlDeserializer* deser =
+        serdec_yaml_deserializer_new_file(input_file);
     int result = volumetric_configuration_deserialize_yaml(deser, config);
     serdec_yaml_deserializer_free(deser);
     fclose(input_file);
 
     if (-PARSE_VERSION_MISMATCH == result) {
         fprintf(stderr, "Configuration file %s: version mismatch, expected %s",
-            config_file, CONFIGURATION_CURRENT_VERSION);
+                config_file, CONFIGURATION_CURRENT_VERSION);
     }
 
     // Take the path of volume_directory relative to the dirname of
     // conf_directory, if volume_directory is not an absolute path.
     if ('/' != config->volume_directory[0]) {
-        char* path = get_volume_directory(config_file,
-            config->volume_directory);
+        char* path =
+            get_volume_directory(config_file, config->volume_directory);
         free(config->volume_directory);
         config->volume_directory = path;
     }
@@ -160,9 +159,15 @@ ParseResult volumetric_configuration_load(const char* config_file,
 }
 
 void volumetric_configuration_release(VolumetricConfiguration* config) {
-    if (NULL != config->version) { free(config->version); }
-    if (NULL != config->volume_directory) { free(config->volume_directory); }
-    if (NULL != config->volume_path) { free(config->volume_path); }
+    if (NULL != config->version) {
+        free(config->version);
+    }
+    if (NULL != config->volume_directory) {
+        free(config->volume_directory);
+    }
+    if (NULL != config->volume_path) {
+        free(config->volume_path);
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -194,7 +199,7 @@ const ProjectFile* project_iter_next(ProjectIter* iter) {
     FILE* input = fopen(iter->entry->absolute_path, "rb");
     if (NULL == input) {
         fprintf(stderr, "error opening file %s: %s\n",
-            iter->entry->entry->d_name, strerror(errno));
+                iter->entry->entry->d_name, strerror(errno));
         return NULL;
     }
 
@@ -223,8 +228,7 @@ void project_iter_free(ProjectIter* iter) {
 ////
 
 bool volumetric_configuration_find_volume_by_name(
-    VolumetricConfiguration* config, const char* volume_name, Volume* volume)
-{
+    VolumetricConfiguration* config, const char* volume_name, Volume* volume) {
     ProjectIter* project_iter = project_iter_new(config);
     if (NULL == project_iter) {
         return false;

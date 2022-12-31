@@ -55,7 +55,7 @@ typedef struct ProjectFile {
 
 // Deserialize the ProjectFile instance from the deserializer
 int project_file_deserialize_from_yaml(SerdecYamlDeserializer* yaml,
-    ProjectFile* volumes);
+                                       ProjectFile* volumes);
 
 // Free memory used internally by the instance
 void project_file_release(ProjectFile* volumes);

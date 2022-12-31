@@ -41,7 +41,7 @@
 
 static int copy_data(struct archive* reader, struct archive* writer) {
     int result = 0;
-    const void *buff = NULL;
+    const void* buff = NULL;
     size_t size = 0;
     la_int64_t offset = 0;
 
@@ -61,8 +61,7 @@ static int copy_data(struct archive* reader, struct archive* writer) {
 }
 
 static void prepend_directory_path(const char* directory,
-    struct archive_entry* entry)
-{
+                                   struct archive_entry* entry) {
     const char* current_path = archive_entry_pathname(entry);
     size_t directory_length = strlen(directory);
     size_t path_length = directory_length + 1 + strlen(current_path);
@@ -83,11 +82,11 @@ static void prepend_directory_path(const char* directory,
 ////
 
 void archive_extract_to_disk_universal(const FileContents* file,
-    const char* location)
-{
+                                       const char* location) {
     /* Select which attributes we want to restore. */
-    int flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM
-        | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS | ARCHIVE_EXTRACT_OWNER;
+    int flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM |
+                ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS |
+                ARCHIVE_EXTRACT_OWNER;
 
     struct archive* read_archive = archive_read_new();
     archive_read_support_format_all(read_archive);
@@ -96,11 +95,11 @@ void archive_extract_to_disk_universal(const FileContents* file,
     archive_write_disk_set_options(extractor, flags);
     archive_write_disk_set_standard_lookup(extractor);
 
-    int result = archive_read_open_memory(read_archive, file->contents,
-        file->size);
+    int result =
+        archive_read_open_memory(read_archive, file->contents, file->size);
     assert(0 == result);
 
-    struct archive_entry *entry = NULL;
+    struct archive_entry* entry = NULL;
     for (;;) {
 
         result = archive_read_next_header(read_archive, &entry);

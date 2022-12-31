@@ -44,7 +44,7 @@ typedef struct ArchiveVolume {
 } ArchiveVolume;
 
 int archive_volume_deserialize_yaml(SerdecYamlDeserializer* yaml,
-    ArchiveVolume* volume);
+                                    ArchiveVolume* volume);
 int archive_volume_checkout(ArchiveVolume* config, Docker* docker);
 int archive_volume_diff(ArchiveVolume* volume, Docker* docker);
 int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run);

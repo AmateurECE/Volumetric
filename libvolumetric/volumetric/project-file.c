@@ -36,8 +36,7 @@
 const char* VOLUME_SCHEMA_VERSION = "1.0";
 
 static int volume_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
-    const char* key)
-{
+                            const char* key) {
     GHashTable* volumes = (GHashTable*)user_data;
     Volume* volume = malloc(sizeof(Volume));
     if (NULL == volume) {
@@ -51,8 +50,7 @@ static int volume_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
 }
 
 static int project_file_visit_map(SerdecYamlDeserializer* yaml,
-    void* user_data, const char* key)
-{
+                                  void* user_data, const char* key) {
     ProjectFile* volumes = (ProjectFile*)user_data;
     if (!strcmp("version", key)) {
         const char* temp = NULL;
@@ -66,9 +64,9 @@ static int project_file_visit_map(SerdecYamlDeserializer* yaml,
         return 1;
     } else if (!strcmp("volumes", key)) {
         volumes->volumes = g_hash_table_new_full(g_str_hash, g_str_equal, free,
-            (GDestroyNotify)volume_free);
+                                                 (GDestroyNotify)volume_free);
         return serdec_yaml_deserialize_map(yaml, volume_visit_map,
-            volumes->volumes);
+                                           volumes->volumes);
     } else {
         return -ENOSYS;
     }
@@ -80,10 +78,9 @@ static int project_file_visit_map(SerdecYamlDeserializer* yaml,
 
 // Deserialize the ProjectFile instance from the deserializer
 int project_file_deserialize_from_yaml(SerdecYamlDeserializer* yaml,
-    ProjectFile* volumes)
-{
-    int result = serdec_yaml_deserialize_map(yaml, project_file_visit_map,
-        volumes);
+                                       ProjectFile* volumes) {
+    int result =
+        serdec_yaml_deserialize_map(yaml, project_file_visit_map, volumes);
     if (0 != result) {
         return -EINVAL;
     }

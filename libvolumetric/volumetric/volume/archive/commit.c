@@ -96,8 +96,8 @@ static char* get_new_filename(const char* current_url, const char* suffix) {
         get_basename_without_extension_owned(current_url);
     char* extension_owned = get_extension_owned(current_url);
 
-    char* new_filename = string_join_new(dirname_owned, '/',
-        basename_without_extension_owned);
+    char* new_filename =
+        string_join_new(dirname_owned, '/', basename_without_extension_owned);
     free(basename_without_extension_owned);
     new_filename = string_join_new(new_filename, '-', suffix);
     new_filename = string_append_new(new_filename, extension_owned);
@@ -132,8 +132,8 @@ static char* get_date_string_owned() {
 
     // Convert it into a string
     memset(string, 0, string_length);
-    size_t bytes_written = strftime(string, string_length - 1,
-        "%Y%m%d-%H%M%S", &time_parts);
+    size_t bytes_written =
+        strftime(string, string_length - 1, "%Y%m%d-%H%M%S", &time_parts);
     if (0 == bytes_written) {
         perror("couldn't get system time");
         free(string);
@@ -144,8 +144,7 @@ static char* get_date_string_owned() {
 }
 
 static GPtrArray* get_consumers_of_volume(Docker* docker,
-    const char* volume_name)
-{
+                                          const char* volume_name) {
     GPtrArray* consumers = g_ptr_array_new();
 
     DockerContainerIter* containers = docker_container_list(docker);
@@ -168,8 +167,7 @@ static GPtrArray* get_consumers_of_volume(Docker* docker,
 }
 
 static char* get_archive_path_for_file(const char* filename,
-    const char* directory)
-{
+                                       const char* directory) {
     size_t directory_length = strlen(directory);
     if (!strncmp(filename, directory, directory_length)) {
         return string_append_new(strdup("."), filename + directory_length);
@@ -179,20 +177,19 @@ static char* get_archive_path_for_file(const char* filename,
 }
 
 static int commit_changes(const char* archive_name, GPtrArray* files,
-    const char* mountpoint)
-{
+                          const char* mountpoint) {
     struct archive* writer = archive_write_new();
     archive_write_add_filter_gzip(writer);
     archive_write_set_format_pax_restricted(writer);
     int result = archive_write_open_filename(writer, archive_name);
     if (ARCHIVE_OK != result) {
         fprintf(stderr, "%s:%d: Couldn't open file for writing: %s\n",
-            __FUNCTION__, __LINE__, archive_error_string(writer));
+                __FUNCTION__, __LINE__, archive_error_string(writer));
         archive_write_free(writer);
         return result;
     }
 
-    struct archive_entry *entry = NULL;
+    struct archive_entry* entry = NULL;
     struct stat file_stat;
     char buffer[4096];
     for (guint i = 0; i < files->len; ++i) {
@@ -215,14 +212,14 @@ static int commit_changes(const char* archive_name, GPtrArray* files,
         int fd = open(filename, O_RDONLY);
         if (0 > fd) {
             fprintf(stderr, "%s:%d: Couldn't open %s for reading: %s\n",
-                __FUNCTION__, __LINE__, filename, strerror(errno));
+                    __FUNCTION__, __LINE__, filename, strerror(errno));
             archive_write_close(writer);
             archive_write_free(writer);
             return -1 * errno;
         }
 
         int bytes_read = read(fd, buffer, sizeof(buffer));
-        while ( bytes_read > 0 ) {
+        while (bytes_read > 0) {
             archive_write_data(writer, buffer, bytes_read);
             bytes_read = read(fd, buffer, sizeof(buffer));
         }
@@ -241,8 +238,8 @@ static int commit_changes(const char* archive_name, GPtrArray* files,
 // Public API
 ////
 
-int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
-{
+int archive_volume_commit(ArchiveVolume* volume, Docker* docker,
+                          bool dry_run) {
     // Rename the current source file to save it.
     char* current_time = get_date_string_owned();
     char* new_filename = get_new_filename(volume->url, current_time);
@@ -260,7 +257,8 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
         return -1 * errno;
     } else if (errno & ENOENT) {
         printf("Volume file %s doesn't appear to exist. Assuming this is an"
-            " initial commit.\n", volume->url);
+               " initial commit.\n",
+               volume->url);
     }
 
     // Get the list of containers that have this volume mounted
@@ -272,7 +270,7 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
         printf("Pausing %s\n", (const char*)containers->pdata[i]);
         if (!dry_run) {
             result = docker_container_pause(docker,
-                (const char*)containers->pdata[i]);
+                                            (const char*)containers->pdata[i]);
         }
         if (0 != result) {
             g_ptr_array_unref(containers);
@@ -289,12 +287,11 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
             // Print the hash of the new volume.
             FileContents file = {0};
             file_contents_init(&file, volume->url);
-            FileHash* file_hash = file_hash_of_buffer(volume->hash->hash_type,
-                file.contents, file.size);
+            FileHash* file_hash = file_hash_of_buffer(
+                volume->hash->hash_type, file.contents, file.size);
             char* hash_string = file_hash_to_string(file_hash);
-            printf("%s: %s\n",
-                file_hash_type_to_string(file_hash->hash_type),
-                hash_string);
+            printf("%s: %s\n", file_hash_type_to_string(file_hash->hash_type),
+                   hash_string);
             free(hash_string);
             file_hash_free(file_hash);
             file_contents_release(&file);
@@ -312,8 +309,8 @@ int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run)
         printf("Un-pausing %s\n", (const char*)containers->pdata[i]);
         if (!dry_run) {
             // Don't reset the error code to zero if commit failed
-            result += docker_container_unpause(docker,
-                (const char*)containers->pdata[i]);
+            result += docker_container_unpause(
+                docker, (const char*)containers->pdata[i]);
         }
         if (0 != result) {
             g_ptr_array_unref(containers);

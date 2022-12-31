@@ -63,8 +63,9 @@ extern const char* CONFIGURATION_CURRENT_VERSION;
 // Configuration loading API (lower-level)
 ////
 
-ParseResult volumetric_configuration_load(const char* file_path,
-    VolumetricConfiguration* configuration);
+ParseResult
+volumetric_configuration_load(const char* file_path,
+                              VolumetricConfiguration* configuration);
 void volumetric_configuration_release(VolumetricConfiguration* config);
 
 ///////////////////////////////////////////////////////////////////////////////

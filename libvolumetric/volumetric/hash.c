@@ -34,8 +34,8 @@
 #include <volumetric/hash.h>
 
 static void convert_hex_string_to_bytes(const char* string,
-    unsigned char** byte_array, size_t* length)
-{
+                                        unsigned char** byte_array,
+                                        size_t* length) {
     size_t byte_array_length = strlen(string) / 2;
     unsigned char* result = malloc(byte_array_length);
     assert(NULL != result);
@@ -50,10 +50,9 @@ static void convert_hex_string_to_bytes(const char* string,
 }
 
 static void get_md5_hash(void* buffer, size_t length, unsigned char* hash_out,
-    unsigned int* hash_length)
-{
+                         unsigned int* hash_length) {
     assert(EVP_MAX_MD_SIZE <= *hash_length);
-    const EVP_MD* digest= EVP_get_digestbyname("MD5");
+    const EVP_MD* digest = EVP_get_digestbyname("MD5");
     assert(NULL != digest);
 
     EVP_MD_CTX* context = EVP_MD_CTX_new();
@@ -81,15 +80,17 @@ FileHashType file_hash_type_from_string(const char* string) {
 
 const char* file_hash_type_to_string(FileHashType hash_type) {
     switch (hash_type) {
-    case FILE_HASH_TYPE_MD5: return "md5";
-    case FILE_HASH_TYPE_INVALID: return "invalid";
-    default: assert(0); // Programmer's error
+    case FILE_HASH_TYPE_MD5:
+        return "md5";
+    case FILE_HASH_TYPE_INVALID:
+        return "invalid";
+    default:
+        assert(0); // Programmer's error
     }
 }
 
 FileHash* file_hash_of_buffer(FileHashType hash_type, void* buffer,
-    size_t length)
-{
+                              size_t length) {
     FileHash* file_hash = malloc(sizeof(FileHash));
     if (NULL == file_hash) {
         return NULL;
@@ -107,7 +108,7 @@ FileHash* file_hash_of_buffer(FileHashType hash_type, void* buffer,
         memset(file_hash->hash_string, 0, hash_length);
 
         get_md5_hash(buffer, length, (unsigned char*)file_hash->hash_string,
-            &hash_length);
+                     &hash_length);
         file_hash->hash_length = (size_t)hash_length;
     } else {
         fprintf(stderr, "%s:%d: Unknown FileHashType", __FILE__, __LINE__);
@@ -132,8 +133,8 @@ FileHash* file_hash_from_string(const char* type, const char* hex_string) {
 
     file_hash->hash_type = hash_type;
     convert_hex_string_to_bytes(hex_string,
-        (unsigned char**)&file_hash->hash_string,
-        &file_hash->hash_length);
+                                (unsigned char**)&file_hash->hash_string,
+                                &file_hash->hash_length);
     return file_hash;
 }
 
@@ -168,7 +169,7 @@ bool file_hash_equal(const FileHash* first, const FileHash* second) {
     }
 
     return !memcmp(first->hash_string, second->hash_string,
-        first->hash_length);
+                   first->hash_length);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

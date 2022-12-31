@@ -52,7 +52,7 @@ int archive_volume_checkout(ArchiveVolume* config, Docker* docker) {
     while (NULL != (list_entry = docker_volume_list_iter_next(iter))) {
         if (!strcmp(config->name, list_entry->name)) {
             printf("%s: Volume exists, taking no further action.\n",
-                config->name);
+                   config->name);
             action_necessary = false;
             break;
         }
@@ -68,22 +68,22 @@ int archive_volume_checkout(ArchiveVolume* config, Docker* docker) {
 
     // Hash the contents of the file (in memory) to verify against config
     printf("%s: Checking hash of file %s\n", config->name, config->url);
-    FileHash* file_hash = file_hash_of_buffer(config->hash->hash_type,
-        file.contents, file.size);
-    if (!file_hash_equal(config->hash, file_hash))
-    {
+    FileHash* file_hash =
+        file_hash_of_buffer(config->hash->hash_type, file.contents, file.size);
+    if (!file_hash_equal(config->hash, file_hash)) {
         char* expected = file_hash_to_string(config->hash);
         char* got = file_hash_to_string(file_hash);
         file_hash_free(file_hash);
         file_hash = NULL;
-        const char* hash_type = file_hash_type_to_string(
-            config->hash->hash_type);
-        fprintf(stderr, "%s: Error: %s hash mismatch for file %s.\n"
-            "Expected:\n"
-            "    %s\n"
-            "Got:\n"
-            "    %s\n",
-            config->name, hash_type, config->url, expected, got);
+        const char* hash_type =
+            file_hash_type_to_string(config->hash->hash_type);
+        fprintf(stderr,
+                "%s: Error: %s hash mismatch for file %s.\n"
+                "Expected:\n"
+                "    %s\n"
+                "Got:\n"
+                "    %s\n",
+                config->name, hash_type, config->url, expected, got);
         file_contents_release(&file);
         free(expected);
         free(got);

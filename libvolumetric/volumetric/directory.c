@@ -54,7 +54,7 @@ DirectoryIter* directory_iter_new(const char* directory) {
     DIR* system_directory = opendir(directory);
     if (NULL == system_directory) {
         fprintf(stderr, "%s:%d: Couldn't open directory: %s (%s)\n", __FILE__,
-            __LINE__, directory, strerror(errno));
+                __LINE__, directory, strerror(errno));
     }
 
     DirectoryIter* iter = malloc(sizeof(DirectoryIter));
@@ -86,8 +86,8 @@ DirectoryEntry* directory_iter_next(DirectoryIter* iter) {
         }
 
         // Ignore "." and ".."
-        entry_found = strcmp(".", entry->d_name)
-            && strcmp("..", entry->d_name);
+        entry_found =
+            strcmp(".", entry->d_name) && strcmp("..", entry->d_name);
     }
 
     iter->entry.entry = entry;
@@ -95,7 +95,7 @@ DirectoryEntry* directory_iter_next(DirectoryIter* iter) {
     strcpy(iter->path_buffer, iter->directory_owned);
     iter->path_buffer[iter->directory_owned_length] = '/';
     strcpy(iter->path_buffer + iter->directory_owned_length + 1,
-        entry->d_name);
+           entry->d_name);
     iter->entry.absolute_path = iter->path_buffer;
     return &iter->entry;
 }
@@ -113,8 +113,8 @@ GPtrArray* get_file_list_for_directory(const char* directory) {
     while ((node = fts_read(tree))) {
         if (FTS_F == node->fts_info || FTS_D == node->fts_info) {
             g_ptr_array_add(list, strdup(node->fts_path));
-        } else if (FTS_ERR == node->fts_info || FTS_DNR == node->fts_info
-            || FTS_NS == node->fts_info) {
+        } else if (FTS_ERR == node->fts_info || FTS_DNR == node->fts_info ||
+                   FTS_NS == node->fts_info) {
             fprintf(stderr, "fts_read error: %s\n", strerror(node->fts_errno));
             exit(errno);
         }

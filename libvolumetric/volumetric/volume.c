@@ -41,8 +41,7 @@
 ////
 
 static int volume_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
-    const char* key)
-{
+                            const char* key) {
     Volume* volume = (Volume*)user_data;
     if (!strcmp("archive", key)) {
         volume->type = VOLUME_TYPE_ARCHIVE;
@@ -56,8 +55,9 @@ static int volume_visit_map(SerdecYamlDeserializer* yaml, void* user_data,
 // Public API
 ////
 
-int volume_deserialize_yaml(SerdecYamlDeserializer* yaml, Volume* volume)
-{ return serdec_yaml_deserialize_map(yaml, volume_visit_map, volume); }
+int volume_deserialize_yaml(SerdecYamlDeserializer* yaml, Volume* volume) {
+    return serdec_yaml_deserialize_map(yaml, volume_visit_map, volume);
+}
 
 void volume_free(Volume* volume) {
     volume_release(volume);

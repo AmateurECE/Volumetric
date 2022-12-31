@@ -36,8 +36,7 @@
 #include <volumetric/volume/archive.h>
 
 static int archive_volume_visit_map(SerdecYamlDeserializer* yaml,
-    void* user_data, const char* key)
-{
+                                    void* user_data, const char* key) {
     ArchiveVolume* volume = (ArchiveVolume*)user_data;
     const char* temp = NULL;
 
@@ -64,8 +63,9 @@ static int archive_volume_visit_map(SerdecYamlDeserializer* yaml,
 ////
 
 int archive_volume_deserialize_yaml(SerdecYamlDeserializer* yaml,
-    ArchiveVolume* volume)
-{ return serdec_yaml_deserialize_map(yaml, archive_volume_visit_map, volume); }
+                                    ArchiveVolume* volume) {
+    return serdec_yaml_deserialize_map(yaml, archive_volume_visit_map, volume);
+}
 
 void archive_volume_release(ArchiveVolume* volume) {
     free(volume->name);

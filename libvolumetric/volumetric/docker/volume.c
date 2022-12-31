@@ -48,8 +48,7 @@ typedef struct DockerVolumeListIter {
 ////
 
 static void populate_docker_volume_from_json(DockerVolume* volume,
-    json_object* object)
-{
+                                             json_object* object) {
     struct json_object_iterator iter = json_object_iter_begin(object);
     struct json_object_iterator end = json_object_iter_end(object);
 
@@ -79,31 +78,30 @@ DockerVolume* docker_volume_create(Docker* docker, const char* name) {
     json_object_object_add(request, "Name", json_object_new_string(name));
     docker->read_object = NULL;
     if (0 != http_encode(request, &docker->read_object,
-            &docker->read_object_length)) {
+                         &docker->read_object_length)) {
         goto error;
     }
 
     docker->read_object_index = 0;
-    int result = http_post_application_json(docker,
-        "http://localhost/volumes/create");
+    int result =
+        http_post_application_json(docker, "http://localhost/volumes/create");
     json_object_put(request);
     free(docker->read_object);
     if (0 != result) {
         goto error;
     }
 
-
     // Read json_object from response
     DockerVolume* volume = malloc(sizeof(DockerVolume));
     if (NULL == volume) {
         fprintf(stderr, "%s:%d: Failed to initialize memory for volume: %s\n",
-            __FILE__, __LINE__, strerror(errno));
+                __FILE__, __LINE__, strerror(errno));
         goto error;
     }
 
     populate_docker_volume_from_json(volume, docker->write_object);
     return volume;
- error:
+error:
     return NULL;
 }
 
@@ -122,20 +120,20 @@ DockerVolumeListIter* docker_volume_list(Docker* docker) {
     }
 
     // Check whether the response was an error message
-    json_object* volumes = json_object_object_get(docker->write_object,
-        "Volumes");
+    json_object* volumes =
+        json_object_object_get(docker->write_object, "Volumes");
     if (NULL == volumes) {
-        json_object* message = json_object_object_get(docker->write_object,
-            "message");
+        json_object* message =
+            json_object_object_get(docker->write_object, "message");
         fprintf(stderr, "%s:%d:Docker daemon says: %s\n", __FILE__, __LINE__,
-            json_object_get_string(message));
+                json_object_get_string(message));
         free(iter);
         json_object_put(docker->write_object);
         return NULL;
     }
 
-    iter->array = g_ptr_array_new_with_free_func(
-        (GDestroyNotify)docker_volume_free);
+    iter->array =
+        g_ptr_array_new_with_free_func((GDestroyNotify)docker_volume_free);
     int array_length = json_object_array_length(volumes);
     for (int i = 0; i < array_length; ++i) {
         json_object* object = json_object_array_get_idx(volumes, i);
@@ -180,11 +178,11 @@ DockerVolume* docker_volume_inspect(Docker* docker, const char* name) {
     }
 
     // Read json_object from response
-    json_object* message = json_object_object_get(docker->write_object,
-        "message");
+    json_object* message =
+        json_object_object_get(docker->write_object, "message");
     if (NULL != message) {
         fprintf(stderr, "%s:%d:Docker daemon says: %s\n", __FILE__, __LINE__,
-            json_object_get_string(message));
+                json_object_get_string(message));
         return NULL;
     }
 
@@ -196,9 +194,15 @@ DockerVolume* docker_volume_inspect(Docker* docker, const char* name) {
 }
 
 void docker_volume_free(DockerVolume* volume) {
-    if (NULL != volume->name) { free(volume->name); }
-    if (NULL != volume->driver) { free(volume->driver); }
-    if (NULL != volume->mountpoint) { free(volume->mountpoint); }
+    if (NULL != volume->name) {
+        free(volume->name);
+    }
+    if (NULL != volume->driver) {
+        free(volume->driver);
+    }
+    if (NULL != volume->mountpoint) {
+        free(volume->mountpoint);
+    }
     free(volume);
 }
 

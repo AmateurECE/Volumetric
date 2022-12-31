@@ -48,9 +48,10 @@ const char* argp_program_bug_address = "<ethan.twardy@gmail.com>";
 static char doc[] = "Version control for Docker persistent volumes";
 static struct argp_option options[] = {
     {"config", 'c', "FILE", 0,
-     "Read configuration file FILE instead of default ("
-     CONFIG_CONFIGURATION_FILE ")", 0},
-    { 0 },
+     "Read configuration file FILE instead of default "
+     "(" CONFIG_CONFIGURATION_FILE ")",
+     0},
+    {0},
 };
 static char args_doc[] = "";
 
@@ -98,7 +99,7 @@ static int load_volumes(VolumetricConfiguration* config) {
     return result;
 }
 
-static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
+static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
 int main(int argc, char** argv) {
     struct arguments arguments = {
@@ -107,8 +108,8 @@ int main(int argc, char** argv) {
 
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
     VolumetricConfiguration config = {0};
-    int result = volumetric_configuration_load(arguments.configuration_file,
-        &config);
+    int result =
+        volumetric_configuration_load(arguments.configuration_file, &config);
     if (0 != result) {
         return result;
     }

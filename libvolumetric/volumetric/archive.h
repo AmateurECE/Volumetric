@@ -33,7 +33,7 @@ typedef struct FileContents FileContents;
 // Lazy, universal archive extraction routine. Works for all archive files
 // supported by BSD's libarchive.
 void archive_extract_to_disk_universal(const FileContents* file,
-    const char* location);
+                                       const char* location);
 
 #endif // VOLUMETRIC_ARCHIVE_H
 

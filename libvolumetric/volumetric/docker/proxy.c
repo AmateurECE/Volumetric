@@ -42,27 +42,27 @@
 static const char* DOCKER_SOCK_PATH = "/var/run/docker.sock";
 
 static size_t copy_data_to_curl_request(char* buffer,
-    size_t size __attribute__((unused)), size_t nitems, void* user_data)
-{
+                                        size_t size __attribute__((unused)),
+                                        size_t nitems, void* user_data) {
     Docker* docker = (Docker*)user_data;
-    size_t copy_length = docker->read_object_length
-        - docker->read_object_index;
+    size_t copy_length =
+        docker->read_object_length - docker->read_object_index;
     if (nitems < copy_length) {
         copy_length = nitems;
     }
 
     memcpy(buffer, docker->read_object + docker->read_object_index,
-        copy_length);
+           copy_length);
     docker->read_object_index += copy_length;
     return copy_length;
 }
 
 static size_t copy_data_from_curl_response(void* buffer,
-    size_t size __attribute__((unused)), size_t nmemb, void* user_data)
-{
+                                           size_t size __attribute__((unused)),
+                                           size_t nmemb, void* user_data) {
     Docker* docker = (Docker*)user_data;
-    docker->write_object = json_tokener_parse_ex(docker->tokener, buffer,
-        nmemb);
+    docker->write_object =
+        json_tokener_parse_ex(docker->tokener, buffer, nmemb);
     enum json_tokener_error error = json_tokener_get_error(docker->tokener);
     if (NULL == docker->write_object && json_tokener_continue != error) {
         return 0;
@@ -75,7 +75,7 @@ static int http_read_application_json(Docker* docker, const char* url) {
     docker->tokener = json_tokener_new();
     curl_easy_setopt(docker->curl, CURLOPT_URL, url);
     curl_easy_setopt(docker->curl, CURLOPT_WRITEFUNCTION,
-        copy_data_from_curl_response);
+                     copy_data_from_curl_response);
     curl_easy_setopt(docker->curl, CURLOPT_WRITEDATA, docker);
 
     char error_buffer[CURL_ERROR_SIZE] = {0};
@@ -88,17 +88,18 @@ static int http_read_application_json(Docker* docker, const char* url) {
     // Check that CURL is happy
     if (CURLE_OK != response) {
         fprintf(stderr, "%s:%d:Couldn't connect to docker daemon: %s (%s)\n",
-            __FILE__, __LINE__, error_buffer, curl_easy_strerror(response));
+                __FILE__, __LINE__, error_buffer,
+                curl_easy_strerror(response));
         json_tokener_free(docker->tokener);
         return -EINVAL;
     }
 
     // Check that the docker daemon returned a valid JSON object
     if (NULL == docker->write_object) {
-        enum json_tokener_error error = json_tokener_get_error(
-            docker->tokener);
+        enum json_tokener_error error =
+            json_tokener_get_error(docker->tokener);
         fprintf(stderr, "%s:%d:Couldn't enumerate docker volumes: %s\n",
-            __FILE__, __LINE__, json_tokener_error_desc(error));
+                __FILE__, __LINE__, json_tokener_error_desc(error));
         json_tokener_free(docker->tokener);
         return -EINVAL;
     }
@@ -112,13 +113,13 @@ static int http_read_application_json(Docker* docker, const char* url) {
 ////
 
 int http_encode(json_object* object, char** string, size_t* length) {
-    const char* string_value = json_object_to_json_string_ext(object,
-        JSON_C_TO_STRING_NOSLASHESCAPE);
+    const char* string_value =
+        json_object_to_json_string_ext(object, JSON_C_TO_STRING_NOSLASHESCAPE);
     *length = strlen(string_value) + 2; // For "\r\n"
     *string = malloc(*length + 1);
     if (NULL == *string) {
         fprintf(stderr, "%s:%d: Couldn't allocate memory: %s\n", __FILE__,
-            __LINE__, strerror(errno));
+                __LINE__, strerror(errno));
         return -ENOMEM;
     }
 
@@ -136,7 +137,7 @@ int http_get_application_json(Docker* docker, const char* url) {
 
 int http_post_application_json(Docker* docker, const char* url) {
     curl_easy_setopt(docker->curl, CURLOPT_READFUNCTION,
-        copy_data_to_curl_request);
+                     copy_data_to_curl_request);
     curl_easy_setopt(docker->curl, CURLOPT_READDATA, docker);
 
     struct curl_slist* headers = NULL;
@@ -169,7 +170,7 @@ Docker* docker_proxy_new() {
         const char* unix = "unix";
         if (strncmp(docker_host, unix, strlen(unix))) {
             fprintf(stderr, "Unknown url scheme in DOCKER_HOST '%s'",
-                docker_host);
+                    docker_host);
             free(docker);
             return NULL;
         }
@@ -180,7 +181,7 @@ Docker* docker_proxy_new() {
     } else {
         docker->curl = curl_easy_init();
         curl_easy_setopt(docker->curl, CURLOPT_UNIX_SOCKET_PATH,
-            DOCKER_SOCK_PATH);
+                         DOCKER_SOCK_PATH);
     }
 
     return docker;

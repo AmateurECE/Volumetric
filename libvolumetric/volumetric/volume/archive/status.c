@@ -47,8 +47,7 @@
 ////
 
 static bool check_file_for_modifications(struct archive_entry* entry,
-    const char* directory_file)
-{
+                                         const char* directory_file) {
     // Check for differences based on stat data
     struct stat file_stat = {0};
     assert(0 == stat(directory_file, &file_stat));
@@ -66,10 +65,10 @@ static bool check_file_for_modifications(struct archive_entry* entry,
 
 // Find what's changed in the directory from the archive
 static int diff_directory_from_archive(GPtrArray* directory,
-    const char* archive_url, const char* directory_base)
-{
-    struct archive *reader = archive_read_new();
-    struct archive_entry *entry = NULL;
+                                       const char* archive_url,
+                                       const char* directory_base) {
+    struct archive* reader = archive_read_new();
+    struct archive_entry* entry = NULL;
     archive_read_support_filter_all(reader);
     archive_read_support_format_all(reader);
 
@@ -97,7 +96,7 @@ static int diff_directory_from_archive(GPtrArray* directory,
             if (!strcmp(archive_file, directory_file)) {
                 found = true;
                 char* full_path = string_append_new(string_new(directory_base),
-                    directory_file);
+                                                    directory_file);
                 if (check_file_for_modifications(entry, full_path)) {
                     printf("M %s\n", archive_file);
                 }
@@ -155,8 +154,8 @@ int archive_volume_diff(ArchiveVolume* volume, Docker* docker) {
     docker_proxy_free(docker);
     assert(NULL != live_volume);
 
-    GPtrArray* directory = get_file_list_for_directory(
-        live_volume->mountpoint);
+    GPtrArray* directory =
+        get_file_list_for_directory(live_volume->mountpoint);
 
     // First, let's remove the top-level entry (either "./" or "/...")
     remove_matching_entry(directory, live_volume->mountpoint);
@@ -165,13 +164,13 @@ int archive_volume_diff(ArchiveVolume* volume, Docker* docker) {
     if ('/' != live_volume->mountpoint[mountpoint_length - 1]) {
         // Have to add that terminating '/'
         free(mountpoint);
-        mountpoint = string_append_new(string_new(live_volume->mountpoint),
-            "/");
+        mountpoint =
+            string_append_new(string_new(live_volume->mountpoint), "/");
     }
     trim_prefix_from_entries(directory, mountpoint);
 
-    int result = diff_directory_from_archive(directory, volume->url,
-        mountpoint);
+    int result =
+        diff_directory_from_archive(directory, volume->url, mountpoint);
 
     free(mountpoint);
     g_ptr_array_unref(directory);

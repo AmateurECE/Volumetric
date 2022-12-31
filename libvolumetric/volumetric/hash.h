@@ -53,7 +53,7 @@ const char* file_hash_type_to_string(FileHashType hash_type);
 
 // Get the hash of the data in memory. Must be free'd using file_hash_free.
 FileHash* file_hash_of_buffer(FileHashType hash_type, void* buffer,
-    size_t length);
+                              size_t length);
 
 // Convenience method to get a FileHash instance from a type and a hex_string.
 // `type' is a string such as "md5", and `hex_string' is a string containing

@@ -41,9 +41,10 @@ static char args_doc[] = "VOLUME_NAME";
 static const int NUMBER_OF_ARGS = 1;
 static struct argp_option options[] = {
     {"config", 'c', "FILE", 0,
-     "Read configuration file FILE instead of default ("
-     CONFIG_CONFIGURATION_FILE ")", 0},
-    { 0 },
+     "Read configuration file FILE instead of default "
+     "(" CONFIG_CONFIGURATION_FILE ")",
+     0},
+    {0},
 };
 
 static const char* CONFIGURATION_FILE = CONFIG_CONFIGURATION_FILE;
@@ -56,7 +57,9 @@ struct arguments {
 static error_t parse_opt(int key, char* arg, struct argp_state* state) {
     struct arguments* arguments = state->input;
     switch (key) {
-    case 'c': arguments->configuration_file = arg; break;
+    case 'c':
+        arguments->configuration_file = arg;
+        break;
     case ARGP_KEY_ARG:
         if (state->arg_num >= NUMBER_OF_ARGS) {
             argp_usage(state);
@@ -77,24 +80,24 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
     return 0;
 }
 
-static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
+static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 int main(int argc, char** argv) {
     struct arguments arguments = {0};
     arguments.configuration_file = CONFIGURATION_FILE;
 
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
     VolumetricConfiguration config = {0};
-    int result = volumetric_configuration_load(arguments.configuration_file,
-        &config);
+    int result =
+        volumetric_configuration_load(arguments.configuration_file, &config);
     assert(0 == result);
 
     // Get the volume from the configuration
     Volume volume = {0};
-    bool found = volumetric_configuration_find_volume_by_name(&config,
-        arguments.volume_name, &volume);
+    bool found = volumetric_configuration_find_volume_by_name(
+        &config, arguments.volume_name, &volume);
     if (true != found) {
         fprintf(stderr, "No volume named \"%s\" in the configuration\n",
-            arguments.volume_name);
+                arguments.volume_name);
         return ENOENT;
     }
 
