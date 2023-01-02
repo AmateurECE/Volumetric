@@ -8,7 +8,7 @@
 //
 // CREATED:         01/21/2022
 //
-// LAST EDITED:     06/22/2022
+// LAST EDITED:     01/01/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -58,7 +58,7 @@ FileHash* file_hash_of_buffer(FileHashType hash_type, void* buffer,
 // Convenience method to get a FileHash instance from a type and a hex_string.
 // `type' is a string such as "md5", and `hex_string' is a string containing
 // the ASCII representation of the hash bytex in hex, e.g. 'ac9687bd45'...
-FileHash* file_hash_from_string(const char* type, const char* hex_string);
+FileHash* file_hash_from_string(FileHashType type, const char* hex_string);
 
 // Conveniently convert a binary hash representation to ASCII for printing. The
 // string must be free'd after use.

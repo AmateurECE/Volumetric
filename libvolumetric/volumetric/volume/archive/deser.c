@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     06/22/2022
+// LAST EDITED:     01/01/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -44,17 +44,39 @@ static int archive_volume_visit_map(SerdecYamlDeserializer* yaml,
         int result = serdec_yaml_deserialize_string(yaml, &temp);
         volume->name = strdup(temp);
         return result;
-    } else if (!strcmp("url", key)) {
+    }
+
+    else if (!strcmp("url", key)) {
         int result = serdec_yaml_deserialize_string(yaml, &temp);
         volume->url = strdup(temp);
         return result;
-    } else {
+    }
+
+    else if (!strcmp("hash", key)) {
         int result = serdec_yaml_deserialize_string(yaml, &temp);
-        volume->hash = file_hash_from_string(key, temp);
+        FileHashType hash_type = file_hash_type_from_string(key);
+        if (FILE_HASH_TYPE_INVALID == hash_type) {
+            fprintf(stderr, "Invalid hash type: %s\n", key);
+            return -EINVAL;
+        }
+
+        volume->hash = file_hash_from_string(hash_type, temp);
         if (NULL == volume->hash) {
             return -EINVAL;
         }
         return result;
+    }
+
+    else if (!strcmp("update-on-stale-lock", key)) {
+        bool value = false;
+        int result = serdec_yaml_deserialize_bool(yaml, &value);
+        volume->update_on_stale_lock = value;
+        return result;
+    }
+
+    else {
+        fprintf(stderr, "Unknown object key: %s\n", key);
+        return -EINVAL;
     }
 }
 

@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     06/22/2022
+// LAST EDITED:     01/01/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include <glib-2.0/glib.h>
 #include <serdec/yaml.h>
@@ -38,28 +39,67 @@
 #include <volumetric/file.h>
 #include <volumetric/hash.h>
 #include <volumetric/volume/archive.h>
+#include <volumetric/volume/archive/lock-file.h>
+
+enum {
+    NO_ACTION = 0,
+    ACTION_REQUIRED = 1,
+};
+
+static int archive_checkout_is_necessary(ArchiveVolume* config,
+                                         Docker* docker) {
+    // First, check to make sure the volume doesn't already exist. If the
+    // configuration does not ask us to maintain a lock file, and the volume
+    // already exists, no action is necessary.
+    int result = docker_volume_exists(docker, config->name);
+    if (result < 0) {
+        return result;
+    } else if (result == 1 && !config->update_on_stale_lock) {
+        printf("%s: Volume exists, taking no further action.\n", config->name);
+        return NO_ACTION;
+    }
+
+    // If the lock file does not exist, create it and continue.
+    ArchiveLockFile* lock_file = archive_lock_file_open(config->name);
+    if (NULL == lock_file) {
+        return ACTION_REQUIRED;
+    }
+
+    // If the hash in the lock file is different from the hash in the
+    // configuration, updates are required.
+    const FileHash* locked_hash = archive_lock_file_get_hash(lock_file);
+    if (!file_hash_equal(locked_hash, config->hash)) {
+        return ACTION_REQUIRED;
+    }
+
+    // If the lock file exists, and its modification time is after the
+    //  modification time of the archive file, return.
+    const struct timespec lock_stat = archive_lock_file_get_mtime(lock_file);
+    archive_lock_file_close(lock_file);
+
+    struct stat archive_stat = {0};
+    result = stat(config->url, &archive_stat);
+    if (0 != result) {
+        return result;
+    }
+
+    if (archive_stat.st_mtim.tv_sec <= lock_stat.tv_sec) {
+        return NO_ACTION;
+    } else {
+        printf("%s: Lock file is stale; performing checkout\n", config->name);
+    }
+
+    return ACTION_REQUIRED;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Public API
+////
 
 int archive_volume_checkout(ArchiveVolume* config, Docker* docker) {
-    // First, check to make sure the volume doesn't already exist
-    DockerVolumeListIter* iter = docker_volume_list(docker);
-    if (NULL == iter) {
-        // We couldn't connect to the server for some reason.
-        return -ENOTCONN;
-    }
-
-    const DockerVolume* list_entry = NULL;
-    bool action_necessary = true;
-    while (NULL != (list_entry = docker_volume_list_iter_next(iter))) {
-        if (!strcmp(config->name, list_entry->name)) {
-            printf("%s: Volume exists, taking no further action.\n",
-                   config->name);
-            action_necessary = false;
-            break;
-        }
-    }
-    docker_volume_list_iter_free(iter);
-    if (!action_necessary) {
-        return 0;
+    int result = archive_checkout_is_necessary(config, docker);
+    if (0 == result || 0 > result) {
+        return result;
     }
 
     // Map the file to memory
@@ -106,6 +146,14 @@ int archive_volume_checkout(ArchiveVolume* config, Docker* docker) {
     file_contents_release(&file);
 
     docker_volume_free(volume);
+
+    // If the config wants us to keep a lock file, update that now.
+    if (config->update_on_stale_lock) {
+        ArchiveLockFile* lock_file = archive_lock_file_create(config->name);
+        archive_lock_file_update(lock_file, config->hash);
+        archive_lock_file_close(lock_file);
+    }
+
     return 0;
 }
 

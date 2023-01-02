@@ -7,7 +7,7 @@
 #
 # CREATED:          01/26/2022
 #
-# LAST EDITED:      02/13/2022
+# LAST EDITED:      12/30/2022
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -59,9 +59,7 @@ libvolumetric = library(
     'volumetric/volume/archive/deser.c',
     'volumetric/volume/archive/status.c',
     'volumetric/volume/archive/versioning.c',
-  ],
-  c_args: [
-    '-frecord-gcc-switches', '--std=c18', '-D_XOPEN_SOURCE=500', '-O0', '-g',
+    'volumetric/volume/archive/lock-file.c',
   ],
   dependencies: [
     libserdec, libglib, libcurl, libjson_c, libcrypto, libarchive,

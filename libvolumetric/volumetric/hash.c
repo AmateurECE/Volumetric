@@ -7,7 +7,7 @@
 //
 // CREATED:         01/22/2022
 //
-// LAST EDITED:     06/22/2022
+// LAST EDITED:     01/01/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -119,19 +119,14 @@ FileHash* file_hash_of_buffer(FileHashType hash_type, void* buffer,
     return file_hash;
 }
 
-FileHash* file_hash_from_string(const char* type, const char* hex_string) {
-    FileHashType hash_type = file_hash_type_from_string(type);
-    if (FILE_HASH_TYPE_INVALID == hash_type) {
-        return NULL;
-    }
-
+FileHash* file_hash_from_string(FileHashType type, const char* hex_string) {
     FileHash* file_hash = malloc(sizeof(FileHash));
     if (NULL == file_hash) {
         return NULL;
     }
     memset(file_hash, 0, sizeof(FileHash));
 
-    file_hash->hash_type = hash_type;
+    file_hash->hash_type = type;
     convert_hex_string_to_bytes(hex_string,
                                 (unsigned char**)&file_hash->hash_string,
                                 &file_hash->hash_length);

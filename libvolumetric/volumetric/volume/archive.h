@@ -8,7 +8,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     02/14/2022
+// LAST EDITED:     12/30/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -41,6 +41,7 @@ typedef struct ArchiveVolume {
     char* name;
     char* url;
     FileHash* hash;
+    bool update_on_stale_lock;
 } ArchiveVolume;
 
 int archive_volume_deserialize_yaml(SerdecYamlDeserializer* yaml,

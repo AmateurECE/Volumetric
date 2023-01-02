@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     06/23/2022
+// LAST EDITED:     12/30/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -167,15 +167,15 @@ Docker* docker_proxy_new() {
     // with the DOCKER_HOST environment variable.
     char* docker_host = getenv("DOCKER_HOST");
     if (NULL != docker_host) {
-        const char* unix = "unix";
-        if (strncmp(docker_host, unix, strlen(unix))) {
+        const char* unix_sock = "unix";
+        if (strncmp(docker_host, unix_sock, strlen(unix_sock))) {
             fprintf(stderr, "Unknown url scheme in DOCKER_HOST '%s'",
                     docker_host);
             free(docker);
             return NULL;
         }
 
-        docker_host += strlen(unix) + strlen(":/");
+        docker_host += strlen(unix_sock) + strlen(":/");
         docker->curl = curl_easy_init();
         curl_easy_setopt(docker->curl, CURLOPT_UNIX_SOCKET_PATH, docker_host);
     } else {

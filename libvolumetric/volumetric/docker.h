@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     12/30/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -82,6 +82,12 @@ DockerVolume* docker_volume_inspect(Docker* docker, const char* name);
 
 // This method currently doesn't have an implementation.
 int docker_volume_remove(Docker* docker, const char* name);
+
+// Returns:
+//  0: Volume does not exist
+//  1: Volume exists
+//  <0: Error code
+int docker_volume_exists(Docker* docker, const char* name);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Docker Container API

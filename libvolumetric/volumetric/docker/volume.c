@@ -7,7 +7,7 @@
 //
 // CREATED:         01/18/2022
 //
-// LAST EDITED:     02/15/2022
+// LAST EDITED:     12/30/2022
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -208,5 +208,30 @@ void docker_volume_free(DockerVolume* volume) {
 
 // Currently no use case for this?
 int docker_volume_remove(Docker* proxy, const char* name);
+
+int docker_volume_exists(Docker* docker, const char* name) {
+    DockerVolumeListIter* iter = docker_volume_list(docker);
+    if (NULL == iter) {
+        // We couldn't connect to the server for some reason.
+        return -ENOTCONN;
+    }
+
+    const DockerVolume* list_entry = NULL;
+    bool exists = false;
+    while (NULL != (list_entry = docker_volume_list_iter_next(iter))) {
+        if (!strcmp(name, list_entry->name)) {
+            exists = true;
+            break;
+        }
+    }
+
+    docker_volume_list_iter_free(iter);
+
+    if (exists) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
