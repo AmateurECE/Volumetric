@@ -7,7 +7,7 @@
 //
 // CREATED:         01/22/2022
 //
-// LAST EDITED:     02/02/2022
+// LAST EDITED:     01/01/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -75,6 +75,11 @@ static void prepend_directory_path(const char* directory,
     new_path[path_length] = '\0';
 
     archive_entry_set_pathname(entry, new_path);
+    // clang-tidy complains about the memory leak related to the passing of
+    // ownership of the malloc'd string "new_path" to the struct archive_entry.
+    // Unfortunately, the benefit of fixing this leak doesn't seem justified
+    // based on the effort. So, we disable the lint.
+    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
