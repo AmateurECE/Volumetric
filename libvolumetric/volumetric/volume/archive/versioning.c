@@ -59,37 +59,37 @@ static int archive_checkout_is_necessary(ArchiveVolume* config,
         return NO_ACTION;
     }
 
-    // If the lock file does not exist, create it and continue.
+    // If the lock file does not exist, checkout the volume.
     ArchiveLockFile* lock_file = archive_lock_file_open(config->name);
     if (NULL == lock_file) {
         return ACTION_REQUIRED;
     }
 
     // If the hash in the lock file is different from the hash in the
-    // configuration, updates are required.
+    // configuration and the modification time of the volume image is more
+    // recent than the modification time of the lock file, updates are
+    // required.
     const FileHash* locked_hash = archive_lock_file_get_hash(lock_file);
-    if (!file_hash_equal(locked_hash, config->hash)) {
-        return ACTION_REQUIRED;
-    }
+    bool hash_equal = file_hash_equal(locked_hash, config->hash);
 
-    // If the lock file exists, and its modification time is after the
-    //  modification time of the archive file, return.
     const struct timespec lock_stat = archive_lock_file_get_mtime(lock_file);
     archive_lock_file_close(lock_file);
 
     struct stat archive_stat = {0};
+    // TODO: If ever support for more schemes than plain old absolute paths is
+    // added, this will need to be updated to actually parse the URL.
     result = stat(config->url, &archive_stat);
     if (0 != result) {
         return result;
     }
 
-    if (archive_stat.st_mtim.tv_sec <= lock_stat.tv_sec) {
-        return NO_ACTION;
-    } else {
+    bool lock_stale = archive_stat.st_mtim.tv_sec <= lock_stat.tv_sec;
+    if (!hash_equal && lock_stale) {
         printf("%s: Lock file is stale; performing checkout\n", config->name);
+        return ACTION_REQUIRED;
     }
 
-    return ACTION_REQUIRED;
+    return NO_ACTION;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
