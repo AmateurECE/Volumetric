@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     01/01/2023
+// LAST EDITED:     01/02/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -34,6 +34,21 @@
 
 #include <volumetric/hash.h>
 #include <volumetric/volume/archive.h>
+
+static int archive_volume_set_update_policy(ArchiveVolume* volume,
+                                            const char* update_policy) {
+    if (!strcmp("never", update_policy)) {
+        volume->update_policy = archive_volume_update_policy_never;
+    } else if (!strcmp("on-stale-lock", update_policy)) {
+        volume->update_policy = archive_volume_update_policy_on_stale_lock;
+        volume->commit = archive_volume_commit_update_lock_file;
+    } else {
+        fprintf(stderr, "Invalid update policy: %s\n", update_policy);
+        return -EINVAL;
+    }
+
+    return 0;
+}
 
 static int archive_volume_visit_map(SerdecYamlDeserializer* yaml,
                                     void* user_data, const char* key) {
@@ -67,10 +82,9 @@ static int archive_volume_visit_map(SerdecYamlDeserializer* yaml,
         return result;
     }
 
-    else if (!strcmp("update-on-stale-lock", key)) {
-        bool value = false;
-        int result = serdec_yaml_deserialize_bool(yaml, &value);
-        volume->update_on_stale_lock = value;
+    else if (!strcmp("update", key)) {
+        int result = serdec_yaml_deserialize_string(yaml, &temp);
+        result = archive_volume_set_update_policy(volume, temp);
         return result;
     }
 
@@ -83,6 +97,11 @@ static int archive_volume_visit_map(SerdecYamlDeserializer* yaml,
 ///////////////////////////////////////////////////////////////////////////////
 // Public API
 ////
+
+void archive_volume_defaults(ArchiveVolume* volume) {
+    memset(volume, 0, sizeof(*volume));
+    volume->update_policy = archive_volume_update_policy_never;
+}
 
 int archive_volume_deserialize_yaml(SerdecYamlDeserializer* yaml,
                                     ArchiveVolume* volume) {

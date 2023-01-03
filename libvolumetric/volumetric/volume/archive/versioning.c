@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/01/2023
+// LAST EDITED:     01/02/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -41,28 +41,25 @@
 #include <volumetric/volume/archive.h>
 #include <volumetric/volume/archive/lock-file.h>
 
-enum {
-    NO_ACTION = 0,
-    ACTION_REQUIRED = 1,
-};
-
-static int archive_checkout_is_necessary(ArchiveVolume* config,
-                                         Docker* docker) {
-    // First, check to make sure the volume doesn't already exist. If the
-    // configuration does not ask us to maintain a lock file, and the volume
-    // already exists, no action is necessary.
-    int result = docker_volume_exists(docker, config->name);
+// In this case, if the volume already exists, we do nothing.
+int archive_volume_update_policy_never(ArchiveVolume* volume, Docker* docker) {
+    int result = docker_volume_exists(docker, volume->name);
     if (result < 0) {
         return result;
-    } else if (result == 1 && !config->update_on_stale_lock) {
-        printf("%s: Volume exists, taking no further action.\n", config->name);
-        return NO_ACTION;
+    } else if (result == 1) {
+        printf("%s: Volume exists, taking no further action.\n", volume->name);
+        return VOLUMETRIC_NO_ACTION;
     }
 
+    return VOLUMETRIC_ACTION_REQUIRED;
+}
+
+int archive_volume_update_policy_on_stale_lock(ArchiveVolume* volume,
+                                               Docker* docker) {
     // If the lock file does not exist, checkout the volume.
-    ArchiveLockFile* lock_file = archive_lock_file_open(config->name);
+    ArchiveLockFile* lock_file = archive_lock_file_open(volume->name);
     if (NULL == lock_file) {
-        return ACTION_REQUIRED;
+        return VOLUMETRIC_ACTION_REQUIRED;
     }
 
     // If the hash in the lock file is different from the hash in the
@@ -70,7 +67,7 @@ static int archive_checkout_is_necessary(ArchiveVolume* config,
     // recent than the modification time of the lock file, updates are
     // required.
     const FileHash* locked_hash = archive_lock_file_get_hash(lock_file);
-    bool hash_equal = file_hash_equal(locked_hash, config->hash);
+    bool hash_equal = file_hash_equal(locked_hash, volume->hash);
 
     const struct timespec lock_stat = archive_lock_file_get_mtime(lock_file);
     archive_lock_file_close(lock_file);
@@ -78,18 +75,26 @@ static int archive_checkout_is_necessary(ArchiveVolume* config,
     struct stat archive_stat = {0};
     // TODO: If ever support for more schemes than plain old absolute paths is
     // added, this will need to be updated to actually parse the URL.
-    result = stat(config->url, &archive_stat);
+    int result = stat(volume->url, &archive_stat);
     if (0 != result) {
         return result;
     }
 
     bool lock_stale = archive_stat.st_mtim.tv_sec <= lock_stat.tv_sec;
     if (!hash_equal && lock_stale) {
-        printf("%s: Lock file is stale; performing checkout\n", config->name);
-        return ACTION_REQUIRED;
+        printf("%s: Lock file is stale; performing checkout\n", volume->name);
+        return VOLUMETRIC_ACTION_REQUIRED;
     }
 
-    return NO_ACTION;
+    return VOLUMETRIC_NO_ACTION;
+}
+
+int archive_volume_commit_update_lock_file(ArchiveVolume* volume,
+                                           Docker* docker) {
+    ArchiveLockFile* lock_file = archive_lock_file_create(volume->name);
+    int result = archive_lock_file_update(lock_file, volume->hash);
+    archive_lock_file_close(lock_file);
+    return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -97,8 +102,9 @@ static int archive_checkout_is_necessary(ArchiveVolume* config,
 ////
 
 int archive_volume_checkout(ArchiveVolume* config, Docker* docker) {
-    int result = archive_checkout_is_necessary(config, docker);
-    if (0 == result || 0 > result) {
+    // Apply the update policy to determine whether any action is required.
+    int result = config->update_policy(config, docker);
+    if (VOLUMETRIC_NO_ACTION == result || 0 > result) {
         return result;
     }
 
@@ -147,14 +153,12 @@ int archive_volume_checkout(ArchiveVolume* config, Docker* docker) {
 
     docker_volume_free(volume);
 
-    // If the config wants us to keep a lock file, update that now.
-    if (config->update_on_stale_lock) {
-        ArchiveLockFile* lock_file = archive_lock_file_create(config->name);
-        archive_lock_file_update(lock_file, config->hash);
-        archive_lock_file_close(lock_file);
+    // Run any commit action
+    if (NULL != config->commit) {
+        result = config->commit(config, docker);
     }
 
-    return 0;
+    return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

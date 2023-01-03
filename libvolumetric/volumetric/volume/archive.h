@@ -8,7 +8,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     12/30/2022
+// LAST EDITED:     01/02/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -41,15 +41,31 @@ typedef struct ArchiveVolume {
     char* name;
     char* url;
     FileHash* hash;
-    bool update_on_stale_lock;
+    int (*update_policy)(struct ArchiveVolume* volume, Docker* docker);
+    int (*commit)(struct ArchiveVolume* volume, Docker* docker);
 } ArchiveVolume;
 
+void archive_volume_defaults(ArchiveVolume* volume);
 int archive_volume_deserialize_yaml(SerdecYamlDeserializer* yaml,
                                     ArchiveVolume* volume);
 int archive_volume_checkout(ArchiveVolume* config, Docker* docker);
 int archive_volume_diff(ArchiveVolume* volume, Docker* docker);
 int archive_volume_commit(ArchiveVolume* volume, Docker* docker, bool dry_run);
 void archive_volume_release(ArchiveVolume* volume);
+
+// Update policies
+
+typedef enum VolumetricUpdateStatus {
+    VOLUMETRIC_NO_ACTION = 0,
+    VOLUMETRIC_ACTION_REQUIRED = 1,
+} VolumetricUpdateStatus;
+
+int archive_volume_update_policy_never(ArchiveVolume* volume, Docker* docker);
+int archive_volume_update_policy_on_stale_lock(ArchiveVolume* volume,
+                                               Docker* docker);
+
+int archive_volume_commit_update_lock_file(ArchiveVolume* volume,
+                                           Docker* docker);
 
 #endif // VOLUMETRIC_VOLUME_ARCHIVE_H
 
