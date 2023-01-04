@@ -85,9 +85,8 @@ static int archive_volume_visit_map(SerdecYamlDeserializer* yaml,
     }
 
     else if (!strcmp("update", key)) {
-        int result = serdec_yaml_deserialize_string(yaml, &temp);
-        result = archive_volume_set_update_policy(volume, temp);
-        return result;
+        serdec_yaml_deserialize_string(yaml, &temp);
+        return archive_volume_set_update_policy(volume, temp);
     }
 
     else {
