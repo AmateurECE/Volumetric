@@ -8,7 +8,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     01/02/2023
+// LAST EDITED:     01/04/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -31,6 +31,7 @@
 
 #include <stdbool.h>
 
+typedef struct FileContents FileContents;
 typedef struct FileHash FileHash;
 typedef struct Docker Docker;
 typedef struct SerdecYamlDeserializer SerdecYamlDeserializer;
@@ -41,8 +42,9 @@ typedef struct ArchiveVolume {
     char* name;
     char* url;
     FileHash* hash;
-    int (*update_policy)(struct ArchiveVolume* volume, Docker* docker);
-    int (*commit)(struct ArchiveVolume* volume, Docker* docker);
+    int (*update_policy)(struct ArchiveVolume*, Docker*);
+    int (*commit)(struct ArchiveVolume*, Docker*);
+    int (*check)(struct ArchiveVolume*, Docker*, const FileContents*);
 } ArchiveVolume;
 
 void archive_volume_defaults(ArchiveVolume* volume);
@@ -64,8 +66,18 @@ int archive_volume_update_policy_never(ArchiveVolume* volume, Docker* docker);
 int archive_volume_update_policy_on_stale_lock(ArchiveVolume* volume,
                                                Docker* docker);
 
+// Commit actions
+
 int archive_volume_commit_update_lock_file(ArchiveVolume* volume,
                                            Docker* docker);
+
+// Check actions
+
+int archive_volume_check_hash(ArchiveVolume* volume, Docker* docker,
+                              const FileContents* file);
+int archive_volume_check_remove_existing_volume(ArchiveVolume* volume,
+                                                Docker* docker,
+                                                const FileContents*);
 
 #endif // VOLUMETRIC_VOLUME_ARCHIVE_H
 

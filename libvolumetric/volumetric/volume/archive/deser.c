@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     01/02/2023
+// LAST EDITED:     01/04/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -39,9 +39,11 @@ static int archive_volume_set_update_policy(ArchiveVolume* volume,
                                             const char* update_policy) {
     if (!strcmp("never", update_policy)) {
         volume->update_policy = archive_volume_update_policy_never;
+        volume->check = archive_volume_check_hash;
     } else if (!strcmp("on-stale-lock", update_policy)) {
         volume->update_policy = archive_volume_update_policy_on_stale_lock;
         volume->commit = archive_volume_commit_update_lock_file;
+        volume->check = archive_volume_check_remove_existing_volume;
     } else {
         fprintf(stderr, "Invalid update policy: %s\n", update_policy);
         return -EINVAL;

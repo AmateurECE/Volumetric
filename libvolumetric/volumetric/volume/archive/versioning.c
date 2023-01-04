@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/02/2023
+// LAST EDITED:     01/04/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -54,6 +54,36 @@ int archive_volume_update_policy_never(ArchiveVolume* volume, Docker* docker) {
     return VOLUMETRIC_ACTION_REQUIRED;
 }
 
+int archive_volume_check_hash(ArchiveVolume* volume, Docker* docker,
+                              const FileContents* file) {
+    // Hash the contents of the file (in memory) to verify against config
+    printf("%s: Checking hash of file %s\n", volume->name, volume->url);
+    FileHash* file_hash = file_hash_of_buffer(volume->hash->hash_type,
+                                              file->contents, file->size);
+    if (!file_hash_equal(volume->hash, file_hash)) {
+        char* expected = file_hash_to_string(volume->hash);
+        char* got = file_hash_to_string(file_hash);
+        file_hash_free(file_hash);
+        file_hash = NULL;
+        const char* hash_type =
+            file_hash_type_to_string(volume->hash->hash_type);
+        fprintf(stderr,
+                "%s: Error: %s hash mismatch for file %s.\n"
+                "Expected:\n"
+                "    %s\n"
+                "Got:\n"
+                "    %s\n",
+                volume->name, hash_type, volume->url, expected, got);
+        free(expected);
+        free(got);
+        return -EINVAL;
+    }
+    file_hash_free(file_hash);
+    file_hash = NULL;
+
+    return 0;
+}
+
 int archive_volume_update_policy_on_stale_lock(ArchiveVolume* volume,
                                                Docker* docker) {
     // If the lock file does not exist, checkout the volume.
@@ -89,6 +119,18 @@ int archive_volume_update_policy_on_stale_lock(ArchiveVolume* volume,
     return VOLUMETRIC_NO_ACTION;
 }
 
+int archive_volume_check_remove_existing_volume(ArchiveVolume* volume,
+                                                Docker* docker,
+                                                const FileContents*) {
+    // Remove the volume if it exists, to prevent contamination.
+    int result = 0;
+    if (docker_volume_exists(docker, volume->name)) {
+        result = docker_volume_remove(docker, volume->name);
+    }
+
+    return result;
+}
+
 int archive_volume_commit_update_lock_file(ArchiveVolume* volume,
                                            Docker* docker) {
     ArchiveLockFile* lock_file = archive_lock_file_create(volume->name);
@@ -108,43 +150,18 @@ int archive_volume_checkout(ArchiveVolume* config, Docker* docker) {
         return result;
     }
 
-    // Remove the volume if it exists, to prevent contamination.
-    if (docker_volume_exists(docker, config->name)) {
-        result = docker_volume_remove(docker, config->name);
-        if (0 > result) {
-            return result;
-        }
-    }
-
     // Map the file to memory
     FileContents file = {0};
     file_contents_init(&file, config->url);
 
-    // Hash the contents of the file (in memory) to verify against config
-    printf("%s: Checking hash of file %s\n", config->name, config->url);
-    FileHash* file_hash =
-        file_hash_of_buffer(config->hash->hash_type, file.contents, file.size);
-    if (!file_hash_equal(config->hash, file_hash)) {
-        char* expected = file_hash_to_string(config->hash);
-        char* got = file_hash_to_string(file_hash);
-        file_hash_free(file_hash);
-        file_hash = NULL;
-        const char* hash_type =
-            file_hash_type_to_string(config->hash->hash_type);
-        fprintf(stderr,
-                "%s: Error: %s hash mismatch for file %s.\n"
-                "Expected:\n"
-                "    %s\n"
-                "Got:\n"
-                "    %s\n",
-                config->name, hash_type, config->url, expected, got);
-        file_contents_release(&file);
-        free(expected);
-        free(got);
-        return -EINVAL;
+    // Run a check action to determine that the checkout is safe to perform.
+    if (NULL != config->check) {
+        result = config->check(config, docker, &file);
+        if (0 > result) {
+            file_contents_release(&file);
+            return result;
+        }
     }
-    file_hash_free(file_hash);
-    file_hash = NULL;
 
     // Create the volume
     printf("%s: Initializing Docker volume\n", config->name);
