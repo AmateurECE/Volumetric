@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     02/13/2022
+// LAST EDITED:     01/03/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -44,6 +44,9 @@ int http_post_application_json(Docker* docker, const char* url);
 
 // POST without a request object
 int http_post(Docker* docker, const char* url);
+
+// DELETE without a request object
+int http_delete(Docker* docker, const char* url);
 
 #endif // VOLUMETRIC_DOCKER_INTERNAL_H
 

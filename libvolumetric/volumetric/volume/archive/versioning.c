@@ -108,6 +108,14 @@ int archive_volume_checkout(ArchiveVolume* config, Docker* docker) {
         return result;
     }
 
+    // Remove the volume if it exists, to prevent contamination.
+    if (docker_volume_exists(docker, config->name)) {
+        result = docker_volume_remove(docker, config->name);
+        if (0 > result) {
+            return result;
+        }
+    }
+
     // Map the file to memory
     FileContents file = {0};
     file_contents_init(&file, config->url);

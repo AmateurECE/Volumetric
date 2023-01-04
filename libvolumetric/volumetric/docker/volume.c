@@ -7,7 +7,7 @@
 //
 // CREATED:         01/18/2022
 //
-// LAST EDITED:     12/30/2022
+// LAST EDITED:     01/03/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -206,8 +206,20 @@ void docker_volume_free(DockerVolume* volume) {
     free(volume);
 }
 
-// Currently no use case for this?
-int docker_volume_remove(Docker* proxy, const char* name);
+int docker_volume_remove(Docker* proxy, const char* name) {
+    static const char* url_base = "http://localhost/volumes/";
+    size_t url_length = strlen(url_base) + strlen(name);
+    char* request_url = malloc(url_length + 1);
+    assert(NULL != request_url);
+
+    memset(request_url, 0, url_length + 1);
+    strcat(request_url, url_base);
+    strcat(request_url, name);
+
+    int result = http_delete(proxy, request_url);
+    free(request_url);
+    return result;
+}
 
 int docker_volume_exists(Docker* docker, const char* name) {
     DockerVolumeListIter* iter = docker_volume_list(docker);

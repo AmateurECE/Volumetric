@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     12/30/2022
+// LAST EDITED:     01/03/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -149,6 +149,28 @@ int http_post_application_json(Docker* docker, const char* url) {
 int http_post(Docker* docker, const char* url) {
     curl_easy_setopt(docker->curl, CURLOPT_POST, 1);
     return http_read_application_json(docker, url);
+}
+
+int http_delete(Docker* docker, const char* url) {
+    curl_easy_setopt(docker->curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+    curl_easy_setopt(docker->curl, CURLOPT_URL, url);
+
+    char error_buffer[CURL_ERROR_SIZE] = {0};
+    curl_easy_setopt(docker->curl, CURLOPT_ERRORBUFFER, error_buffer);
+
+    CURLcode response = CURLE_OK;
+    response = curl_easy_perform(docker->curl);
+
+    // Check that CURL is happy
+    if (CURLE_OK != response) {
+        fprintf(stderr, "%s:%d:Couldn't connect to docker daemon: %s (%s)\n",
+                __FILE__, __LINE__, error_buffer,
+                curl_easy_strerror(response));
+        json_tokener_free(docker->tokener);
+        return -EINVAL;
+    }
+
+    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

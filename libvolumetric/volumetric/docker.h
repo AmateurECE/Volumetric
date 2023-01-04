@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     12/30/2022
+// LAST EDITED:     01/02/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -80,7 +80,7 @@ void docker_volume_free(DockerVolume* volume);
 // Get all the attributes for the Docker volume with the given name.
 DockerVolume* docker_volume_inspect(Docker* docker, const char* name);
 
-// This method currently doesn't have an implementation.
+// Remove a volume from the system
 int docker_volume_remove(Docker* docker, const char* name);
 
 // Returns:
