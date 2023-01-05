@@ -101,7 +101,7 @@ static int archive_volume_visit_map(SerdecYamlDeserializer* yaml,
 
 void archive_volume_defaults(ArchiveVolume* volume) {
     memset(volume, 0, sizeof(*volume));
-    volume->update_policy = archive_volume_update_policy_never;
+    archive_volume_set_update_policy(volume, "never");
 }
 
 int archive_volume_deserialize_yaml(SerdecYamlDeserializer* yaml,
