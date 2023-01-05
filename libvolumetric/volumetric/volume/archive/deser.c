@@ -69,7 +69,12 @@ static int archive_volume_visit_map(SerdecYamlDeserializer* yaml,
         return result;
     }
 
-    else if (!strcmp("hash", key)) {
+    else if (!strcmp("update", key)) {
+        serdec_yaml_deserialize_string(yaml, &temp);
+        return archive_volume_set_update_policy(volume, temp);
+    }
+
+    else {
         int result = serdec_yaml_deserialize_string(yaml, &temp);
         FileHashType hash_type = file_hash_type_from_string(key);
         if (FILE_HASH_TYPE_INVALID == hash_type) {
@@ -82,16 +87,6 @@ static int archive_volume_visit_map(SerdecYamlDeserializer* yaml,
             return -EINVAL;
         }
         return result;
-    }
-
-    else if (!strcmp("update", key)) {
-        serdec_yaml_deserialize_string(yaml, &temp);
-        return archive_volume_set_update_policy(volume, temp);
-    }
-
-    else {
-        fprintf(stderr, "Unknown object key: %s\n", key);
-        return -EINVAL;
     }
 }
 
@@ -106,6 +101,7 @@ void archive_volume_defaults(ArchiveVolume* volume) {
 
 int archive_volume_deserialize_yaml(SerdecYamlDeserializer* yaml,
                                     ArchiveVolume* volume) {
+    archive_volume_defaults(volume);
     return serdec_yaml_deserialize_map(yaml, archive_volume_visit_map, volume);
 }
 
