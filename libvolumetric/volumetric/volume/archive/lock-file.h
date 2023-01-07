@@ -8,7 +8,7 @@
 //
 // CREATED:         12/30/2022
 //
-// LAST EDITED:	    01/01/2023
+// LAST EDITED:	    01/07/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -32,8 +32,6 @@
 #include <stddef.h>
 #include <time.h>
 
-#include <volumetric/hash.h>
-
 typedef struct ArchiveLockFile ArchiveLockFile;
 
 // Create a lock file for the volume with the provided name, or truncate it if
@@ -49,13 +47,6 @@ void archive_lock_file_close(ArchiveLockFile* file);
 
 // Get the modification time (mtime) of the open lock file.
 struct timespec archive_lock_file_get_mtime(ArchiveLockFile* file);
-
-// Get the hash stored in the lock file. The returned value is a non-owning
-// pointer to the FileHash, and so should never be passed to file_hash_free().
-const FileHash* archive_lock_file_get_hash(ArchiveLockFile* file);
-
-// Update the lock file with the provided hash.
-int archive_lock_file_update(ArchiveLockFile* file, const FileHash* hash);
 
 #endif // VOLUMETRIC_LOCK_FILE_H
 

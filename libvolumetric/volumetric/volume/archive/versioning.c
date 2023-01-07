@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/04/2023
+// LAST EDITED:     01/07/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -92,13 +92,8 @@ int archive_volume_update_policy_on_stale_lock(ArchiveVolume* volume,
         return VOLUMETRIC_ACTION_REQUIRED;
     }
 
-    // If the hash in the lock file is different from the hash in the
-    // configuration and the modification time of the volume image is more
-    // recent than the modification time of the lock file, updates are
-    // required.
-    const FileHash* locked_hash = archive_lock_file_get_hash(lock_file);
-    bool hash_equal = file_hash_equal(locked_hash, volume->hash);
-
+    // If the modification time of the volume image is more recent than the
+    // modification time of the lock file, updates are required.
     const struct timespec lock_stat = archive_lock_file_get_mtime(lock_file);
     archive_lock_file_close(lock_file);
 
@@ -111,7 +106,7 @@ int archive_volume_update_policy_on_stale_lock(ArchiveVolume* volume,
     }
 
     bool lock_stale = archive_stat.st_mtim.tv_sec <= lock_stat.tv_sec;
-    if (!hash_equal && lock_stale) {
+    if (lock_stale) {
         printf("%s: Lock file is stale; performing checkout\n", volume->name);
         return VOLUMETRIC_ACTION_REQUIRED;
     }
@@ -134,9 +129,15 @@ int archive_volume_check_remove_existing_volume(ArchiveVolume* volume,
 int archive_volume_commit_update_lock_file(ArchiveVolume* volume,
                                            Docker* docker) {
     ArchiveLockFile* lock_file = archive_lock_file_create(volume->name);
-    int result = archive_lock_file_update(lock_file, volume->hash);
+    if (NULL == lock_file) {
+        char message[80] = {0};
+        strerror_r(errno, message, sizeof(message));
+        fprintf(stderr, "Couldn't create lock file: %s\n", message);
+        return -EINVAL;
+    }
+
     archive_lock_file_close(lock_file);
-    return result;
+    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
