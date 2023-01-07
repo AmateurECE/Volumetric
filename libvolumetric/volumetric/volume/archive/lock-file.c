@@ -75,7 +75,7 @@ ArchiveLockFile* archive_lock_file_create(const char* volume_name) {
     ArchiveLockFile* lock_file = archive_lock_file_new();
     lock_file->path = archive_lock_file_get_path(volume_name);
 
-    lock_file->fd = open(lock_file->path, O_CREAT | O_TRUNC | O_RDWR);
+    lock_file->fd = open(lock_file->path, O_CREAT | O_TRUNC | O_RDWR, 0600);
     if (0 > lock_file->fd) {
         free(lock_file);
         return NULL;
