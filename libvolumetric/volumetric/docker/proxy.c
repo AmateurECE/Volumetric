@@ -7,7 +7,7 @@
 //
 // CREATED:         02/13/2022
 //
-// LAST EDITED:     01/03/2023
+// LAST EDITED:     01/07/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -61,11 +61,19 @@ static size_t copy_data_from_curl_response(void* buffer,
                                            size_t size __attribute__((unused)),
                                            size_t nmemb, void* user_data) {
     Docker* docker = (Docker*)user_data;
+    if (docker->debug) {
+        printf("%.*s", (int)nmemb, (const char*)buffer);
+    }
+
     docker->write_object =
         json_tokener_parse_ex(docker->tokener, buffer, nmemb);
     enum json_tokener_error error = json_tokener_get_error(docker->tokener);
     if (NULL == docker->write_object && json_tokener_continue != error) {
         return 0;
+    }
+
+    if (docker->debug && NULL != docker->write_object) {
+        printf("\n");
     }
 
     return nmemb;
@@ -87,7 +95,7 @@ static int http_read_application_json(Docker* docker, const char* url) {
 
     // Check that CURL is happy
     if (CURLE_OK != response) {
-        fprintf(stderr, "%s:%d:Couldn't connect to docker daemon: %s (%s)\n",
+        fprintf(stderr, "%s:%d:Error during call to docker daemon: %s (%s)\n",
                 __FILE__, __LINE__, error_buffer,
                 curl_easy_strerror(response));
         json_tokener_free(docker->tokener);
@@ -105,6 +113,12 @@ static int http_read_application_json(Docker* docker, const char* url) {
     }
 
     json_tokener_free(docker->tokener);
+
+    // Reset state incurred by this function
+    curl_easy_setopt(docker->curl, CURLOPT_WRITEFUNCTION, NULL);
+    curl_easy_setopt(docker->curl, CURLOPT_WRITEDATA, NULL);
+    curl_easy_setopt(docker->curl, CURLOPT_ERRORBUFFER, NULL);
+
     return result;
 }
 
@@ -143,7 +157,15 @@ int http_post_application_json(Docker* docker, const char* url) {
     struct curl_slist* headers = NULL;
     headers = curl_slist_append(headers, "Content-Type: application/json");
     curl_easy_setopt(docker->curl, CURLOPT_HTTPHEADER, headers);
-    return http_post(docker, url);
+
+    int result = http_post(docker, url);
+
+    // Reset state incurred by this function
+    curl_easy_setopt(docker->curl, CURLOPT_HTTPHEADER, NULL);
+    curl_easy_setopt(docker->curl, CURLOPT_READFUNCTION, NULL);
+    curl_easy_setopt(docker->curl, CURLOPT_READDATA, NULL);
+
+    return result;
 }
 
 int http_post(Docker* docker, const char* url) {
@@ -153,24 +175,9 @@ int http_post(Docker* docker, const char* url) {
 
 int http_delete(Docker* docker, const char* url) {
     curl_easy_setopt(docker->curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-    curl_easy_setopt(docker->curl, CURLOPT_URL, url);
-
-    char error_buffer[CURL_ERROR_SIZE] = {0};
-    curl_easy_setopt(docker->curl, CURLOPT_ERRORBUFFER, error_buffer);
-
-    CURLcode response = CURLE_OK;
-    response = curl_easy_perform(docker->curl);
-
-    // Check that CURL is happy
-    if (CURLE_OK != response) {
-        fprintf(stderr, "%s:%d:Couldn't connect to docker daemon: %s (%s)\n",
-                __FILE__, __LINE__, error_buffer,
-                curl_easy_strerror(response));
-        json_tokener_free(docker->tokener);
-        return -EINVAL;
-    }
-
-    return 0;
+    int result = http_read_application_json(docker, url);
+    curl_easy_setopt(docker->curl, CURLOPT_CUSTOMREQUEST, NULL);
+    return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -206,6 +213,13 @@ Docker* docker_proxy_new() {
                          DOCKER_SOCK_PATH);
     }
 
+    char* curlopt_verbose = getenv("CURLOPT_VERBOSE");
+    if (NULL != curlopt_verbose) {
+        curl_easy_setopt(docker->curl, CURLOPT_VERBOSE, 1);
+        docker->debug = true;
+    }
+
+    curl_easy_setopt(docker->curl, CURLOPT_FAILONERROR, 1);
     return docker;
 }
 

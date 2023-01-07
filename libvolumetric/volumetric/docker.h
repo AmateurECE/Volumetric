@@ -7,7 +7,7 @@
 //
 // CREATED:         01/17/2022
 //
-// LAST EDITED:     01/02/2023
+// LAST EDITED:     01/07/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -28,6 +28,7 @@
 #ifndef VOLUMETRIC_DOCKER_H
 #define VOLUMETRIC_DOCKER_H
 
+#include <stdbool.h>
 #include <stddef.h>
 
 typedef void CURL;
@@ -51,6 +52,7 @@ typedef struct Docker {
     size_t read_object_length;
     size_t read_object_index;
 
+    bool debug;
 } Docker;
 
 Docker* docker_proxy_new();

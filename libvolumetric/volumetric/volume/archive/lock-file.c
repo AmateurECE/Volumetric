@@ -7,7 +7,7 @@
 //
 // CREATED:         12/30/2022
 //
-// LAST EDITED:	    01/01/2023
+// LAST EDITED:	    01/07/2023
 //
 ////
 // Copyright 2022, Ethan D. Twardy
@@ -167,6 +167,7 @@ ArchiveLockFile* archive_lock_file_open(const char* volume_name) {
 
     lock_file->fd = open(lock_file->path, O_RDONLY);
     if (0 > lock_file->fd) {
+        free(lock_file->path);
         free(lock_file);
         return NULL;
     }
@@ -174,6 +175,7 @@ ArchiveLockFile* archive_lock_file_open(const char* volume_name) {
     int result = archive_lock_file_read_hash(lock_file);
     if (0 != result) {
         close(lock_file->fd);
+        free(lock_file->path);
         free(lock_file);
         return NULL;
     }
@@ -184,6 +186,7 @@ ArchiveLockFile* archive_lock_file_open(const char* volume_name) {
 void archive_lock_file_close(ArchiveLockFile* file) {
     close(file->fd);
     file_hash_free(file->hash);
+    free(file->path);
     free(file);
 }
 
