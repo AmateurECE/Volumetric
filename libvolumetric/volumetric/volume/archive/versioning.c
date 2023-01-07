@@ -105,12 +105,14 @@ int archive_volume_update_policy_on_stale_lock(ArchiveVolume* volume,
         return result;
     }
 
-    bool lock_stale = archive_stat.st_mtim.tv_sec <= lock_stat.tv_sec;
+    bool lock_stale = archive_stat.st_mtim.tv_sec > lock_stat.tv_sec;
     if (lock_stale) {
         printf("%s: Lock file is stale; performing checkout\n", volume->name);
         return VOLUMETRIC_ACTION_REQUIRED;
     }
 
+    printf("%s: Lock file is up-to-date; taking no further action\n",
+           volume->name);
     return VOLUMETRIC_NO_ACTION;
 }
 
