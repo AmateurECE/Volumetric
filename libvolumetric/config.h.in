@@ -7,7 +7,7 @@
 //
 // CREATED:         01/16/2022
 //
-// LAST EDITED:     01/17/2022
+// LAST EDITED:     01/07/2023
 //
 // Copyright 2022, Ethan D. Twardy
 //
@@ -27,5 +27,6 @@
 
 #define CONFIG_VERSION "@version@"
 #define CONFIG_CONFIGURATION_FILE "@configuration_file@"
+#define CONFIG_LOCK_PATH "@lock_path@"
 
 ///////////////////////////////////////////////////////////////////////////////

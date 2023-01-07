@@ -25,9 +25,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
+lock_path = get_option('localstatedir') / 'lib' / meson.project_name()
 config_data = configuration_data({
   'version': meson.project_version(),
   'configuration_file': get_option('configuration_file'),
+  'lock_path': lock_path,
 })
 configure_file(input: 'config.h.in', output: 'config.h',
                configuration: config_data)
@@ -68,7 +70,6 @@ libvolumetric = library(
   install: true,
 )
 
-lock_path = get_option('localstatedir') / meson.project_name()
 meson.add_install_script('sh', '-c', 'mkdir -p "$DESTDIR/$1"', '_', lock_path)
 
 ###############################################################################

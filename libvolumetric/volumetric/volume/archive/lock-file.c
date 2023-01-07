@@ -35,8 +35,9 @@
 #include <unistd.h>
 
 #include "lock-file.h"
+#include "config.h"
 
-static const char* VOLUMETRIC_LOCK_DIRECTORY = "/var/local/volumetric";
+static const char* VOLUMETRIC_LOCK_DIRECTORY = CONFIG_LOCK_PATH;
 static const char* VOLUMETRIC_LOCK_EXTENSION = ".lock";
 
 typedef struct ArchiveLockFile {
