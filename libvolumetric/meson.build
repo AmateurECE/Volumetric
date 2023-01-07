@@ -7,7 +7,7 @@
 #
 # CREATED:          01/26/2022
 #
-# LAST EDITED:      12/30/2022
+# LAST EDITED:      01/07/2023
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -67,5 +67,8 @@ libvolumetric = library(
   soversion: meson.project_version(),
   install: true,
 )
+
+lock_path = get_option('localstatedir') / meson.project_name()
+meson.add_install_script('sh', '-c', 'mkdir -p "$DESTDIR/$1"', '_', lock_path)
 
 ###############################################################################
