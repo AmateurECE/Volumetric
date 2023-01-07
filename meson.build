@@ -7,7 +7,7 @@
 #
 # CREATED:          01/22/2022
 #
-# LAST EDITED:      01/01/2023
+# LAST EDITED:      01/07/2023
 #
 # Copyright 2022, Ethan D. Twardy
 #
@@ -25,7 +25,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###
 
-project('volumetric', 'c', version: '0.3.4',
+project('volumetric', 'c', version: '0.4.0',
        default_options: ['c_std=c11', 'buildtype=debug'])
 
 add_project_arguments('-frecord-gcc-switches', language: 'c')
